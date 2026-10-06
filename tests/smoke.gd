@@ -6,6 +6,22 @@ func _initialize() -> void:
 
 
 func _check() -> void:
+	var start_scene := load("res://scenes/start.tscn") as PackedScene
+	if start_scene == null:
+		_fail("Стартовая сцена не загружена")
+		return
+	var start := start_scene.instantiate()
+	root.add_child(start)
+	await process_frame
+	if start.get_script() == null:
+		_fail("Скрипт стартового экрана не загрузился")
+		return
+	var guard := start.get_node("OrientationGuard") as OrientationGuard
+	if guard == null or not guard.is_landscape():
+		_fail("Стартовый экран не определил горизонтальную раскладку")
+		return
+	start.queue_free()
+	await process_frame
 	var scene := load("res://scenes/main.tscn") as PackedScene
 	if scene == null:
 		_fail("Главная сцена не загружена")
@@ -13,7 +29,13 @@ func _check() -> void:
 	var game := scene.instantiate()
 	root.add_child(game)
 	await process_frame
+	if game.get_script() == null:
+		_fail("Скрипт главной сцены не загрузился")
+		return
 	var session := game.get_node("SessionState") as SessionState
+	if session.phase != SessionState.Phase.RUNNING:
+		_fail("Игра не запустилась автоматически из горизонтального окна")
+		return
 	var world := game.get_node("World") as WorldManager
 	var pool := game.get_node("EffectPool") as ObjectPool
 	if world.markers.multimesh.instance_count != 60:

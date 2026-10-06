@@ -2,9 +2,13 @@ config_version=5
 
 [application]
 
-config/name="72h Jam Starter"
-run/main_scene="res://scenes/main.tscn"
+config/name="Шаблон"
+run/main_scene="res://scenes/start.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
+boot_splash/image="res://assets/textures/start_background.png"
+boot_splash/bg_color=Color(0.019608, 0.027451, 0.047059, 1)
+boot_splash/stretch_mode=1
+
 
 [display]
 

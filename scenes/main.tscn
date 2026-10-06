@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/core/session_state.gd" id="2"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/core/world_manager.gd" id="7"]
 [ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="8"]
 [ext_resource type="PackedScene" path="res://scenes/debug_pulse.tscn" id="9"]
+[ext_resource type="Script" path="res://scripts/core/orientation_guard.gd" id="10"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1")
@@ -44,3 +45,6 @@ initial_size = 12
 
 [node name="DebugHud" type="CanvasLayer" parent="."]
 script = ExtResource("8")
+
+[node name="OrientationGuard" type="CanvasLayer" parent="."]
+script = ExtResource("10")

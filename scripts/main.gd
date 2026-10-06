@@ -7,6 +7,10 @@ extends Node3D
 @onready var audio_manager: JamAudioManager = $AudioManager
 @onready var effect_pool: ObjectPool = $EffectPool
 @onready var hud: DebugHud = $DebugHud
+@onready var orientation_guard: OrientationGuard = $OrientationGuard
+
+var _paused_by_orientation := false
+var _pending_start := false
 
 
 func _ready() -> void:
@@ -18,6 +22,12 @@ func _ready() -> void:
 	session.phase_changed.connect(hud.set_phase)
 	hud.set_phase(session.phase)
 	hud.set_seed(world.seed_value)
+	audio_manager.set_muted(not GameSettings.sound_enabled)
+	orientation_guard.landscape_changed.connect(_on_landscape_changed)
+	if orientation_guard.is_landscape():
+		session.start()
+	else:
+		_pending_start = true
 
 
 func _process(_delta: float) -> void:
@@ -54,4 +64,18 @@ func _spawn_pulse() -> void:
 
 func _on_mute(value: bool) -> void:
 	audio_manager.set_muted(value)
+
+
+func _on_landscape_changed(is_landscape: bool) -> void:
+	if not is_landscape:
+		if session.phase == SessionState.Phase.RUNNING:
+			session.pause()
+			_paused_by_orientation = true
+		return
+	if _paused_by_orientation:
+		_paused_by_orientation = false
+		session.start()
+	elif _pending_start:
+		_pending_start = false
+		session.start()
 
