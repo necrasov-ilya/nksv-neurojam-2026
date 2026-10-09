@@ -1,12 +1,21 @@
 extends Node3D
 ## A walkable, inhabited district. Local ground top is y = 0.
 const Geometry = preload("res://scripts/intro/geometry.gd")
+const Pedestrians = preload("res://scripts/intro/pedestrians.gd")
 const CAR_BODY := [Vector2(-2.35, 0.62), Vector2(2.35, 0.62), Vector2(2.23, 0.9), Vector2(1.48, 1.04), Vector2(-1.64, 1.04), Vector2(-2.23, 0.88)]
 const CAR_CABIN := [Vector2(-1.43, 1.0), Vector2(1.34, 1.0), Vector2(0.69, 1.71), Vector2(-0.83, 1.71)]
 const WAGON_CABIN := [Vector2(-1.83, 1.0), Vector2(1.34, 1.0), Vector2(0.69, 1.77), Vector2(-1.54, 1.77)]
+const CAR_WHEEL_RADIUS := 0.43
 const ROOF_PROFILE := [Vector2(-0.5, 0), Vector2(0.5, 0), Vector2(0.5, 0.12), Vector2(0.36, 1.0), Vector2(-0.36, 1.0), Vector2(-0.5, 0.12)]
 const CANOPY_PROFILE := [Vector2(-1.6, 0), Vector2(1.6, 0), Vector2(1.6, 0.18), Vector2(1.0, 0.42), Vector2(-1.0, 0.42), Vector2(-1.6, 0.18)]
 var pedestrian_routes: Array = []
+var street_anchors: Dictionary = {}
+var street_driver: Node3D
+var street_crossing_display: Label3D
+var street_crossing_lamp: Node3D
+var street_crossing_button: Node3D
+var street_ad_display: Label3D
+var street_ad_button: Node3D
 var _g
 var _traffic: Array = []
 var _built := false
@@ -25,6 +34,7 @@ func build() -> void:
 	_street_life()
 	_stop(Vector3(18.1, 0, 108))
 	_plaza()
+	_street_interaction_points()
 	_routes()
 	_g.flush()
 	_background_traffic()
@@ -98,6 +108,12 @@ func _ground_and_streets() -> void:
 	# Footpaths extend through the side streets and courtyards, not into fences.
 	for z in [-179.0, -137.0, -27.0, 57.0, 99.0, 153.0]:
 		for side in [-1, 1]:
+			if side > 0 and z == 99.0:
+				# The cafe slab owns x=20..54, z=62..100 at the same ground height.
+				# Fill only the remaining footpath, with shared edges and no overlap.
+				_g.box(Vector3(90, -0.025, z), Vector3(72, 0.05, 6), "concrete")
+				_g.box(Vector3(37, -0.025, 101), Vector3(34, 0.05, 2), "concrete")
+				continue
 			_g.box(Vector3(side * 73.0, -0.025, z), Vector3(106, 0.05, 6), "concrete")
 	for z in range(-204, 164, 12):
 		if abs(z + 80) < 25:
@@ -522,6 +538,106 @@ func _street_life() -> void:
 	_bench(Vector3(71, 0, 52), 0)
 	_planter(Vector3(71, 0, 59.5), Vector3(6.5, 0.55, 1.1))
 
+func _stationary_civilian(node_name: String, p: Vector3, yaw: float, appearance_id: int) -> Node3D:
+	var civilian = Pedestrians.new()
+	civilian.name = node_name
+	add_child(civilian)
+	civilian.populate_stationary(Vector3.ZERO, 0, appearance_id)
+	civilian.position = p
+	civilian.rotation.y = yaw
+	return civilian
+
+func _street_button(mount: Node3D, p: Vector3, node_name: String) -> Node3D:
+	# Only this small mesh moves; its local +Z points out of the housing.
+	var button = Geometry.new()
+	button.name = node_name
+	mount.add_child(button)
+	button.position = p
+	button.cylinder(Vector3.ZERO, 0.115, 0.035, "mustard", Vector3(PI / 2, 0, 0))
+	button.cylinder(Vector3(0, 0, 0.021), 0.074, 0.01, "cream", Vector3(PI / 2, 0, 0))
+	button.flush()
+	return button
+
+func _street_interaction_points() -> void:
+	# These props exist before the main pedestrians collect their obstacle bounds.
+	# The driver's feet clear the bus collider's curb-side edge at x = 8.3.
+	street_driver = _stationary_civilian("StreetBusDriver", Vector3(9.55, 0, 117.3), -PI / 2, 36)
+	street_anchors["street_bus"] = Vector3(9.8, 1.42, 117.3)
+	var service_origin := Vector3(8.33, 0, 116.05)
+	_b(service_origin, PI / 2, Vector3(0, 2.44, 0.025), Vector3(0.92, 0.48, 0.06), "petrol")
+	_sign(service_origin, PI / 2, Vector3(0, 2.44, 0.066), "ВОДИТЕЛЬ\nМАРШРУТ 18", 22, "cream", 0.007, 0.78, 0.34, "BusServiceText")
+
+	# A conversation beside the actual table, outside its chairs and parasol edge.
+	var cafe_a := Vector3(25.5, 0, 84.5)
+	var cafe_b := Vector3(26.2, 0, 86.1)
+	var cafe_delta := cafe_b - cafe_a
+	_stationary_civilian("StreetCafePatronA", cafe_a, atan2(-cafe_delta.x, -cafe_delta.z), 12)
+	_stationary_civilian("StreetCafePatronB", cafe_b, atan2(cafe_delta.x, cafe_delta.z), 11)
+	street_anchors["street_cafe"] = Vector3(25.3, 1.42, 85.3)
+
+	_crossing_control(Vector3(27, 0, -63))
+	_street_ad_stand(Vector3(155, 0, -68))
+
+func _crossing_control(o: Vector3) -> void:
+	var r := -PI / 2
+	var mount := Node3D.new()
+	mount.name = "StreetCrossingControl"
+	mount.position = o
+	mount.rotation.y = r
+	add_child(mount)
+	# The existing traffic pole carries a west-facing civic control, off the route.
+	_b(o, r, Vector3(0, 1.72, 0.16), Vector3(1.5, 1.90, 0.28), "petrol")
+	_s(o, r, Vector3(0, 1.72, 0.16), Vector3(1.5, 1.90, 0.28))
+	_b(o, r, Vector3(0, 1.72, 0.31), Vector3(1.36, 1.74, 0.035), "cream")
+	_b(o, r, Vector3(0, 2.14, 0.337), Vector3(1.29, 0.65, 0.02), "dark")
+	street_crossing_display = _g.label("НАЖМИТЕ", _p(o, r, Vector3(0, 2.14, 0.36)), 28, "cream", Vector3(0, r, 0), 0.009, 1.24, 0.54)
+	street_crossing_display.name = "StreetCrossingResponse"
+	_sign(o, r, Vector3(0, 1.62, 0.35), "ПЕШЕХОДНЫЙ ПЕРЕХОД\nНАЖМИТЕ КНОПКУ", 20, "petrol", 0.007, 1.20, 0.25, "StreetCrossingInstruction")
+	_c(o, r, Vector3(0, 1.08, 0.347), 0.16, 0.03, "steel", Vector3(PI / 2, 0, 0))
+	street_crossing_button = _street_button(mount, Vector3(0, 1.08, 0.379), "StreetCrossingButton")
+	for x in [-0.61, 0.61]:
+		for y in [0.94, 2.50]:
+			_c(o, r, Vector3(x, y, 0.341), 0.022, 0.014, "steel", Vector3(PI / 2, 0, 0))
+	_c(o, r, Vector3(0, 2.53, 0.34), 0.065, 0.025, "dark", Vector3(PI / 2, 0, 0))
+	var lamp = Geometry.new()
+	lamp.name = "StreetCrossingLamp"
+	mount.add_child(lamp)
+	lamp.position = Vector3(0, 2.53, 0.365)
+	lamp.cylinder(Vector3.ZERO, 0.048, 0.014, "cross_green", Vector3(PI / 2, 0, 0))
+	lamp.flush()
+	lamp.visible = false
+	street_crossing_lamp = lamp
+	street_anchors["street_crossing"] = Vector3(26.55, 1.50, -63)
+
+func _street_ad_stand(o: Vector3) -> void:
+	var r := -PI / 2
+	var mount := Node3D.new()
+	mount.name = "StreetAdStand"
+	mount.position = o
+	mount.rotation.y = r
+	add_child(mount)
+	# Restrained corporate furniture faces west, away from the direct tower entrance.
+	for x in [-1.35, 1.35]:
+		_b(o, r, Vector3(x, 0.08, 0), Vector3(0.46, 0.16, 0.85), "steel")
+		_b(o, r, Vector3(x, 0.30, 0), Vector3(0.12, 0.44, 0.12), "petrol")
+	_b(o, r, Vector3(0, 1.64, 0), Vector3(3.5, 2.88, 0.32), "petrol")
+	_s(o, r, Vector3(0, 1.55, 0), Vector3(3.5, 3.1, 0.36))
+	_b(o, r, Vector3(0, 1.64, 0.175), Vector3(3.28, 2.66, 0.03), "cream")
+	_b(o, r, Vector3(0, 2.74, 0.202), Vector3(3.28, 0.45, 0.025), "petrol")
+	_sign(o, r, Vector3(0, 2.74, 0.23), "LATENT SYSTEMS", 34, "cream", 0.010, 2.98, 0.30, "StreetAdHeader")
+	_b(o, r, Vector3(0, 1.84, 0.203), Vector3(3.16, 1.26, 0.025), "white")
+	street_ad_display = _g.label("Генерируем миры.\nКофе пока варим вручную.", _p(o, r, Vector3(0, 1.84, 0.234)), 34, "petrol", Vector3(0, r, 0), 0.010, 3.00, 1.10)
+	street_ad_display.name = "StreetAdSlogan"
+	_b(o, r, Vector3(0, 0.70, 0.203), Vector3(3.05, 0.018, 0.025), "teal")
+	_sign(o, r, Vector3(0, 0.50, 0.23), "СООБЩЕНИЯ КОМПАНИИ · ЛИСТАЙТЕ КНОПКОЙ", 20, "petrol", 0.007, 3.00, 0.19, "StreetAdPageHint")
+	_sign(o, r, Vector3(-0.30, 0.98, 0.23), "СЛЕДУЮЩЕЕ  →", 22, "petrol", 0.009, 1.65, 0.23, "StreetAdButtonCaption")
+	_c(o, r, Vector3(1.17, 0.98, 0.232), 0.16, 0.03, "steel", Vector3(PI / 2, 0, 0))
+	street_ad_button = _street_button(mount, Vector3(1.17, 0.98, 0.267), "StreetAdButton")
+	for x in [-1.55, 1.55]:
+		for y in [0.41, 2.88]:
+			_c(o, r, Vector3(x, y, 0.214), 0.024, 0.014, "steel", Vector3(PI / 2, 0, 0))
+	street_anchors["street_ad"] = Vector3(154.50, 1.55, -68)
+
 func _lamp(o: Vector3, r: float) -> void:
 	_c(o, r, Vector3(0, 0.12, 0), 0.27, 0.24, "stone")
 	_c(o, r, Vector3(0, 0.52, 0), 0.14, 0.75, "petrol")
@@ -753,7 +869,7 @@ func _plaza() -> void:
 		_sign(sign_origin, -PI / 2, Vector3(0, 1.45, 0.19), "LATENT\nSYSTEMS\n18", 30, "cream", 0.01, 1.02, 1.35, "PlazaSignText")
 		_s(sign_origin, -PI / 2, Vector3(0, 1.15, 0), Vector3(1.3, 2.3, 0.32))
 
-func _car(o: Vector3, r: float, color: String, collision: bool, g = null) -> void:
+func _car(o: Vector3, r: float, color: String, collision: bool, g = null, rolling_wheels = null) -> void:
 	var target = _g if g == null else g
 	var wagon := posmod(roundi(o.x + o.z), 3) == 1
 	target.prism(_p(o, r, Vector3.ZERO), PackedVector2Array(CAR_BODY), 1.9, color, Vector3(0, r, 0))
@@ -764,12 +880,18 @@ func _car(o: Vector3, r: float, color: String, collision: bool, g = null) -> voi
 	_b(o, r, Vector3(0, 0.61, 0), Vector3(4.15, 0.13, 1.65), "dark", target)
 	for side in [-1, 1]:
 		for x in [-1.45, 1.45]:
-			_c(o, r, Vector3(x, 0.45, side * 0.98), 0.43, 0.25, "dark", Vector3(PI / 2, 0, 0), target)
-			_c(o, r, Vector3(x, 0.45, side * 1.12), 0.26, 0.035, "steel", Vector3(PI / 2, 0, 0), target)
-			_c(o, r, Vector3(x, 0.45, side * 1.147), 0.105, 0.028, "petrol", Vector3(PI / 2, 0, 0), target)
-			for bolt in 5:
-				var angle := bolt * TAU / 5
-				_c(o, r, Vector3(x + cos(angle) * 0.165, 0.45 + sin(angle) * 0.165, side * 1.15), 0.027, 0.015, "dark", Vector3(PI / 2, 0, 0), target)
+			var axle := Vector3(x, 0.45, side * 0.98)
+			if rolling_wheels == null:
+				_car_wheel(_p(o, r, axle), r, side, target)
+			else:
+				var wheel = Geometry.new()
+				wheel.name = "Wheel%s_%s" % [side, x]
+				wheel.position = _p(o, r, axle)
+				wheel.rotation.y = r
+				target.add_child(wheel)
+				_car_wheel(Vector3.ZERO, 0, side, wheel)
+				wheel.flush()
+				rolling_wheels.append(wheel)
 		_b(o, r, Vector3(-0.13, 1.38, side * 0.805), Vector3(0.11, 0.66, 0.12), color, target)
 		_rod(o, r, Vector3(0.71, roof_y - 0.02, side * 0.78), Vector3(1.32, 1.01, side * 0.78), 0.045, color, target)
 		_rod(o, r, Vector3(-1.55 if wagon else -0.85, roof_y - 0.02, side * 0.78), Vector3(-1.82 if wagon else -1.4, 1.01, side * 0.78), 0.045, color, target)
@@ -795,19 +917,33 @@ func _car(o: Vector3, r: float, color: String, collision: bool, g = null) -> voi
 	if collision:
 		_s(o, r, Vector3(0, 0.85, 0), Vector3(4.75, 1.7, 2.25))
 
+func _car_wheel(o: Vector3, r: float, side: int, g) -> void:
+	_c(o, r, Vector3.ZERO, CAR_WHEEL_RADIUS, 0.25, "dark", Vector3(PI / 2, 0, 0), g)
+	_c(o, r, Vector3(0, 0, side * 0.14), 0.26, 0.035, "steel", Vector3(PI / 2, 0, 0), g)
+	_c(o, r, Vector3(0, 0, side * 0.167), 0.105, 0.028, "petrol", Vector3(PI / 2, 0, 0), g)
+	for bolt in 5:
+		var angle := bolt * TAU / 5
+		_c(o, r, Vector3(cos(angle) * 0.165, sin(angle) * 0.165, side * 0.17), 0.027, 0.015, "dark", Vector3(PI / 2, 0, 0), g)
+
 func _bus(o: Vector3, r: float) -> void:
 	_b(o, r, Vector3(0, 1.55, 0), Vector3(10.7, 2.5, 2.5), "cream")
 	_b(o, r, Vector3(0, 0.8, 0), Vector3(10.85, 0.65, 2.55), "teal")
 	_b(o, r, Vector3(0, 2.87, 0), Vector3(10.3, 0.22, 2.6), "petrol")
 	for side in [-1, 1]:
-		for i in 7:
+		for i in (6 if side < 0 else 7):
 			_b(o, r, Vector3(-4.35 + i * 1.4, 1.95, side * 1.29), Vector3(1.15, 1.3, 0.16), "glass")
+		if side < 0:
+			# A narrow front pane leaves a solid pillar before the passenger door.
+			_b(o, r, Vector3(3.64, 1.95, -1.29), Vector3(0.6, 1.3, 0.16), "glass")
 		for x in [-3.4, 3.4]:
 			_c(o, r, Vector3(x, 0.61, side * 1.23), 0.58, 0.28, "dark", Vector3(PI / 2, 0, 0))
 			_c(o, r, Vector3(x, 0.61, side * 1.4), 0.3, 0.025, "cream", Vector3(PI / 2, 0, 0))
-		_b(o, r, Vector3(3.8, 1.4, side * 1.39), Vector3(1.35, 2.15, 0.12), "petrol")
-		for x in [3.45, 4.13]:
-			_b(o, r, Vector3(x, 1.6, side * 1.47), Vector3(0.56, 1.6, 0.05), "glass")
+	# The stop is on local -Z. Keep the doorway ahead of the front tyre (x <= 3.98).
+	# Its glazing shares the window-top height; the frame sits close to the body.
+	_b(o, r, Vector3(4.62, 1.48, -1.30), Vector3(1.06, 2.24, 0.08), "petrol")
+	for x in [4.355, 4.885]:
+		_b(o, r, Vector3(x, 1.75, -1.355), Vector3(0.425, 1.55, 0.03), "glass")
+		_b(o, r, Vector3(x, 0.66, -1.355), Vector3(0.425, 0.44, 0.03), "teal")
 	_b(o, r, Vector3(5.43, 1.9, 0), Vector3(0.13, 1.25, 2.25), "glass")
 	_b(o, r, Vector3(5.46, 2.65, 0), Vector3(0.12, 0.35, 2.2), "dark")
 	_g.label("18  ЦЕНТРАЛЬНЫЙ", _p(o, r, Vector3(5.54, 2.65, 0)), 26, "mustard", Vector3(0, r + PI / 2, 0), 0.009, 1.96, 0.25).name = "BusDestinationText"
@@ -894,15 +1030,24 @@ func _background_traffic() -> void:
 		model.name = "GentleTraffic%d" % i
 		add_child(model)
 		var r := PI / 2 if i == 0 else -PI / 2
-		_car(Vector3.ZERO, r, "teal" if i == 0 else "cream", false, model)
+		var wheels: Array[Node3D] = []
+		_car(Vector3.ZERO, 0, "teal" if i == 0 else "cream", false, model, wheels)
 		model.flush()
+		model.rotation.y = r
 		model.position = Vector3(3.5 if i == 0 else -3.5, 0, 155 if i == 0 else -200)
-		_traffic.append({"node": model, "speed": -6.0 if i == 0 else 5.5})
+		_traffic.append({"node": model, "speed": -6.0 if i == 0 else 5.5, "wheels": wheels, "wheel_angle": 0.0})
 
 func _process(delta: float) -> void:
 	for vehicle in _traffic:
 		var node: Node3D = vehicle["node"]
-		node.position.z += vehicle["speed"] * delta
+		var distance: float = vehicle["speed"] * delta
+		node.position.z += distance
+		# Both lanes drive along the car's local +X; rolling uses the local Z axle.
+		# Route wrapping below is a teleport, not distance travelled by the tyres.
+		var angle: float = fposmod(vehicle["wheel_angle"] - absf(distance) / CAR_WHEEL_RADIUS, TAU)
+		vehicle["wheel_angle"] = angle
+		for wheel: Node3D in vehicle["wheels"]:
+			wheel.rotation.z = angle
 		if node.position.z < -225:
 			node.position.z = 180
 		elif node.position.z > 180:

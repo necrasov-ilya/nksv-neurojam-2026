@@ -8,6 +8,7 @@ const Ambience = preload("res://scripts/intro/ambience.gd")
 const Player = preload("res://scripts/intro/player.gd")
 const Geometry = preload("res://scripts/intro/geometry.gd")
 const TapeShader = preload("res://assets/shaders/intro_tape.gdshader")
+const StreetExtras = preload("res://scripts/intro/street_extras.gd")
 const FLOOR_COUNT := 22
 const RECEPTION_LINES := [
 	{"speaker":"Вы","text":"Здравствуйте. Я на собеседование."},
@@ -42,6 +43,8 @@ var _subtitle_label: Label
 var _subtitle_remaining := 0.0
 var _voice_player: AudioStreamPlayer
 var _interaction_points: Dictionary = {}
+var street_extras: Node
+var _street_use_ray := PhysicsRayQueryParameters3D.new()
 
 func _ready() -> void:
 	_build_environment()
@@ -73,6 +76,8 @@ func _ready() -> void:
 			"return": office.to_global(office.anchors["lift_return"]),
 		},
 	}
+	for action in city.street_anchors:
+		_interaction_points["street"][action] = city.to_global(city.street_anchors[action])
 	_add_people(city, 64)
 	_add_people(lobby, 18)
 	_add_people(office, 6)
@@ -82,6 +87,7 @@ func _ready() -> void:
 	receptionist.populate_stationary(Vector3(-8,0,-6.4),PI,17)
 	player = Player.new()
 	add_child(player)
+	_street_use_ray.exclude = [player.get_rid()]
 	audio = Ambience.new()
 	add_child(audio)
 	_voice_player = AudioStreamPlayer.new()
@@ -90,6 +96,12 @@ func _ready() -> void:
 	audio.attach_city(city)
 	player.stepped.connect(audio.footstep)
 	_build_ui()
+	street_extras = StreetExtras.new()
+	add_child(street_extras)
+	street_extras.setup(city)
+	street_extras.say_requested.connect(_say)
+	street_extras.clear_speech_requested.connect(_clear_street_speech)
+	street_extras.sound_requested.connect(audio.play_event)
 	_set_location("street", Vector3(14,0.03,110), 0)
 	player.capture_mouse()
 
@@ -346,6 +358,12 @@ func _say(speaker: String, text: String, seconds: float = 4.0) -> void:
 	_subtitle_remaining = seconds
 	_subtitle_panel.visible = GameSettings.subtitles_enabled
 
+func _clear_street_speech() -> void:
+	# Reception owns its own dialogue; a street cancellation must never erase it.
+	if _dialogue_index < 0:
+		_subtitle_remaining = 0.0
+		_subtitle_panel.hide()
+
 func _start_dialogue() -> void:
 	_dialogue_index = 1 if reception_done else 0
 	player.enabled = false
@@ -399,6 +417,7 @@ func _process(delta: float) -> void:
 	if _subtitle_remaining > 0 and not _paused:
 		_subtitle_remaining = maxf(0,_subtitle_remaining-delta)
 		_subtitle_panel.visible = GameSettings.subtitles_enabled and _subtitle_remaining > 0
+	street_extras.tick(delta, player.global_position, location == "street", _paused or _transitioning)
 	_hint_time -= delta
 	_help.visible = _hint_time > 0 or _paused
 	if _transitioning or _paused or _floor_panel.visible or _dialogue_panel.visible:
@@ -406,8 +425,9 @@ func _process(delta: float) -> void:
 		return
 	_current_action = _find_action()
 	var captions := {"reception":"Поговорить с администратором", "lift":"Вызвать лифт" if reception_done else "Сначала обратитесь к администратору", "floor14":"Выбрать этаж", "return":"Вернуться в холл", "door":"Открыть кабинет 1406" if not door_open else "Закрыть кабинет 1406", "computer":"Начать собеседование"}
-	_prompt.text = "E  ·  " + captions[_current_action] if captions.has(_current_action) else ""
-	_prompt.visible = _subtitle_remaining <= 0
+	var caption: String = captions.get(_current_action, StreetExtras.CAPTIONS.get(_current_action, ""))
+	_prompt.text = "E  ·  " + caption if not caption.is_empty() else ""
+	_prompt.visible = not _subtitle_panel.visible
 	_check_doorways()
 	if location == "street":
 		if player.position.z > -58:
@@ -442,6 +462,11 @@ func _find_action() -> String:
 		if distance < best and offset.normalized().dot(-player.camera.global_basis.z) > 0.45:
 			if key == "computer" and not door_open:
 				continue
+			if location == "street":
+				_street_use_ray.from = player.camera.global_position
+				_street_use_ray.to = anchors[key]
+				if not player.get_world_3d().direct_space_state.intersect_ray(_street_use_ray).is_empty():
+					continue
 			best = distance
 			action = key
 	return action
@@ -464,7 +489,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			player.enabled = false
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("intro_use") and not _paused and not _transitioning and not _floor_panel.visible:
+	elif event.is_action_pressed("intro_use") and not event.is_echo() and not _paused and not _transitioning and not _floor_panel.visible:
 		if _dialogue_panel.visible:
 			_advance_dialogue()
 		else:
@@ -474,6 +499,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _perform_action(action: String) -> void:
 	if action.is_empty():
+		return
+	if location == "street" and street_extras.activate(action, player.global_position):
 		return
 	audio.play_event("ui_click")
 	match action:
@@ -510,6 +537,7 @@ func _perform_action(action: String) -> void:
 
 func _set_location(value: String, p: Vector3, yaw: float) -> void:
 	location = value
+	street_extras.cancel()
 	city.visible = value == "street"
 	lobby.visible = value == "lobby"
 	office.visible = value == "office"
@@ -526,6 +554,7 @@ func _set_location(value: String, p: Vector3, yaw: float) -> void:
 	_subtitle_panel.hide()
 
 func _travel(value: String, p: Vector3, yaw: float) -> void:
+	street_extras.cancel()
 	_transitioning = true
 	player.enabled = false
 	var tween := create_tween()
