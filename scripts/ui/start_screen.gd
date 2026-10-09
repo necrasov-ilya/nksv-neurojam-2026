@@ -1,7 +1,7 @@
 extends Node
 
-const MAIN_SCENE_PATH := "res://scenes/main.tscn"
-const GAME_TITLE := "Шаблон"
+const MAIN_SCENE_PATH := "res://scenes/intro.tscn"
+const GAME_TITLE := "LATENTPUNK:\nTEST SUBJECT 0"
 
 const BRIGHT_COLOR := Color(1.0, 0.72, 0.14)
 const BRIGHT_HOVER := Color(1.0, 0.8, 0.28)
@@ -22,6 +22,7 @@ var _start_button: Button
 var _settings_panel: Control
 var _about_panel: Control
 var _sound_check: CheckButton
+var _subtitles_check: CheckButton
 
 
 func _ready() -> void:
@@ -63,14 +64,14 @@ func _build_ui() -> void:
 	var title := Label.new()
 	title.text = GAME_TITLE
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 64)
+	title.add_theme_font_size_override("font_size", 44)
 	title.add_theme_color_override("font_color", Color(1, 1, 1, 0.96))
 	title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
 	title.add_theme_constant_override("shadow_offset_x", 2)
 	title.add_theme_constant_override("shadow_offset_y", 2)
 	column.add_child(title)
 
-	_start_button = _styled_button("Начать игру", 26, BRIGHT_COLOR, BRIGHT_HOVER, BRIGHT_PRESSED)
+	_start_button = _styled_button("Играть", 26, BRIGHT_COLOR, BRIGHT_HOVER, BRIGHT_PRESSED)
 	_start_button.pressed.connect(_on_start_pressed)
 	column.add_child(_start_button)
 	column.add_child(_styled_button("Настройки", 20, PLATE_COLOR, PLATE_HOVER, PLATE_PRESSED, _show_settings))
@@ -86,13 +87,19 @@ func _build_ui() -> void:
 	_sound_check.add_theme_font_size_override("font_size", 18)
 	_sound_check.toggled.connect(_on_sound_toggled)
 	settings_body.add_child(_sound_check)
+	_subtitles_check = CheckButton.new()
+	_subtitles_check.text = "Субтитры"
+	_subtitles_check.button_pressed = GameSettings.subtitles_enabled
+	_subtitles_check.add_theme_font_size_override("font_size", 18)
+	_subtitles_check.toggled.connect(GameSettings.set_subtitles_enabled)
+	settings_body.add_child(_subtitles_check)
 	settings_body.add_child(_styled_button("Готово", 18, PLATE_COLOR, PLATE_HOVER, PLATE_PRESSED, _hide_settings))
 
 	var about_parts := _make_dialog("Об игре")
 	_about_panel = about_parts[0]
 	var about_body: VBoxContainer = about_parts[1]
 	var info := Label.new()
-	info.text = "«Шаблон» — игра для 72-часового геймджема.\nGodot 4.7.2 · GDScript · Compatibility renderer.\nОкно должно быть горизонтальным: шире, чем высоким."
+	info.text = "LATENTPUNK: TEST SUBJECT 0\nВступление · По пути в LATENT SYSTEMS\nGodot 4.7.2 · Compatibility · однопоточный Web.\nWASD — передвижение · Мышь — обзор · E — взаимодействие"
 	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	info.add_theme_font_size_override("font_size", 16)
 	about_body.add_child(info)

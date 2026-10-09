@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111b19" />
+  <meta name="description" content="Lead the dead. Overrun five story districts or spread the infection through endless procedural biomes and escalating defenses." />
+  <title>DEAD PARADE — Lead the dead.</title>
+  <link rel="stylesheet" href="/src/ui/styles.css" />
+</head>
+<body>
+  <canvas id="gameCanvas" aria-label="Dead Parade game world"></canvas>
+  <div id="boot" class="screen on center"><div class="boot-inner"><div class="boot-title">DEAD PARADE</div><div class="boot-bar"><div id="bootFill"></div></div><div id="bootTip" class="eyebrow">WAKING THE DEAD…</div></div></div>
+
+  <main id="menu" class="screen">
+    <div class="menu-left">
+      <div class="eyebrow edition"><span class="live-dot"></span> A NIGHT TO DISMEMBER</div>
+      <h1 class="logo">DEAD<br><span>PARADE</span><i>THE CITY IS THE BUFFET.</i></h1>
+      <p class="tagline">LEAD THE DEAD.<br>INFECT THE CITY.</p>
+      <nav class="menu-buttons" aria-label="Main menu">
+        <button id="btnStart" class="mbtn primary"><span>STORY RUN</span><small>FIVE DISTRICTS</small></button>
+        <button id="btnEndless" class="mbtn"><span>ENDLESS PARADE</span><small>SECTOR ∞</small></button>
+        <button id="btnLoadout" class="mbtn"><span>LOADOUT</span><small>MAKE A MONSTER</small></button>
+        <button id="btnHow" class="mbtn"><span>HOW TO PLAY</span><small>FIELD MANUAL</small></button>
+        <button id="btnSettings" class="mbtn"><span>SETTINGS</span><small>FINE TUNING</small></button>
+      </nav>
+      <p class="menu-foot">FIVE STORY DISTRICTS. TEN NEW BIOMES. ENDLESS OUTBREAK.</p>
+    </div>
+    <aside class="broadcast"><span class="eyebrow">DEAD AIR / 101.9 FM</span><div class="broadcast-line"></div><p>“The evacuation failed.<br>The infection has <em>left the city.</em>”</p><span class="broadcast-status"><span class="live-dot"></span> DEFENSE LINES MOBILIZING</span></aside>
+    <div class="menu-bottom"><span>WASD TO MOVE · MOUSE TO LOOK</span><span>SINGLE PLAYER / ENDLESS APPETITE</span></div>
+  </main>
+
+  <section id="howto" class="screen center dim" aria-labelledby="howTitle">
+    <div class="panel howto-panel"><div class="eyebrow">THE NEWLY DEAD HANDBOOK</div><h2 id="howTitle" class="panel-title">MAKE SOME<br>DEAD FRIENDS.</h2>
+      <div class="howto-steps">
+        <div class="hstep"><b>01 / LEAD</b><p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · mouse look · <kbd>SHIFT</kbd> sprint · <kbd>SPACE</kbd> dash. Your leader bites nearby humans automatically.</p></div>
+        <div class="hstep"><b>02 / MULTIPLY</b><p>Infect humans to grow your horde. Athletes become runners; heavy civilians become brutes. Overrun shelters for reinforcements. Your followers attack nearby threats.</p></div>
+        <div class="hstep"><b>03 / UNLEASH</b><p><kbd>Q</kbd> surges the horde. <kbd>1</kbd>–<kbd>4</kbd> select a mutation; <kbd>E</kbd> unleashes its special attack. Dash out of grenade rings and break the gun lines.</p></div>
+        <div class="hstep"><b>04 / CONQUER</b><p>STORY: meet each objective and follow the EXIT marker. Overrun all five districts to win. Collect XP for 38 ranked upgrades; click a card or press <kbd>1</kbd>–<kbd>3</kbd>. <kbd>TAB</kbd> checks your build; <kbd>ESC</kbd> pauses.</p></div>
+        <div class="hstep"><b>05 / SPREAD FOREVER</b><p>ENDLESS: overrun the population, open shelters and push through the exit into another procedural sector. Ten new biomes span winter, spring, summer and autumn. Each new defense tier brings tougher resistance; ELITE sectors reinforce the line. There is no final evacuation—survive as far as you can.</p></div>
+        <div class="hstep"><b>06 / READ THE STREETS</b><p>Rain, snow, heat haze, fog and ash change the atmosphere and visibility, not movement or damage. Watch sniper aim, dodge explosive markers and swarm shooters while they reload. A restart keeps your current story or endless mode.</p></div>
+      </div><button id="btnHowBack" class="mbtn primary">GOT IT</button>
+    </div>
+  </section>
+
+  <section id="settings" class="screen center dim" aria-labelledby="settingsTitle">
+    <div class="panel settings-panel"><div class="eyebrow">ADJUST THE ATMOSPHERE</div><h2 id="settingsTitle" class="panel-title">SETTINGS</h2>
+      <label class="set-row" for="setMaster"><span>MASTER VOLUME</span><input id="setMaster" type="range" min="0" max="1" step="0.05"><output id="valMaster" for="setMaster"></output></label>
+      <label class="set-row" for="setMusic"><span>MUSIC</span><input id="setMusic" type="range" min="0" max="1" step="0.05"><output id="valMusic" for="setMusic"></output></label>
+      <label class="set-row" for="setSfx"><span>SOUND EFFECTS</span><input id="setSfx" type="range" min="0" max="1" step="0.05"><output id="valSfx" for="setSfx"></output></label>
+      <label class="set-row" for="setSens"><span>MOUSE SENSITIVITY</span><input id="setSens" type="range" min="0.2" max="3" step="0.05"><output id="valSens" for="setSens"></output></label>
+      <label class="set-row" for="setShadows"><span>SHADOWS</span><input id="setShadows" type="checkbox"></label>
+      <label class="set-row" for="setHorde"><span>HORDE QUALITY</span><select id="setHorde"><option value="high">HIGH</option><option value="medium">MEDIUM</option><option value="low">LOW</option></select></label>
+      <label class="set-row" for="setFull"><span>FULLSCREEN</span><input id="setFull" type="checkbox"></label>
+      <p class="panel-note">Changes are applied immediately and saved on this device.</p><button id="btnSetBack" class="mbtn primary">BACK</button>
+    </div>
+  </section>
+
+  <section id="loadout" class="screen" aria-label="Loadout">
+    <header class="lo-head"><div><span class="eyebrow">PRE-PARADE PREPARATIONS</span><h2 class="lo-title">DRESS TO DECOMPOSE.</h2></div><button id="btnLoBack" class="mbtn small">← BACK</button></header>
+    <div class="lo-body"><div class="lo-left"><div class="lo-model" id="loModel"><span class="specimen-tag">SPECIMEN 001 / THE LEADER</span><div class="model-caption"><span class="eyebrow">NO HEARTBEAT. ALL HEART.</span><h3>YOUR ALPHA.</h3></div></div><div class="lo-stats" id="loStats"></div></div>
+      <div class="lo-right"><div class="lo-inv-title">THE COLLECTION <span id="loItemHint"></span></div><p class="lo-instruction">Select an item to equip. Select an equipped slot to remove it.</p>
+        <div class="lo-inv" id="loInv"></div><div id="itemDetail" class="item-detail" aria-live="polite"></div>
+        <div class="lo-equip"><div class="lo-slothead">YOUR LOADOUT <span>SAVED AUTOMATICALLY</span></div><div class="lo-slots">
+          <button class="lo-slot" data-slot="charm"><span>CHARM</span><b id="slotCharm">—</b></button><button class="lo-slot" data-slot="organ"><span>ORGAN</span><b id="slotOrgan">—</b></button><button class="lo-slot" data-slot="bone"><span>BONE</span><b id="slotBone">—</b></button>
+          <button class="lo-slot mutation-slot" id="slotMutation" title="Cycle starting mutation"><span>MUTATION</span><b id="slotMutationName"></b></button>
+        </div><div id="mutationChoices" class="mutation-choices" aria-label="Starting mutation"></div><button id="btnStartRun" class="mbtn primary big"><span>LET THE PARADE BEGIN</span><span>↗</span></button></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="hud" class="screen" aria-label="Game status">
+    <div class="hud-tl"><div id="hudDistrict" class="eyebrow"></div><div id="hudDistName" class="hud-distname"></div><div id="hudEnvironment" class="eyebrow"></div><div class="infection-row"><span id="hudInfection"></span><span id="hudTarget"></span></div><div class="infection-track"><div id="infectionFill"></div></div></div>
+    <div class="hud-tc"><span class="objective-label">CURRENT OBJECTIVE</span><div id="hudObjective"></div><div id="hudDirection"></div></div>
+    <button id="btnPause" class="hud-pause" title="Pause [Esc]" aria-label="Pause game">Ⅱ <span>ESC</span></button>
+    <div class="hud-bl"><div class="leader-label"><span>ALPHA / VITALS</span><span id="hpText"></span></div><div id="hudHp" class="hud-hp"><div class="hp-bar"><div id="hpFill"></div></div></div><div id="hudMut" class="hud-mut"></div><div class="hud-runline"><span id="hudTimer"></span><span>TAB / BUILD</span></div></div>
+    <div class="hud-bc"><div class="horde-label">THE PARADE</div><div id="hudHorde" class="hud-horde-num"></div><div id="hudHordeBreak" class="hud-horde-break"><span class="walker"><b id="count0">0</b>WALKERS</span><span class="runner"><b id="count1">0</b>RUNNERS</span><span class="brute"><b id="count2">0</b>BRUTES</span><span class="spitter"><b id="count3">0</b>SPITTERS</span><span class="bomber"><b id="count4">0</b>BOMBERS</span></div></div>
+    <div class="hud-br"><div class="ability-help">1–4 SELECT MUTATION</div><div class="ability-row">
+      <div class="abil" id="abQ" title="Q — command a horde surge"><div class="abil-cd" id="cdQ"></div><b class="abil-key">Q</b><span class="abil-name">SURGE</span><span class="abil-time" id="tQ"></span></div>
+      <div class="abil" id="abE" title="E — unleash your mutation"><div class="abil-cd" id="cdE"></div><b class="abil-key">E</b><span class="abil-name" id="eName">MUTATION</span><span class="abil-time" id="tE"></span></div>
+      <div class="abil" id="abSp" title="Space — dash out of danger"><div class="abil-cd" id="cdSp"></div><b class="abil-key">SPACE</b><span class="abil-name">DASH</span><span class="abil-time" id="tSp"></span></div>
+    </div></div><div class="xp-track"><div id="xpFill"></div><span id="hudLevel"></span></div>
+  </section>
+
+  <section id="levelup" class="screen center dim" aria-labelledby="levelTitle"><span class="eyebrow">NATURAL SELECTION HAS LEFT THE CHAT.</span><h2 id="levelTitle" class="lu-title">EVOLVE YOUR HORDE.</h2><p class="lu-sub">Click an upgrade or press 1, 2, 3. Tab + Enter also selects.</p><div class="lu-cards" id="luCards"></div></section>
+  <section id="pausemenu" class="screen center dim" aria-labelledby="pauseTitle"><div class="panel pause-panel"><div class="eyebrow">TAKE A BREATHER. METAPHORICALLY.</div><h2 id="pauseTitle" class="panel-title">INTERMISSION.</h2><button id="btnResume" class="mbtn primary">RESUME PARADE</button><button id="btnPauseSettings" class="mbtn">SETTINGS</button><button id="btnRestart" class="mbtn">RESTART RUN</button><button id="btnQuit" class="mbtn quiet">ABANDON TO MENU</button></div></section>
+  <section id="buildPanel" class="build-panel" hidden><div class="eyebrow">TAB / CLOSE</div><h2>THE ANATOMY<br>OF A MONSTER.</h2><div id="buildContent"></div></section>
+  <section id="victory" class="screen center dim" aria-labelledby="winTitle"><div class="panel stats-panel"><div class="eyebrow">THAT'S A WRAP.</div><h2 id="winTitle" class="go-title win">CITY LOST.<br>YOU WIN.</h2><p id="winNarrative" class="go-sub">THE EVACUATION NEVER LEFT.</p><div class="stats-grid" id="winStats"></div><p id="winReward" class="end-reward"></p><div class="go-buttons"><button id="btnWinAgain" class="mbtn primary">RUN AGAIN</button><button id="btnWinLoadout" class="mbtn">LOADOUT</button><button id="btnWinMenu" class="mbtn quiet">MAIN MENU</button></div></div></section>
+  <section id="defeat" class="screen center dim" aria-labelledby="loseTitle"><div class="panel stats-panel"><div class="eyebrow">EVERY PARADE HAS AN END.</div><h2 id="loseTitle" class="go-title lose">DEAD.<br>AGAIN.</h2><p id="loseNarrative" class="go-sub">THE CITY HOLDS… FOR NOW.</p><div class="stats-grid" id="loseStats"></div><p id="loseReward" class="end-reward"></p><div class="go-buttons"><button id="btnLoseAgain" class="mbtn primary">RISE AGAIN</button><button id="btnLoseLoadout" class="mbtn">LOADOUT</button><button id="btnLoseMenu" class="mbtn quiet">MAIN MENU</button></div></div></section>
+  <div id="toasts" role="status" aria-live="polite"></div><div id="vignette"></div><div class="film-grain"></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

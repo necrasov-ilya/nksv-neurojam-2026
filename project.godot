@@ -1,24 +1,35 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
 config_version=5
 
 [application]
 
-config/name="Шаблон"
+config/name="LATENTPUNK: TEST SUBJECT 0"
 run/main_scene="res://scenes/start.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-boot_splash/image="res://assets/textures/start_background.png"
 boot_splash/bg_color=Color(0.019608, 0.027451, 0.047059, 1)
-boot_splash/stretch_mode=1
-
+boot_splash/image="res://assets/textures/start_background.png"
 
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[gui]
+
+theme/custom="res://assets/fonts/interface_theme.tres"
 
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+anti_aliasing/quality/msaa_3d=1
 environment/defaults/default_clear_color=Color(0.075, 0.087, 0.108, 1)
-

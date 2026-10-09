@@ -2,4 +2,7 @@
 build/
 .DS_Store
 *.tmp
+games/**/node_modules/
+games/**/dist/
+games/**/.vite/
 

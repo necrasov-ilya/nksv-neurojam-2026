@@ -11,6 +11,11 @@ html, body, #canvas {
 	border: 0;
 }
 
+html, body {
+	width: 100%;
+	height: 100%;
+}
+
 body {
 	background-color: #05060d;
 	overflow: hidden;
@@ -19,6 +24,8 @@ body {
 
 #canvas {
 	display: block;
+	width: 100%;
+	height: 100%;
 }
 
 #canvas:focus {
@@ -128,6 +135,9 @@ const engine = new Engine(GODOT_CONFIG);
 	const statusOverlay = document.getElementById('status');
 	const statusProgress = document.getElementById('status-progress');
 	const statusNotice = document.getElementById('status-notice');
+	document.getElementById('canvas').addEventListener('contextmenu', function (event) {
+		event.preventDefault();
+	});
 
 	let initializing = true;
 	let statusMode = '';
