@@ -1,6 +1,6 @@
 extends Node
 
-const MAIN_SCENE_PATH := "res://scenes/intro.tscn"
+const MAIN_SCENE_PATH := "res://scenes/prologue.tscn"
 const GAME_TITLE := "LATENTPUNK:\nTEST SUBJECT 0"
 
 const BRIGHT_COLOR := Color(1.0, 0.72, 0.14)
@@ -27,8 +27,23 @@ var _subtitles_check: CheckButton
 
 func _ready() -> void:
 	_build_ui()
+	_build_vhs()
 	orientation_guard.landscape_changed.connect(_on_landscape_changed)
 	_on_landscape_changed(orientation_guard.is_landscape())
+
+func _build_vhs() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "VhsOverlay"
+	layer.layer = _ui_layer.layer + 1
+	add_child(layer)
+	var overlay := ColorRect.new()
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var material := ShaderMaterial.new()
+	material.shader = preload("res://assets/shaders/intro_tape.gdshader")
+	material.set_shader_parameter("noise_texture", preload("res://assets/textures/intro/tape_noise.png"))
+	overlay.material = material
+	layer.add_child(overlay)
 
 
 func _build_ui() -> void:
@@ -99,7 +114,7 @@ func _build_ui() -> void:
 	_about_panel = about_parts[0]
 	var about_body: VBoxContainer = about_parts[1]
 	var info := Label.new()
-	info.text = "LATENTPUNK: TEST SUBJECT 0\nВступление · По пути в LATENT SYSTEMS\nGodot 4.7.2 · Compatibility · однопоточный Web.\nWASD — передвижение · Мышь — обзор · E — взаимодействие"
+	info.text = "LATENTPUNK: TEST SUBJECT 0\nПо пути в LATENT SYSTEMS · Собеседование\nGodot 4.7.2 · Compatibility · однопоточный Web.\nWASD — идти · Мышь — обзор · E — взаимодействие\nСобеседование: Tab — выбор · Enter — ответ\nОтпечатки: стрелки ← → · Esc — пауза\nМузыка и звук: пауза собеседования → Авторство\nГолоса NPC и терминала: Built with Fish Audio · fish.audio"
 	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	info.add_theme_font_size_override("font_size", 16)
 	about_body.add_child(info)

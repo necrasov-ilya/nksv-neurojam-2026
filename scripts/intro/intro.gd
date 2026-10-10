@@ -1,6 +1,6 @@
 extends Node3D
-## Scene boundary: the interview itself is intentionally a separate deliverable.
-signal interview_requested
+## The interview overlays this instance so the office and its state survive.
+const InterviewScene := preload("res://scenes/interview.tscn")
 const City = preload("res://scripts/intro/city.gd")
 const Interiors = preload("res://scripts/intro/interiors.gd")
 const Pedestrians = preload("res://scripts/intro/pedestrians.gd")
@@ -9,12 +9,12 @@ const Player = preload("res://scripts/intro/player.gd")
 const Geometry = preload("res://scripts/intro/geometry.gd")
 const TapeShader = preload("res://assets/shaders/intro_tape.gdshader")
 const StreetExtras = preload("res://scripts/intro/street_extras.gd")
+const Voices := preload("res://scripts/core/dialogue_voices.gd")
 const FLOOR_COUNT := 22
 const RECEPTION_LINES := [
 	{"speaker":"Вы","text":"Здравствуйте. Я на собеседование."},
 	{"speaker":"Администратор","text":"Доброе утро. Поднимитесь на четырнадцатый этаж. Кабинет 1406, направо по коридору."}
 ]
-@export var reception_voice: AudioStream
 var city: Node3D
 var lobby: Node3D
 var office: Node3D
@@ -24,6 +24,7 @@ var location := "street"
 var door_open := false
 var _transitioning := false
 var _paused := false
+var _focus_lost := false
 var _current_action := ""
 var _environment: Environment
 var _objective: Label
@@ -45,6 +46,90 @@ var _voice_player: AudioStreamPlayer
 var _interaction_points: Dictionary = {}
 var street_extras: Node
 var _street_use_ray := PhysicsRayQueryParameters3D.new()
+var _interview_layer: CanvasLayer
+var _interview_completed := false
+var _interview_viewport_3d_was_disabled := false
+
+# Set before adding this scene to the tree; direct launches retain normal behavior.
+var opening_prepared := false
+var _opening_bus := ""
+var _opening_audio: Dictionary = {}
+var _game_ui: Control
+var _city_tape_layer: CanvasLayer
+
+func set_opening_mix(level: float) -> void:
+	if not _opening_bus.is_empty():
+		AudioServer.set_bus_volume_db(AudioServer.get_bus_index(_opening_bus), linear_to_db(maxf(level, 0.0001)))
+
+func set_opening_paused(value: bool) -> void:
+	if not opening_prepared:
+		return
+	city.process_mode = Node.PROCESS_MODE_DISABLED if value else Node.PROCESS_MODE_INHERIT
+	audio.process_mode = Node.PROCESS_MODE_DISABLED if value else Node.PROCESS_MODE_INHERIT
+	for sound: Node in _opening_audio:
+		sound.stream_paused = value
+
+func finish_opening() -> void:
+	if not opening_prepared:
+		return
+	set_opening_paused(false)
+	opening_prepared = false
+	# Live Web samples must retain their bus until these players leave the tree.
+	set_opening_mix(1.0)
+	_game_ui.show()
+	_city_tape_layer.show()
+	# Reparenting can interrupt audio playback; restore the existing location
+	# without resetting its already-faded bed levels.
+	audio.set_muted(not GameSettings.sound_enabled)
+	_hint_time = 16.0
+	player.process_mode = Node.PROCESS_MODE_INHERIT
+	player.enabled = true
+	player.camera.make_current()
+	set_process(true)
+	set_process_unhandled_input(true)
+	player.capture_mouse()
+
+func _prepare_opening() -> void:
+	_opening_bus = "OpeningCity_%d" % get_instance_id()
+	AudioServer.add_bus()
+	var bus_index := AudioServer.bus_count - 1
+	AudioServer.set_bus_name(bus_index, _opening_bus)
+	AudioServer.set_bus_send(bus_index, "Master")
+	AudioServer.set_bus_volume_db(bus_index, -80.0)
+	_route_opening_audio(self)
+	player.enabled = false
+	player.process_mode = Node.PROCESS_MODE_DISABLED
+	_game_ui.hide()
+	_city_tape_layer.hide()
+	set_process(false)
+	set_process_unhandled_input(false)
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	audio.set_muted(not GameSettings.sound_enabled)
+
+func _route_opening_audio(root: Node) -> void:
+	for child in root.get_children():
+		if child is AudioStreamPlayer or child is AudioStreamPlayer3D:
+			_opening_audio[child] = child.bus
+			child.bus = _opening_bus
+		_route_opening_audio(child)
+
+func _release_opening_bus() -> void:
+	if _opening_bus.is_empty():
+		return
+	for sound: Node in _opening_audio:
+		if is_instance_valid(sound):
+			sound.stop()
+			sound.bus = _opening_audio[sound]
+	_opening_audio.clear()
+	AudioServer.remove_bus(AudioServer.get_bus_index(_opening_bus))
+	_opening_bus = ""
+
+func _exit_tree() -> void:
+	if _voice_player != null:
+		_voice_player.stop()
+	_release_opening_bus()
+	if _interview_layer != null:
+		get_viewport().disable_3d = _interview_viewport_3d_was_disabled
 
 func _ready() -> void:
 	_build_environment()
@@ -78,7 +163,7 @@ func _ready() -> void:
 	}
 	for action in city.street_anchors:
 		_interaction_points["street"][action] = city.to_global(city.street_anchors[action])
-	_add_people(city, 64)
+	_add_cafe_people(city, 64)
 	_add_people(lobby, 18)
 	_add_people(office, 6)
 	var receptionist := Pedestrians.new()
@@ -91,8 +176,11 @@ func _ready() -> void:
 	audio = Ambience.new()
 	add_child(audio)
 	_voice_player = AudioStreamPlayer.new()
+	_voice_player.name = "DialogueVoice"
+	_voice_player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
+	_voice_player.volume_db = 0.0 if GameSettings.sound_enabled else -80.0
 	add_child(_voice_player)
-	audio.set_muted(not GameSettings.sound_enabled)
+	audio.set_muted(opening_prepared or not GameSettings.sound_enabled)
 	audio.attach_city(city)
 	player.stepped.connect(audio.footstep)
 	_build_ui()
@@ -103,7 +191,10 @@ func _ready() -> void:
 	street_extras.clear_speech_requested.connect(_clear_street_speech)
 	street_extras.sound_requested.connect(audio.play_event)
 	_set_location("street", Vector3(14,0.03,110), 0)
-	player.capture_mouse()
+	if opening_prepared:
+		_prepare_opening()
+	else:
+		player.capture_mouse()
 
 func _build_lift_doors() -> void:
 	for side in [-1.0, 1.0]:
@@ -136,32 +227,37 @@ func _add_people(root: Node3D, count_value: int) -> void:
 	root.add_child(people)
 	people.populate(root.pedestrian_routes, count_value, 72 + count_value)
 
+func _add_cafe_people(root: Node3D, count_value: int) -> void:
+	var people := Pedestrians.new()
+	root.add_child(people)
+	people.populate_cafe(root.pedestrian_routes, count_value, root.cafe_seats, root.cafe_staff_routes, root.cafe_staff_stops, 72 + count_value)
+
 func _build_environment() -> void:
 	var world := WorldEnvironment.new()
 	_environment = Environment.new()
 	_environment.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
 	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color("83b9d2")
-	sky_mat.sky_horizon_color = Color("d4dedf")
-	sky_mat.ground_bottom_color = Color("829398")
-	sky_mat.ground_horizon_color = Color("d4dedf")
+	sky_mat.sky_top_color = Color("c9bfff")
+	sky_mat.sky_horizon_color = Color("f5f2ff")
+	sky_mat.ground_bottom_color = Color("8175c5")
+	sky_mat.ground_horizon_color = Color("f5f2ff")
 	sky.sky_material = sky_mat
 	_environment.sky = sky
 	_environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	_environment.ambient_light_color = Color("d6e2ec")
-	_environment.ambient_light_energy = 0.30
+	_environment.ambient_light_color = Color("aaa1ff")
+	_environment.ambient_light_energy = 0.45
 	_environment.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	_environment.fog_enabled = true
-	_environment.fog_light_color = Color("c3d1cc")
-	_environment.fog_density = 0.0017
+	_environment.fog_light_color = Color("ece8ff")
+	_environment.fog_density = 0.0008
 	world.environment = _environment
 	add_child(world)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-38,-34,0)
-	sun.light_color = Color("fff0db")
+	sun.light_color = Color.WHITE
 	sun.name = "MorningSun"
-	sun.light_energy = 0.45
+	sun.light_energy = 0.95
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 240.0
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
@@ -176,11 +272,13 @@ func _build_ui() -> void:
 	var tape_layer := CanvasLayer.new()
 	tape_layer.layer = 0
 	add_child(tape_layer)
+	_city_tape_layer = tape_layer
 	var tape := ColorRect.new()
 	tape.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	tape.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var tape_material := ShaderMaterial.new()
 	tape_material.shader = TapeShader
+	tape_material.set_shader_parameter("noise_texture", preload("res://assets/textures/intro/tape_noise.png"))
 	tape.material = tape_material
 	tape_layer.add_child(tape)
 	var canvas := CanvasLayer.new()
@@ -189,6 +287,7 @@ func _build_ui() -> void:
 	ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas.add_child(ui)
+	_game_ui = ui
 	_objective = _label(ui, Vector2(28,24), 21)
 	_objective.anchor_right = 1.0
 	_objective.offset_right = -28
@@ -347,13 +446,19 @@ func _build_floor_panel(ui: Control) -> PanelContainer:
 func _on_sound_toggled(value: bool) -> void:
 	GameSettings.set_sound_enabled(value)
 	audio.set_muted(not value)
-	_voice_player.stream_paused = not value
+	_voice_player.volume_db = 0.0 if value else -80.0
 
 func _on_subtitles_toggled(value: bool) -> void:
 	GameSettings.set_subtitles_enabled(value)
 	_subtitle_panel.visible = value and _subtitle_remaining > 0
 
 func _say(speaker: String, text: String, seconds: float = 4.0) -> void:
+	_voice_player.stop()
+	_voice_player.stream = Voices.line(speaker, text)
+	if _voice_player.stream != null:
+		_voice_player.play()
+		_voice_player.stream_paused = _paused or _focus_lost
+		seconds = maxf(seconds, _voice_player.stream.get_length() + 0.15)
 	_subtitle_label.text = speaker + ": " + text
 	_subtitle_remaining = seconds
 	_subtitle_panel.visible = GameSettings.subtitles_enabled
@@ -361,10 +466,12 @@ func _say(speaker: String, text: String, seconds: float = 4.0) -> void:
 func _clear_street_speech() -> void:
 	# Reception owns its own dialogue; a street cancellation must never erase it.
 	if _dialogue_index < 0:
+		_voice_player.stop()
 		_subtitle_remaining = 0.0
 		_subtitle_panel.hide()
 
 func _start_dialogue() -> void:
+	street_extras.cancel()
 	_dialogue_index = 1 if reception_done else 0
 	player.enabled = false
 	_dialogue_panel.show()
@@ -374,9 +481,6 @@ func _start_dialogue() -> void:
 func _show_dialogue_line() -> void:
 	var line: Dictionary = RECEPTION_LINES[_dialogue_index]
 	_say(line["speaker"],line["text"],3600)
-	if _dialogue_index == 1 and reception_voice != null and GameSettings.sound_enabled:
-		_voice_player.stream = reception_voice
-		_voice_player.play()
 
 func _advance_dialogue() -> void:
 	if _dialogue_index < 0:
@@ -414,17 +518,17 @@ func _choose_floor(floor_number: int) -> void:
 	_select_floor()
 
 func _process(delta: float) -> void:
-	if _subtitle_remaining > 0 and not _paused:
+	if _subtitle_remaining > 0 and not _paused and not _focus_lost:
 		_subtitle_remaining = maxf(0,_subtitle_remaining-delta)
 		_subtitle_panel.visible = GameSettings.subtitles_enabled and _subtitle_remaining > 0
-	street_extras.tick(delta, player.global_position, location == "street", _paused or _transitioning)
+	street_extras.tick(delta, player.global_position, location == "street", _paused or _focus_lost or _transitioning)
 	_hint_time -= delta
 	_help.visible = _hint_time > 0 or _paused
-	if _transitioning or _paused or _floor_panel.visible or _dialogue_panel.visible:
+	if _transitioning or _paused or _focus_lost or _floor_panel.visible or _dialogue_panel.visible:
 		_prompt.text = ""
 		return
 	_current_action = _find_action()
-	var captions := {"reception":"Поговорить с администратором", "lift":"Вызвать лифт" if reception_done else "Сначала обратитесь к администратору", "floor14":"Выбрать этаж", "return":"Вернуться в холл", "door":"Открыть кабинет 1406" if not door_open else "Закрыть кабинет 1406", "computer":"Начать собеседование"}
+	var captions := {"reception":"Поговорить с администратором", "lift":"Вызвать лифт" if reception_done else "Сначала обратитесь к администратору", "floor14":"Выбрать этаж", "return":"Вернуться в холл", "door":"Открыть кабинет 1406" if not door_open else "Закрыть кабинет 1406", "computer":"Начать собеседование заново" if _interview_completed else "Начать собеседование"}
 	var caption: String = captions.get(_current_action, StreetExtras.CAPTIONS.get(_current_action, ""))
 	_prompt.text = "E  ·  " + caption if not caption.is_empty() else ""
 	_prompt.visible = not _subtitle_panel.visible
@@ -460,8 +564,6 @@ func _find_action() -> String:
 		var offset: Vector3 = anchors[key] - player.camera.global_position
 		var distance := offset.length()
 		if distance < best and offset.normalized().dot(-player.camera.global_basis.z) > 0.45:
-			if key == "computer" and not door_open:
-				continue
 			if location == "street":
 				_street_use_ray.from = player.camera.global_position
 				_street_use_ray.to = anchors[key]
@@ -476,6 +578,8 @@ func _inside_lift() -> bool:
 	return location == "lobby" and absf(local.x) < 1.65 and local.z < -12.0 and local.z > -17.8
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _focus_lost:
+		return
 	if event.is_action_pressed("ui_cancel") and not _transitioning:
 		if _floor_panel.visible:
 			_close_floor()
@@ -485,6 +589,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_resume()
 		else:
 			_paused = true
+			_voice_player.stream_paused = true
+			city.process_mode = Node.PROCESS_MODE_DISABLED
 			_pause_panel.show()
 			player.enabled = false
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -527,15 +633,53 @@ func _perform_action(action: String) -> void:
 			var tween := create_tween()
 			tween.tween_property(office.office_door, "rotation:y", PI/2 if door_open else 0.0, 0.45)
 		"computer":
-			_transitioning = true
-			player.enabled = false
-			audio.play_event("computer_start")
-			interview_requested.emit()
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-			await get_tree().create_timer(0.6).timeout
-			get_tree().change_scene_to_file("res://scenes/interview_screen.tscn")
+			_open_interview()
+
+func _open_interview() -> void:
+	if _transitioning or _interview_layer != null:
+		return
+	_transitioning = true
+	street_extras.cancel()
+	_voice_player.stop()
+	player.enabled = false
+	audio.play_event("computer_start")
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	await get_tree().create_timer(0.6).timeout
+	_game_ui.hide()
+	_city_tape_layer.hide()
+	office.process_mode = Node.PROCESS_MODE_DISABLED
+	audio.set_muted(true)
+	set_process(false)
+	set_process_unhandled_input(false)
+	_interview_viewport_3d_was_disabled = get_viewport().disable_3d
+	get_viewport().disable_3d = true
+	_interview_layer = CanvasLayer.new()
+	_interview_layer.name = "InterviewLayer"
+	_interview_layer.layer = 20
+	var interview := InterviewScene.instantiate()
+	interview.finished.connect(_close_interview)
+	add_child(_interview_layer)
+	_interview_layer.add_child(interview)
+
+func _close_interview() -> void:
+	_interview_layer.queue_free()
+	get_viewport().disable_3d = _interview_viewport_3d_was_disabled
+	_interview_layer = null
+	_interview_completed = true
+	_transitioning = false
+	office.process_mode = Node.PROCESS_MODE_INHERIT
+	player.enabled = true
+	audio.set_muted(not GameSettings.sound_enabled)
+	_game_ui.show()
+	_city_tape_layer.show()
+	set_process(true)
+	set_process_unhandled_input(true)
+	_objective.text = "Собеседование завершено. Ожидайте сотрудника.\nНажмите на экран, чтобы вернуться к обзору"
+	# Web pointer lock must follow a fresh click, not a delayed interview callback.
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 func _set_location(value: String, p: Vector3, yaw: float) -> void:
+	_voice_player.stop()
 	location = value
 	street_extras.cancel()
 	city.visible = value == "street"
@@ -555,6 +699,7 @@ func _set_location(value: String, p: Vector3, yaw: float) -> void:
 
 func _travel(value: String, p: Vector3, yaw: float) -> void:
 	street_extras.cancel()
+	_voice_player.stop()
 	_transitioning = true
 	player.enabled = false
 	var tween := create_tween()
@@ -588,14 +733,33 @@ func _close_floor() -> void:
 
 func _resume() -> void:
 	_paused = false
+	_voice_player.stream_paused = _focus_lost
+	city.process_mode = Node.PROCESS_MODE_INHERIT if location == "street" else Node.PROCESS_MODE_DISABLED
 	_pause_panel.hide()
-	player.enabled = true
-	player.capture_mouse()
+	player.enabled = not _focus_lost
+	if not _focus_lost:
+		player.capture_mouse()
 
 func _restart() -> void:
+	_voice_player.stop()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	get_tree().reload_current_scene()
 
 func _menu() -> void:
+	_voice_player.stop()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	get_tree().change_scene_to_file("res://scenes/start.tscn")
+
+func _notification(what: int) -> void:
+	if opening_prepared or _interview_layer != null:
+		return
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_focus_lost = true
+	elif what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		_focus_lost = false
+	else:
+		return
+	if _voice_player != null:
+		_voice_player.stream_paused = _paused or _focus_lost
+	if player != null and _floor_panel != null:
+		player.enabled = not _focus_lost and not _paused and not _transitioning and _dialogue_index < 0 and not _floor_panel.visible

@@ -1,0 +1,32 @@
+id	персонаж	реплика	длительность_с	источник	wav	ogg
+driver_01	Водитель	На собеседование? Тогда пешком. Мы тут тоже ждём, когда нас позовут.	4.829751	scripts/intro/street_extras.gd:16	driver/driver_01.wav	driver/driver_01.ogg
+driver_02	Водитель	Четырнадцатый этаж — не автобусная остановка. Дальше на лифте, без пересадок.	5.387029	scripts/intro/street_extras.gd:18	driver/driver_02.wav	driver/driver_02.ogg
+cafe_female_01	Посетительница	Нейросеть придумала мне рецепт ужина.	2.368435	scripts/intro/street_extras.gd:22	cafe_female/cafe_female_01.wav	cafe_female/cafe_female_01.ogg
+cafe_male_01	Посетитель	И как?	0.696599	scripts/intro/street_extras.gd:23	cafe_male/cafe_male_01.wav	cafe_male/cafe_male_01.ogg
+cafe_female_02	Посетительница	Вкусно. Теперь прошу рецепт чистой посуды.	3.018594	scripts/intro/street_extras.gd:24	cafe_female/cafe_female_02.wav	cafe_female/cafe_female_02.ogg
+cafe_male_02	Посетитель	Тут, боюсь, опять ручной труд.	2.089796	scripts/intro/street_extras.gd:25	cafe_male/cafe_male_02.wav	cafe_male/cafe_male_02.ogg
+cafe_female_03	Посетительница	Попросила нейросеть упростить рецепт.	2.275556	scripts/intro/street_extras.gd:28	cafe_female/cafe_female_03.wav	cafe_female/cafe_female_03.ogg
+cafe_male_03	Посетитель	Она убрала лишние ингредиенты?	2.089796	scripts/intro/street_extras.gd:29	cafe_male/cafe_male_03.wav	cafe_male/cafe_male_03.ogg
+cafe_female_04	Посетительница	Нет, добавила ещё две кастрюли.	2.414875	scripts/intro/street_extras.gd:30	cafe_female/cafe_female_04.wav	cafe_female/cafe_female_04.ogg
+cafe_male_04	Посетитель	Значит, посуду моет автор запроса.	2.739955	scripts/intro/street_extras.gd:31	cafe_male/cafe_male_04.wav	cafe_male/cafe_male_04.ogg
+cafe_female_05	Посетительница	Нейросеть назвала мой ужин экспериментальным.	2.786395	scripts/intro/street_extras.gd:34	cafe_female/cafe_female_05.wav	cafe_female/cafe_female_05.ogg
+cafe_male_05	Посетитель	А кто моет посуду после эксперимента?	2.600635	scripts/intro/street_extras.gd:35	cafe_male/cafe_male_05.wav	cafe_male/cafe_male_05.ogg
+cafe_female_06	Посетительница	В рецепте об этом ни слова.	1.764717	scripts/intro/street_extras.gd:36	cafe_female/cafe_female_06.wav	cafe_female/cafe_female_06.ogg
+cafe_male_06	Посетитель	Понятно. Опять мы — человеческая поддержка.	3.250794	scripts/intro/street_extras.gd:37	cafe_male/cafe_male_06.wav	cafe_male/cafe_male_06.ogg
+receptionist_01	Администратор	Доброе утро. Поднимитесь на четырнадцатый этаж. Кабинет 1406, направо по коридору.	6.362268	scripts/intro/intro.gd:15	receptionist/receptionist_01.wav	receptionist/receptionist_01.ogg
+terminal_question_motivation	Терминал	Что для вас важнее всего в этой работе?	2.414875	scripts/interview/questions.gd:7	terminal/terminal_question_motivation.wav	terminal/terminal_question_motivation.ogg
+terminal_question_verification	Терминал	Вы нашли ошибку, которую не удаётся повторить. Что сделаете первым?	5.897868	scripts/interview/questions.gd:13	terminal/terminal_question_verification.wav	terminal/terminal_question_verification.ogg
+terminal_question_isolation	Терминал	Вам подходит смена, во время которой вы работаете один?	3.715193	scripts/interview/questions.gd:19	terminal/terminal_question_isolation.wav	terminal/terminal_question_isolation.ogg
+terminal_question_observation	Терминал	Вы согласны на непрерывную запись ваших действий во время смены?	4.040272	scripts/interview/questions.gd:25	terminal/terminal_question_observation.wav	terminal/terminal_question_observation.ogg
+terminal_question_confidentiality	Терминал	О серьёзном происшествии на работе просят не говорить вне компании. Вы согласитесь?	5.34059	scripts/interview/questions.gd:31	terminal/terminal_question_confidentiality.wav	terminal/terminal_question_confidentiality.ogg
+terminal_question_communication	Терминал	Связь с дежурным пропала, но тест продолжается. Ваше первое действие?	4.551111	scripts/interview/questions.gd:37	terminal/terminal_question_communication.wav	terminal/terminal_question_communication.ogg
+terminal_question_colleague	Терминал	За дверью закрытой зоны коллега просит о помощи. Что сделаете первым?	4.690431	scripts/interview/questions.gd:43	terminal/terminal_question_colleague.wav	terminal/terminal_question_colleague.ogg
+terminal_question_responsibility	Терминал	Вы считаете установку опасной. Руководитель требует продолжить испытание. Что сделаете?	5.897868	scripts/interview/questions.gd:49	terminal/terminal_question_responsibility.wav	terminal/terminal_question_responsibility.ogg
+terminal_question_sacrifice	Терминал	Если остановить аварию и спасти людей можно только ценой вашей жизни, вы готовы это сделать?	5.990748	scripts/interview/questions.gd:55	terminal/terminal_question_sacrifice.wav	terminal/terminal_question_sacrifice.ogg
+terminal_question_absence	Терминал	Есть ли кто-нибудь, кто начнёт вас искать, если сегодня вы не вернётесь домой?	4.736871	scripts/interview/questions.gd:61	terminal/terminal_question_absence.wav	terminal/terminal_question_absence.ogg
+terminal_frames	Терминал	Найдите снимок, который отличается от остальных.	3.157914	scripts/interview/assessment.gd:113	terminal/terminal_frames.wav	terminal/terminal_frames.ogg
+terminal_alignment	Терминал	Совместите отпечатки.	1.625397	scripts/interview/assessment.gd:147	terminal/terminal_alignment.wav	terminal/terminal_alignment.ogg
+terminal_frames_retry	Терминал	Это тот же снимок. Попробуйте ещё раз.	2.786395	scripts/interview/assessment.gd:224	terminal/terminal_frames_retry.wav	terminal/terminal_frames_retry.ogg
+terminal_answer_recorded	Терминал	Ответ записан.	1.160998	scripts/interview/interview.gd:245	terminal/terminal_answer_recorded.wav	terminal/terminal_answer_recorded.ogg
+terminal_result_recorded	Терминал	Результат записан.	1.207438	scripts/interview/interview.gd:340	terminal/terminal_result_recorded.wav	terminal/terminal_result_recorded.ogg
+terminal_complete	Терминал	Собеседование завершено. Ожидайте сотрудника.	3.343673	scripts/interview/interview.gd:394	terminal/terminal_complete.wav	terminal/terminal_complete.ogg

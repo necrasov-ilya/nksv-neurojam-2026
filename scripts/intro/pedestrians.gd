@@ -1,5 +1,5 @@
 extends Node3D
-## Ordinary commuters: tailored articulated models, six shared instanced draws.
+## Articulated commuters and cafe patrons, six shared instanced draws per root.
 ## Coordinates and motion stay local to this root, including elevated interiors.
 const Geometry = preload("res://scripts/intro/geometry.gd")
 const TICK := 1.0 / 20.0
@@ -7,8 +7,8 @@ const DRAW_DISTANCE := 125.0
 const UPPER_LEG := 0.44
 const LOWER_LEG := 0.44
 const ANKLE_HEIGHT := 0.085
-const SKIN := [Color("f1d6bd"), Color("eac9ac"), Color("efd0b8"), Color("e7c2a5"), Color("f3ddc9")]
-const HAIR := [Color("302b29"), Color("594133"), Color("8c6741"), Color("b7a176"), Color("aba99e")]
+const SKIN := [Color("ffe0d8"), Color("f3c9c4"), Color("ffdbd2"), Color("efc5c0"), Color("ffe9e2")]
+const HAIR := [Color("211f2d"), Color("493253"), Color("78546d"), Color("c8b3ce"), Color("b8b2d0")]
 enum Shape { BOX, ROUND, COLUMN, TORSO, SKIRT, HAT, COUNT }
 enum Joint { ROOT, BODY, HEAD, LEFT_ARM, LEFT_FOREARM, RIGHT_ARM, RIGHT_FOREARM, LEFT_THIGH, LEFT_CALF, RIGHT_THIGH, RIGHT_CALF, LEFT_FOOT, RIGHT_FOOT, COUNT }
 
@@ -17,8 +17,8 @@ const BODY_RADIUS := 0.44
 const MAX_LANE := 0.50
 const STRIDE_LENGTH := 2.0 / 3.0
 const SIDES := [-1, 1]
-const CLOTHES := ["teal", "petrol", "mustard", "brick", "cream", "leaf", "concrete"]
-const TROUSERS := ["dark", "petrol", "wood", "concrete"]
+const CLOTHES := ["accent_magenta", "petrol", "accent_violet", "brick", "cream", "lilac", "concrete"]
+const TROUSERS := ["dark", "petrol", "navy", "concrete"]
 const TORSO_CENTER := Vector3(0, 1.255, 0)
 const TORSO_SIZE := Vector3(0.445, 0.51, 0.27)
 const TORSO_RINGS := [
@@ -88,6 +88,10 @@ class Walker:
 	var failed_bypass := 0.0
 	var bypass_cooldown := 0.0
 	var gait_direction := 1.0
+	var seated := false
+	var seat_height := 0.505
+	var waiter := false
+	var service_stops := PackedInt32Array()
 
 var _walkers: Array[Walker] = []
 var _obstacles: Array[Obstacle] = []
@@ -132,8 +136,7 @@ func _new_walker(index: int) -> Walker:
 	walker.joints.resize(Joint.COUNT)
 	return walker
 
-func populate(routes: Array, count: int, seed_value: int = 42) -> void:
-	_reset(seed_value)
+func _usable_routes(routes: Array) -> Array[PackedVector3Array]:
 	var usable: Array[PackedVector3Array] = []
 	for source in routes:
 		var route := PackedVector3Array()
@@ -142,12 +145,70 @@ func populate(routes: Array, count: int, seed_value: int = 42) -> void:
 				route.append(point)
 		if route.size() >= 2:
 			usable.append(route)
+	return usable
+
+func populate(routes: Array, count: int, seed_value: int = 42) -> void:
+	_reset(seed_value)
+	var usable := _usable_routes(routes)
 	if usable.is_empty() or count <= 0:
 		set_process(false)
 		return
 	_collect_obstacles(get_parent(), usable)
+	_populate_walkers(usable, count)
+	_finish_population()
+
+## The cafe takes its guests and staff from the same total street budget.
+## Seat positions are floor origins; seat_height is the actual chair top.
+func populate_cafe(routes: Array, count: int, seats: Array, staff_routes: Array, staff_stops: Array, seed_value: int = 42) -> void:
+	_reset(seed_value)
+	var usable := _usable_routes(routes)
+	var service_routes := _usable_routes(staff_routes)
+	for route in service_routes:
+		if route[0].distance_squared_to(route[-1]) > 0.0001:
+			route.append(route[0])
+	var all_routes: Array[PackedVector3Array] = []
+	all_routes.append_array(usable)
+	all_routes.append_array(service_routes)
+	_collect_obstacles(get_parent(), all_routes)
+	for seat in seats:
+		if _walkers.size() >= count:
+			break
+		var guest := _new_walker(_walkers.size())
+		guest.stationary = true
+		guest.seated = true
+		guest.seat_height = float(seat["seat_height"])
+		guest.position = seat["position"]
+		guest.route_position = guest.position
+		guest.yaw = float(seat["yaw"])
+		guest.heading = Basis(Vector3.UP, guest.yaw) * Vector3.FORWARD
+		_build_person(guest, guest.id)
+		_walkers.append(guest)
+	for index in service_routes.size():
+		if _walkers.size() >= count:
+			break
+		var staff := _new_walker(_walkers.size())
+		staff.waiter = true
+		staff.route = service_routes[index]
+		staff.service_stops = staff_stops[index]
+		staff.looping = true
+		staff.lane = 0.0
+		staff.speed = 0.88
+		staff.position = staff.route[0]
+		staff.route_position = staff.position
+		staff.heading = (staff.route[1] - staff.position).normalized()
+		staff.yaw = atan2(-staff.heading.x, -staff.heading.z)
+		staff.wait = 1.0 + float(index) * 1.2
+		_build_person(staff, staff.id)
+		_walkers.append(staff)
+	_populate_walkers(usable, maxi(0, count - _walkers.size()))
+	_finish_population()
+
+func _populate_walkers(usable: Array[PackedVector3Array], count: int) -> void:
+	if usable.is_empty():
+		return
+	var first_id := _walkers.size()
 	for index in count:
-		var walker := _new_walker(index)
+		var walker := _new_walker(first_id + index)
 		walker.route = usable[index % usable.size()]
 		walker.looping = walker.route[0].distance_squared_to(walker.route[-1]) < 0.0001
 		walker.direction = -1 if not walker.looping and index % 2 == 1 else 1
@@ -181,9 +242,8 @@ func populate(routes: Array, count: int, seed_value: int = 42) -> void:
 		if not placed:
 			continue
 		walker.yaw = atan2(-walker.heading.x, -walker.heading.z)
-		_build_person(walker, index)
+		_build_person(walker, walker.id)
 		_walkers.append(walker)
-	_finish_population()
 
 ## One fixed civilian on a separate root; yaw PI faces +Z, like the receptionist.
 func populate_stationary(p: Vector3, yaw: float = 0.0, appearance_id: int = 0) -> void:
@@ -298,8 +358,11 @@ func _build_person(w: Walker, index: int) -> void:
 	var trousers := _material_color(TROUSERS[index % TROUSERS.size()])
 	var cream := _material_color("cream")
 	var dark := _material_color("dark")
-	var skirt := index % 5 == 2
-	var jacket := index % 3 != 1
+	if w.waiter:
+		coat = cream
+		trousers = dark
+	var skirt := not w.seated and not w.waiter and index % 5 == 2
+	var jacket := w.waiter or index % 3 != 1
 	var sleeve := coat
 	# The shirt ends in a sloping shoulder seam, not two detached shoulder balls.
 	# The shared profile has a flat shirt front, full chest and a fitted waist.
@@ -343,7 +406,17 @@ func _build_person(w: Walker, index: int) -> void:
 		4:
 			_part(w, Shape.ROUND, Joint.HEAD, Vector3(0, 0.118, -0.048), Vector3(0.21, 0.075, 0.112), hair)
 	# Tailoring: shirt inset, folded lapels, pockets, buttons and cuffs.
-	if jacket:
+	if w.waiter:
+		# A light collared shirt, dark bib apron and tied waist identify service staff.
+		for side in SIDES:
+			_shirt_detail(w, Vector2(side * 0.037, 1.463), Vector2(0.048, 0.059), cream.lightened(0.08), side * 0.35, 0.01, 0.008)
+			_shirt_detail(w, Vector2(side * 0.105, 1.38), Vector2(0.022, 0.19), dark, side * 0.12, 0.014, 0.012)
+		_shirt_detail(w, Vector2(0, 1.248), Vector2(0.29, 0.27), dark, 0.0, 0.014, 0.012)
+		_shirt_detail(w, Vector2(0, 1.405), Vector2(0.024, 0.075), dark, 0.0, 0.01, 0.009)
+		_part(w, Shape.COLUMN, Joint.BODY, Vector3(0, 1.015, 0), Vector3(0.41, 0.038, 0.283), dark)
+		_part(w, Shape.BOX, Joint.BODY, Vector3(0, 0.855, -0.15), Vector3(0.31, 0.30, 0.022), dark)
+		_part(w, Shape.BOX, Joint.BODY, Vector3(0.065, 0.90, -0.164), Vector3(0.10, 0.074, 0.008), dark.lightened(0.15))
+	elif jacket:
 		_shirt_detail(w, Vector2(0, 1.35), Vector2(0.10, 0.25), cream, 0.0, 0.01, 0.003)
 		for side in SIDES:
 			_shirt_detail(w, Vector2(side * 0.068, 1.371), Vector2(0.052, 0.19), coat.lightened(0.12), side * 0.29, 0.01, 0.011)
@@ -361,19 +434,19 @@ func _build_person(w: Walker, index: int) -> void:
 		if index % 4 == 1:
 			for stripe in 3:
 				_shirt_detail(w, Vector2(0, 1.27 - stripe * 0.062), Vector2(0.26, 0.009), coat.lightened(0.14))
-	if jacket and not skirt and index % 4 == 2:
+	if not w.seated and not w.waiter and jacket and not skirt and index % 4 == 2:
 		# Split jacket tails extend the silhouette without hiding the knees.
 		for side in SIDES:
 			_part(w, Shape.COLUMN, Joint.BODY, Vector3(side * 0.105, 0.945, 0.015), Vector3(0.205, 0.22, 0.275), coat)
-	if index % 8 == 4:
+	if not w.seated and not w.waiter and index % 8 == 4:
 		var pack_color := _material_color("brick").darkened(0.08)
 		_part(w, Shape.COLUMN, Joint.BODY, Vector3(0, 1.25, 0.20), Vector3(0.32, 0.40, 0.17), pack_color)
 		_part(w, Shape.COLUMN, Joint.BODY, Vector3(0, 1.15, 0.295), Vector3(0.25, 0.16, 0.05), pack_color.lightened(0.12))
 		for side in SIDES:
 			_shirt_detail(w, Vector2(side * 0.11, 1.30), Vector2(0.028, 0.34), dark, -side * 0.06, 0.018, 0.015)
-	if index % 4 == 0:
+	if not w.waiter and index % 4 == 0:
 		_shirt_detail(w, Vector2(0, 1.329), Vector2(0.025, 0.18), _material_color("brick"), 0.0, 0.01, 0.007)
-	if index % 7 == 1:
+	if not w.waiter and index % 7 == 1:
 		_part(w, Shape.COLUMN, Joint.BODY, Vector3(0, 1.52, 0), Vector3(0.16, 0.048, 0.15), _material_color("mustard"))
 		_shirt_detail(w, Vector2(0.10, 1.355), Vector2(0.055, 0.28), _material_color("mustard"), 0.0, 0.025, 0.019)
 	for side in SIDES:
@@ -407,20 +480,20 @@ func _build_person(w: Walker, index: int) -> void:
 		_part(w, Shape.BOX, foot, Vector3(0, -0.003, -0.046), Vector3(0.061, 0.008, 0.049), shoe_color.lightened(0.15))
 	if skirt:
 		_part(w, Shape.SKIRT, Joint.BODY, Vector3(0, 0.87, 0.008), Vector3(0.46, 0.36, 0.56), coat)
-	if index % 6 == 0:
+	if not w.waiter and index % 6 == 0:
 		_part(w, Shape.HAT, Joint.HEAD, Vector3(0, 0.23, 0.005), Vector3(0.27, 0.12, 0.26), coat)
 		_part(w, Shape.COLUMN, Joint.HEAD, Vector3(0, 0.177, 0.005), Vector3(0.35, 0.017, 0.32), coat)
 		_part(w, Shape.COLUMN, Joint.HEAD, Vector3(0, 0.196, 0.005), Vector3(0.273, 0.024, 0.263), dark)
-	elif index % 6 == 3:
+	elif not w.waiter and index % 6 == 3:
 		_part(w, Shape.ROUND, Joint.HEAD, Vector3(0, 0.171, 0), Vector3(0.26, 0.12, 0.25), coat)
 		_part(w, Shape.BOX, Joint.HEAD, Vector3(0, 0.158, -0.14), Vector3(0.21, 0.018, 0.092), coat)
-	if index % 3 == 0: # Leather messenger bag and diagonal shoulder strap.
+	if not w.seated and not w.waiter and index % 3 == 0: # Leather messenger bag and diagonal shoulder strap.
 		var leather := _material_color("wood").darkened(0.2)
 		_shirt_detail(w, Vector2(0, 1.267), Vector2(0.023, 0.47), leather, -0.38)
 		_part(w, Shape.COLUMN, Joint.BODY, Vector3(-0.255, 1.005, 0.018), Vector3(0.09, 0.22, 0.245), leather)
 		_part(w, Shape.BOX, Joint.BODY, Vector3(-0.26, 1.07, -0.108), Vector3(0.085, 0.075, 0.017), leather.lightened(0.12))
 		_part(w, Shape.BOX, Joint.BODY, Vector3(-0.26, 1.026, -0.12), Vector3(0.022, 0.032, 0.008), cream)
-	elif index % 4 == 1: # Small carried briefcase follows the hand.
+	elif not w.seated and not w.waiter and index % 4 == 1: # Small carried briefcase follows the hand.
 		w.has_case = true
 		_part(w, Shape.BOX, Joint.RIGHT_FOREARM, Vector3(0, -0.353, 0), Vector3(0.032, 0.07, 0.085), dark)
 		_part(w, Shape.COLUMN, Joint.RIGHT_FOREARM, Vector3(0, -0.47, 0), Vector3(0.085, 0.20, 0.30), _material_color("wood"))
@@ -498,9 +571,9 @@ func _profile_mesh(torso: bool, skirt := false) -> ArrayMesh:
 	return mesh
 
 func _build_batches() -> void:
-	var material := StandardMaterial3D.new()
-	material.vertex_color_use_as_albedo = true
-	material.roughness = 0.9
+	var material := ShaderMaterial.new()
+	material.shader = Geometry.SurfaceShader
+	material.set_shader_parameter("surface_kind", 0)
 	for shape in Shape.COUNT:
 		var mesh: Mesh
 		if shape == Shape.BOX:
@@ -589,6 +662,7 @@ func _stop_step(w: Walker) -> void:
 	w.desired_velocity = Vector3.ZERO
 
 func _next_target(w: Walker) -> void:
+	var service_stop := w.waiter and (w.service_stops.has(w.target) or (w.looping and w.target == w.route.size() - 1 and w.service_stops.has(0)))
 	var endpoint := w.target == 0 or w.target == w.route.size() - 1
 	if endpoint:
 		if w.looping:
@@ -602,6 +676,8 @@ func _next_target(w: Walker) -> void:
 		w.wait = _rng.randf_range(0.8, 2.0)
 	else:
 		w.target += w.direction
+	if w.waiter:
+		w.wait = _rng.randf_range(2.0, 3.2) if service_stop else 0.0
 
 func _lane_clear(w: Walker, passing: Vector3) -> bool:
 	if not _path_clear(w.position, passing):
@@ -688,6 +764,10 @@ func _prepare_step(w: Walker, dt: float) -> void:
 		if absf(angle_difference(w.yaw, atan2(-w.heading.x, -w.heading.z))) > 0.18:
 			return
 		w.turning = false
+	# A sub-millimetre remainder cannot pass _commit_step's movement
+	# threshold; finish it instead of waiting forever on a zero-size step.
+	if w.retreat_remaining <= 0.001:
+		w.retreat_remaining = 0.0
 	_select_bypass(w)
 	if w.retreat_remaining > 0.0:
 		var previous := w.route[w.target - w.direction]
@@ -805,7 +885,10 @@ func _pose(w: Walker, alpha: float) -> void:
 	w.joints[Joint.ROOT] = root
 	var body_basis := Basis.from_euler(Vector3(w.posture + weight * 0.016, stride * 0.022, stride * 0.014 + sway))
 	var waist := Vector3(0, 1.0, 0)
-	w.joints[Joint.BODY] = root * Transform3D(body_basis, waist - body_basis * waist + Vector3(0, breathing + bob, 0))
+	# Only the pelvis/upper body descend to the chair; leg joints articulate
+	# independently from the floor-rooted model rather than sinking a standing rig.
+	var seat_offset := w.seat_height / w.height_scale - 0.875 if w.seated else 0.0
+	w.joints[Joint.BODY] = root * Transform3D(body_basis, waist - body_basis * waist + Vector3(0, seat_offset + breathing + bob, 0))
 	# A long, quiet glance with a short rest replaces constant metronomic head
 	# wagging. People independently glance, nod, or simply breathe.
 	var glance := sin(time * 0.22 + float(w.idle_style) * 1.7)
@@ -822,6 +905,23 @@ func _pose(w: Walker, alpha: float) -> void:
 		var thigh := Joint.LEFT_THIGH if side < 0 else Joint.RIGHT_THIGH
 		var calf := Joint.LEFT_CALF if side < 0 else Joint.RIGHT_CALF
 		var foot := Joint.LEFT_FOOT if side < 0 else Joint.RIGHT_FOOT
+		if w.seated:
+			w.joints[arm] = w.joints[Joint.BODY] * Transform3D(Basis.from_euler(Vector3(0.18, 0, side * 0.07)), Vector3(side * 0.212, 1.443, 0))
+			w.joints[forearm] = w.joints[arm] * Transform3D(Basis(Vector3.RIGHT, 1.05), Vector3(0, -0.28, 0))
+			var seated_hip := Vector3(side * 0.103, 0.97 + seat_offset, 0)
+			# Grounded shoes and a forward knee solve two equal-length bones.
+			# Guests retain natural body proportions at every authored chair height.
+			var seated_ankle := Vector3(side * 0.103, ANKLE_HEIGHT, -0.40)
+			var seated_reach_vector := seated_ankle - seated_hip
+			var seated_reach := seated_reach_vector.length()
+			var seated_direction := seated_reach_vector / seated_reach
+			var seated_knee_hint := (Vector3.FORWARD - seated_direction * seated_direction.dot(Vector3.FORWARD)).normalized()
+			var seated_along := seated_reach * 0.5
+			var seated_knee := seated_hip + seated_direction * seated_along + seated_knee_hint * sqrt(maxf(0.0, UPPER_LEG * UPPER_LEG - seated_along * seated_along))
+			w.joints[thigh] = root * Transform3D(_leg_basis(seated_knee - seated_hip), seated_hip)
+			w.joints[calf] = root * Transform3D(_leg_basis(seated_ankle - seated_knee), seated_knee)
+			w.joints[foot] = root * Transform3D(Basis.IDENTITY, seated_ankle)
+			continue
 		# The arm counters its same-side leg, with a quieter loaded hand.
 		var swing: float = -arm_swing * side * 0.22
 		if side > 0 and w.has_case:

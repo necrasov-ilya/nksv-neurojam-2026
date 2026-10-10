@@ -1,5 +1,7 @@
 extends Node
 
+const Voices := preload("res://scripts/core/dialogue_voices.gd")
+
 signal say_requested(speaker: String, text: String, seconds: float)
 signal clear_speech_requested()
 signal sound_requested(event_name: String)
@@ -8,6 +10,7 @@ const CAPTIONS := {
 	"street_bus": "Поговорить с водителем",
 	"street_cafe": "Послушать разговор у кафе",
 	"street_crossing": "Нажать кнопку пешеходного перехода",
+	"street_crossing_far": "Нажать кнопку пешеходного перехода",
 	"street_ad": "Переключить рекламу LATENT SYSTEMS",
 }
 const BUS_LINES := [
@@ -53,16 +56,11 @@ const EMPTY_LINES: Array = []
 var current_speech: String = ""
 var _city: Node3D
 var _driver: Node3D
-var _crossing_display: Label3D
-var _crossing_lamp: Node3D
-var _crossing_button: Node3D
+var _crossing_controls: Dictionary = {}
 var _ad_display: Label3D
 var _ad_button: Node3D
-var _crossing_rest := Vector3.ZERO
 var _ad_rest := Vector3.ZERO
-var _crossing_pixel_size := 0.012
 var _ad_pixel_size := 0.012
-var _crossing_tween: Tween
 var _ad_tween: Tween
 var _speech_lines: Array = EMPTY_LINES
 var _speech_action := ""
@@ -84,17 +82,17 @@ func setup(city_root: Node3D) -> void:
 	set_process(false)
 	_city = city_root
 	_driver = _city.get("street_driver") as Node3D
-	_crossing_display = _city.get("street_crossing_display") as Label3D
-	_crossing_lamp = _city.get("street_crossing_lamp") as Node3D
-	_crossing_button = _city.get("street_crossing_button") as Node3D
+	_crossing_controls = _city.get("street_crossings")
+	for action in _crossing_controls:
+		var control: Dictionary = _crossing_controls[action]
+		control["rest"] = (control["button"] as Node3D).position
+		control["pixel_size"] = (control["display"] as Label3D).pixel_size
+		control["tween"] = null
 	_ad_display = _city.get("street_ad_display") as Label3D
 	_ad_button = _city.get("street_ad_button") as Node3D
-	_crossing_rest = _crossing_button.position
 	_ad_rest = _ad_button.position
-	_crossing_pixel_size = _crossing_display.pixel_size
 	_ad_pixel_size = _ad_display.pixel_size
-	_crossing_lamp.visible = false
-	_set_display(_crossing_display, CROSSING_IDLE, _crossing_pixel_size, 1.24, 0.54)
+	_set_crossing_state(CROSSING_IDLE, false)
 	_set_display(_ad_display, AD_MESSAGES[0], _ad_pixel_size, 3.00, 1.10)
 
 func activate(action: String, listener_position: Vector3) -> bool:
@@ -116,14 +114,14 @@ func activate(action: String, listener_position: Vector3) -> bool:
 				_cafe_cooldown = SPEECH_COOLDOWN
 				_start_speech(action, CAFE_LINES[_cafe_visit % CAFE_LINES.size()])
 				_cafe_visit += 1
-		"street_crossing":
+		"street_crossing", "street_crossing_far":
 			if _crossing_cooldown <= 0.0:
 				_crossing_cooldown = BUTTON_COOLDOWN
 				_crossing_idle = CROSSING_RESET
 				_crossing_presses = mini(_crossing_presses + 1, CROSSING_MESSAGES.size())
-				_crossing_lamp.visible = true
-				_set_display(_crossing_display, CROSSING_MESSAGES[_crossing_presses - 1], _crossing_pixel_size, 1.24, 0.54)
-				_crossing_tween = _press_button(_crossing_button, _crossing_rest, _crossing_tween)
+				_set_crossing_state(CROSSING_MESSAGES[_crossing_presses - 1], true)
+				var control: Dictionary = _crossing_controls[action]
+				control["tween"] = _press_button(control["button"], control["rest"], control["tween"])
 				sound_requested.emit("ui_click")
 		"street_ad":
 			if _ad_cooldown <= 0.0:
@@ -150,8 +148,11 @@ func tick(delta: float, listener_position: Vector3, street_active: bool, paused:
 	_cafe_cooldown = maxf(0.0, _cafe_cooldown - delta)
 	_crossing_cooldown = maxf(0.0, _crossing_cooldown - delta)
 	_ad_cooldown = maxf(0.0, _ad_cooldown - delta)
-	if _crossing_tween != null and not _crossing_tween.custom_step(delta):
-		_crossing_tween = null
+	for action in _crossing_controls:
+		var control: Dictionary = _crossing_controls[action]
+		var tween: Tween = control["tween"]
+		if tween != null and not tween.custom_step(delta):
+			control["tween"] = null
 	if _ad_tween != null and not _ad_tween.custom_step(delta):
 		_ad_tween = null
 	if _crossing_idle > 0.0:
@@ -166,30 +167,28 @@ func tick(delta: float, listener_position: Vector3, street_active: bool, paused:
 	else:
 		_cafe_cooldown = SPEECH_COOLDOWN
 	_speech_remaining -= delta
-	while _speech_index >= 0 and _speech_remaining <= 0.0:
+	if _speech_remaining <= 0.0:
 		_speech_index += 1
 		if _speech_index >= _speech_lines.size():
 			_clear_speech()
 			return
-		var line: Array = _speech_lines[_speech_index]
-		_speech_remaining += float(line[2])
-		if _speech_remaining > 0.0:
-			current_speech = line[1]
-			say_requested.emit(line[0], current_speech, _speech_remaining)
+		_show_speech_line()
 
 func cancel() -> void:
 	_clear_speech()
-	if _crossing_tween != null:
-		_crossing_tween.kill()
-		_crossing_tween = null
+	for action in _crossing_controls:
+		var control: Dictionary = _crossing_controls[action]
+		var tween: Tween = control["tween"]
+		if tween != null:
+			tween.kill()
+			control["tween"] = null
+		(control["button"] as Node3D).position = control["rest"]
 	if _ad_tween != null:
 		_ad_tween.kill()
 		_ad_tween = null
-	if _crossing_button != null:
-		_crossing_button.position = _crossing_rest
 	if _ad_button != null:
 		_ad_button.position = _ad_rest
-	if _crossing_display != null and _crossing_presses > 0:
+	if not _crossing_controls.is_empty() and _crossing_presses > 0:
 		_reset_crossing()
 
 func _start_speech(action: String, lines: Array) -> void:
@@ -199,8 +198,14 @@ func _start_speech(action: String, lines: Array) -> void:
 	_speech_lines = lines
 	_speech_action = action
 	_speech_index = 0
-	var line: Array = _speech_lines[0]
+	_show_speech_line()
+
+func _show_speech_line() -> void:
+	var line: Array = _speech_lines[_speech_index]
+	var voice := Voices.line(line[0], line[1])
 	_speech_remaining = float(line[2])
+	if voice != null:
+		_speech_remaining = maxf(_speech_remaining, voice.get_length() + 0.15)
 	current_speech = line[1]
 	say_requested.emit(line[0], current_speech, _speech_remaining)
 
@@ -217,8 +222,14 @@ func _clear_speech() -> void:
 func _reset_crossing() -> void:
 	_crossing_presses = 0
 	_crossing_idle = 0.0
-	_crossing_lamp.visible = false
-	_set_display(_crossing_display, CROSSING_IDLE, _crossing_pixel_size, 1.24, 0.54)
+	_set_crossing_state(CROSSING_IDLE, false)
+
+func _set_crossing_state(text: String, requested: bool) -> void:
+	for action in _crossing_controls:
+		var control: Dictionary = _crossing_controls[action]
+		var size: Vector2 = control["display_size"]
+		(control["lamp"] as Node3D).visible = requested
+		_set_display(control["display"], text, control["pixel_size"], size.x, size.y)
 
 func _press_button(button: Node3D, rest: Vector3, previous: Tween) -> Tween:
 	if previous != null:

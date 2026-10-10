@@ -2,7 +2,11 @@ extends CharacterBody3D
 signal stepped
 const WALK_SPEED := 3.8
 var camera: Camera3D
-var enabled := true
+# Modal screens freeze the body as well as input, including gravity.
+var enabled := true:
+	set(value):
+		enabled = value
+		set_physics_process(value)
 var _step_distance := 0.0
 var _pitch := 0.0
 var _discard_capture_motion := false
@@ -55,9 +59,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		camera.rotation.x = _pitch
 
 func _physics_process(delta: float) -> void:
-	var axis := Vector2.ZERO
-	if enabled:
-		axis = Input.get_vector("intro_left", "intro_right", "intro_forward", "intro_back")
+	var axis := Input.get_vector("intro_left", "intro_right", "intro_forward", "intro_back")
 	var direction := global_basis * Vector3(axis.x, 0, axis.y)
 	velocity.x = direction.x * WALK_SPEED
 	velocity.z = direction.z * WALK_SPEED

@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "obtained_on": "2026-10-10",
+  "tools": {
+    "ffmpeg": "ffmpeg version n9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffprobe": "ffprobe version n9.0.2 Copyright (c) 2007-2026 the FFmpeg developers"
+  },
+  "scope": "Interview audio only; no Godot import, project tests, Web export, browser playback, or human audition performed. Source descriptions and waveform/spectrum measurements are not an audition.",
+  "sources": [
+    {
+      "id": "freesound-345955",
+      "title": "Typewriter bell & carriage reset",
+      "author": "knufds",
+      "page_url": "https://freesound.org/people/knufds/sounds/345955/",
+      "download_url": "https://cdn.freesound.org/previews/345/345955_191884-hq.mp3",
+      "download_file": "originals/345955_191884-hq.mp3",
+      "retrieval_method": "Unauthenticated public CDN download; HQ URL explicitly published in source HTML share-link data-static-file-url. Original login-only WAV not requested.",
+      "source_kind": "Public HQ MP3 preview, not original WAV; originals directory retains downloaded source bytes unchanged.",
+      "license": "CC0 1.0 Universal",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "evidence": {
+        "source_description": "Antique typewriter margin bell and carriage return.",
+        "page_original_metadata": {
+          "format": "WAV",
+          "duration_seconds": 2.92,
+          "sample_rate_hz": 48000,
+          "bit_depth": 16,
+          "channels": 1
+        },
+        "license_link_text": "Creative Commons 0",
+        "download_link_text": "Login to download",
+        "hq_html_attribute": "data-static-file-url=\"https://cdn.freesound.org/previews/345/345955_191884-hq.mp3\""
+      },
+      "credit": "Typewriter bell & carriage reset — knufds — https://freesound.org/people/knufds/sounds/345955/ — CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/). Public HQ preview edited: isolated carriage return, filtering, EQ, fades and compression."
+    },
+    {
+      "id": "incompetech-USUAN1100418",
+      "title": "Long note One",
+      "author": "Kevin MacLeod",
+      "page_url": "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100418",
+      "metadata_url": "https://incompetech.com/music/royalty-free/pieces.json",
+      "download_url": "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Long%20Note%20One.mp3",
+      "download_file": "originals/Long_Note_One.mp3",
+      "source_kind": "Official full public MP3 download, not lossless original and not a short preview.",
+      "retrieval_method": "Read official dynamic page JavaScript and requested official pieces.json. Exact ISRC record supplies filename; official renderTrack constructs /music/royalty-free/mp3-royaltyfree/ + encodeURIComponent(filename).",
+      "official_metadata": {
+        "title": "Long note One",
+        "filename": "Long Note One.mp3",
+        "length": "00:07:20",
+        "instruments": "Basses, Violins",
+        "genre": "22",
+        "bpm": null,
+        "description": "Just a very long pad for use under dialog.",
+        "feel": "Dark, Intense, Suspenseful, Unnerving",
+        "uploaded": "2008-02-15",
+        "isrc": "USUAN1100418",
+        "collection": "37",
+        "sheetmusic": null,
+        "video": null,
+        "itunes": "https://itunes.apple.com/us/album/long-note-one/id945458254?i=945458262",
+        "filmmusicURL": "https://incompetech.filmmusic.io/song/3992-long-note-one/"
+      },
+      "license": "Creative Commons Attribution 4.0 International",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "license_evidence": "Official renderTrack attribution: \"Long note One\" Kevin MacLeod (incompetech.com); Licensed under Creative Commons: By Attribution 4.0 License; http://creativecommons.org/licenses/by/4.0/",
+      "credit": "\"Long note One\" — Kevin MacLeod (incompetech.com) — https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100418 — Licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Modified: constant -4.28 dB gain, Ogg Vorbis encoding; full composition retained."
+    }
+  ],
+  "processing": {
+    "carriage_return.wav": {
+      "source": "freesound-345955",
+      "source_interval_seconds": [
+        0.95,
+        2.92
+      ],
+      "rationale": "100 ms RMS/spectrum analysis shows an isolated opening bell/transient at 0.0–0.3 s, predominantly 12090/4820 Hz with decay through 1.1 s; later mechanical activity begins about 1.2 s and continues to about 2.7 s, with dominant body around 310–350 Hz. Continuous interval removes the initial bell without splicing/reordering/speed change, retains lead-in, complete later gesture and recorded decay. This is signal-based editing, not a human audition.",
+      "changes": "High-pass 45 Hz; two-pole low-pass 6500 Hz; +2 dB broad 330 Hz body EQ; 8/100 ms edge fades; modest transient compression and -1.9 dB output gain. Native recorded room/decay retained; no added synthetic sine, glitch, generated impacts or reverberation.",
+      "loop": false,
+      "command": "ffmpeg -hide_banner -nostats -y -xerror -i assets/audio/interview/originals/345955_191884-hq.mp3 -map 0:a:0 -af atrim=start=0.95:end=2.92,asetpts=PTS-STARTPTS,highpass=f=45,lowpass=f=6500:p=2,equalizer=f=330:t=q:w=0.8:g=2,afade=t=in:st=0:d=0.008,afade=t=out:st=1.87:d=0.10,acompressor=threshold=0.08:ratio=3:attack=2:release=60:makeup=2:knee=2.828,volume=-1.9dB -ar 48000 -ac 1 -c:a pcm_s16le -map_metadata -1 assets/audio/interview/carriage_return.wav"
+    },
+    "long_note_one.ogg": {
+      "source": "incompetech-USUAN1100418",
+      "changes": "Full stereo track; constant -4.28 dB gain derived from measured -19.72 LUFS to target -24 LUFS. Dynamics and original boundaries retained; no trim, fades, compression, time stretching or crossfade. Ogg Vorbis quality 5.",
+      "loop": false,
+      "command": "ffmpeg -hide_banner -nostats -y -xerror -i assets/audio/interview/originals/Long_Note_One.mp3 -map 0:a:0 -af volume=-4.28dB -ar 44100 -ac 2 -c:a libvorbis -q:a 5 -map_metadata -1 -metadata 'title=Long note One' -metadata 'artist=Kevin MacLeod' -metadata 'license=CC BY 4.0 https://creativecommons.org/licenses/by/4.0/' assets/audio/interview/long_note_one.ogg"
+    }
+  },
+  "files": {
+    "originals/345955_191884-hq.mp3": {
+      "sha256": "e798764db4fcdbcddcfcfdf235c8059511d5fe3f50115d855fb84bd5b797bedf",
+      "bytes": 72480,
+      "container_duration_seconds": 2.920854,
+      "codec": "mp3",
+      "sample_rate_hz": 48000,
+      "channels": 1,
+      "bit_rate_bps": 196423,
+      "integrated_lufs": -23.82,
+      "true_peak_dbtp": -1.0,
+      "loudness_range_lu": 0.0,
+      "full_decode_ffmpeg_xerror": "passed"
+    },
+    "originals/Long_Note_One.mp3": {
+      "sha256": "665aef3a5eaba25a0108f632e85895516868813a764a58bc203702829ac4c6c1",
+      "bytes": 17761954,
+      "container_duration_seconds": 440.058778,
+      "codec": "mp3",
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bit_rate_bps": 320000,
+      "integrated_lufs": -19.72,
+      "true_peak_dbtp": -0.1,
+      "loudness_range_lu": 19.2,
+      "full_decode_ffmpeg_xerror": "passed"
+    },
+    "carriage_return.wav": {
+      "sha256": "b2483c9a04d703d5f1bbb2067d94a5674f9a9a6158831f970f70f0b32f630acf",
+      "bytes": 189198,
+      "container_duration_seconds": 1.97,
+      "codec": "pcm_s16le",
+      "sample_rate_hz": 48000,
+      "channels": 1,
+      "bit_rate_bps": 768000,
+      "integrated_lufs": -28.49,
+      "true_peak_dbtp": -5.88,
+      "loudness_range_lu": 0.0,
+      "full_decode_ffmpeg_xerror": "passed"
+    },
+    "long_note_one.ogg": {
+      "sha256": "cf77ac58f2c5de873acf08058cf87f4cfefd255b85060ddc698595bbbfa2b0b0",
+      "bytes": 6339298,
+      "container_duration_seconds": 440.058776,
+      "codec": "vorbis",
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "bit_rate_bps": 160000,
+      "integrated_lufs": -24.0,
+      "true_peak_dbtp": -4.35,
+      "loudness_range_lu": 19.3,
+      "full_decode_ffmpeg_xerror": "passed"
+    }
+  },
+  "measurements": {
+    "method": "ffprobe -v error -show_format -show_streams -of json FILE; ffmpeg -hide_banner -nostats -xerror -i FILE -af loudnorm=I=-24:TP=-3:LRA=20:print_format=json,volumedetect -f null - (all four files fully decoded; LUFS/dBTP/LRA are loudnorm input measurements before analysis normalization). SHA-256 computed on exact stored bytes.",
+    "duration_note": "Container durations are ffprobe measurements, not rounded source-page claims. Short effect LUFS/LRA are limited by its duration. Vorbis nominal stream bitrate differs from actual container average."
+  },
+  "integration": {
+    "godot_paths": [
+      "res://assets/audio/interview/carriage_return.wav",
+      "res://assets/audio/interview/long_note_one.ogg"
+    ],
+    "playback": "Use WAV at 0 dB player gain as short effect; final peak -5.88 dBTP. Stream music continuously across questions; never set loop unless a later genuine seamless edit is documented. Set background mix gain in scene as needed.",
+    "export": "Parent must exclude assets/audio/interview/originals/* and provenance.json from Web export; originals are archival source downloads, not runtime resources."
+  }
+}

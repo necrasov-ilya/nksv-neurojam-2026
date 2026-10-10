@@ -1,25 +1,26 @@
 extends Node3D
 ## Solid geometry batched by shared shape and 48m cell; instance colors preserve the palette.
 const COLORS := {
-	"concrete": Color("bfc1b6"), "cream": Color("e6d9bd"),
-	"teal": Color("68b4ac"), "petrol": Color("305b65"),
-	"mustard": Color("dfa544"), "brick": Color("cb806a"),
-	"glass": Color("638f9e"), "dark": Color("283843"),
-	"road": Color("434e5a"), "wood": Color("ae815c"),
-	"leaf": Color("54876b"), "white": Color("f1ecdd"),
-	"leaf_light": Color("91b376"), "flower": Color("d98b9b"),
-	# Retro-civic pastel extension used by the street district.
-	"sand": Color("e9d3a6"), "stone": Color("d9d2c0"), "rose": Color("e8a89b"),
-	"coral": Color("e07f63"), "terracotta": Color("b65e42"), "yellow": Color("f2cd6b"),
-	"mint": Color("b9dcc4"), "sky": Color("9fcbdc"), "blue": Color("5f8fb8"),
-	"navy": Color("2f4f6f"), "lilac": Color("bba9d0"), "red": Color("c9503f"),
-	"grass": Color("86ab5c"), "hedge": Color("4d7b4b"), "leaf_dark": Color("3f6a48"),
-	"blossom": Color("f2b9c6"), "steel": Color("8d9ea4"), "pane": Color("6f9ca6"),
-	"cross_green": Color("2f9e6a"), "asphalt": Color("4a5659"), "tile": Color("c9dcd6"),
-	"cloud": Color("ffffff"), "cloud_shade": Color("dfe7ec"), "bulb": Color("fff4cf"),
-	"accent_magenta": Color("ac2954"), "accent_violet": Color("5b4cff"), "accent_pink": Color("d47a9a"),
-	"clear_glass": Color("b9dce5"),
-	"masonry": Color("c7806d"),
+	# White architecture, two brand inks and violet rather than grey shadows.
+	"concrete": Color("e8e5f2"), "cream": Color("ffffff"),
+	"teal": Color("dcd6ff"), "petrol": Color("29263a"),
+	"mustard": Color("f2c750"), "brick": Color("ac2954"),
+	"glass": Color("5b4cff"), "dark": Color("211f2d"),
+	"road": Color("211f2d"), "wood": Color("e5e1f3"),
+	"leaf": Color("8175f6"), "white": Color("ffffff"),
+	"leaf_light": Color("bcb4ff"), "flower": Color("ac2954"),
+	"sand": Color("f4f1ff"), "stone": Color("f1eff9"), "rose": Color("edbbd0"),
+	"coral": Color("ac2954"), "terracotta": Color("863251"), "yellow": Color("f2c750"),
+	"mint": Color("eeeaff"), "sky": Color("ece8ff"), "blue": Color("5b4cff"),
+	"navy": Color("34276c"), "lilac": Color("c9c0ff"), "red": Color("d54062"),
+	"grass": Color("ddd8ff"), "hedge": Color("6d62d0"), "leaf_dark": Color("5148bd"),
+	"blossom": Color("edbbd0"), "steel": Color("8c86a8"), "pane": Color("786aff"),
+	# Small safety controls retain amber/green so their meaning stays readable.
+	"cross_green": Color("38ba91"), "asphalt": Color("211f2d"), "tile": Color("f1eff9"),
+	"cloud": Color("ffffff"), "cloud_shade": Color("ded7fb"), "bulb": Color("ffffff"),
+	"accent_magenta": Color("ac2954"), "accent_violet": Color("5b4cff"), "accent_pink": Color("d65b8b"),
+	"clear_glass": Color("dbd4ff"),
+	"masonry": Color("ffffff"),
 }
 static var _meshes: Dictionary = {}
 const SurfaceShader = preload("res://assets/shaders/intro_surface.gdshader")

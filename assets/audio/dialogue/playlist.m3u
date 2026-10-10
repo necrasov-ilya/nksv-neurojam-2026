@@ -1,0 +1,63 @@
+#EXTM3U
+#EXTINF:4.830,Водитель: На собеседование? Тогда пешком. Мы тут тоже ждём, когда нас позовут.
+driver/driver_01.ogg
+#EXTINF:5.387,Водитель: Четырнадцатый этаж — не автобусная остановка. Дальше на лифте, без пересадок.
+driver/driver_02.ogg
+#EXTINF:2.368,Посетительница: Нейросеть придумала мне рецепт ужина.
+cafe_female/cafe_female_01.ogg
+#EXTINF:0.697,Посетитель: И как?
+cafe_male/cafe_male_01.ogg
+#EXTINF:3.019,Посетительница: Вкусно. Теперь прошу рецепт чистой посуды.
+cafe_female/cafe_female_02.ogg
+#EXTINF:2.090,Посетитель: Тут, боюсь, опять ручной труд.
+cafe_male/cafe_male_02.ogg
+#EXTINF:2.276,Посетительница: Попросила нейросеть упростить рецепт.
+cafe_female/cafe_female_03.ogg
+#EXTINF:2.090,Посетитель: Она убрала лишние ингредиенты?
+cafe_male/cafe_male_03.ogg
+#EXTINF:2.415,Посетительница: Нет, добавила ещё две кастрюли.
+cafe_female/cafe_female_04.ogg
+#EXTINF:2.740,Посетитель: Значит, посуду моет автор запроса.
+cafe_male/cafe_male_04.ogg
+#EXTINF:2.786,Посетительница: Нейросеть назвала мой ужин экспериментальным.
+cafe_female/cafe_female_05.ogg
+#EXTINF:2.601,Посетитель: А кто моет посуду после эксперимента?
+cafe_male/cafe_male_05.ogg
+#EXTINF:1.765,Посетительница: В рецепте об этом ни слова.
+cafe_female/cafe_female_06.ogg
+#EXTINF:3.251,Посетитель: Понятно. Опять мы — человеческая поддержка.
+cafe_male/cafe_male_06.ogg
+#EXTINF:6.362,Администратор: Доброе утро. Поднимитесь на четырнадцатый этаж. Кабинет 1406, направо по коридору.
+receptionist/receptionist_01.ogg
+#EXTINF:2.415,Терминал: Что для вас важнее всего в этой работе?
+terminal/terminal_question_motivation.ogg
+#EXTINF:5.898,Терминал: Вы нашли ошибку, которую не удаётся повторить. Что сделаете первым?
+terminal/terminal_question_verification.ogg
+#EXTINF:3.715,Терминал: Вам подходит смена, во время которой вы работаете один?
+terminal/terminal_question_isolation.ogg
+#EXTINF:4.040,Терминал: Вы согласны на непрерывную запись ваших действий во время смены?
+terminal/terminal_question_observation.ogg
+#EXTINF:5.341,Терминал: О серьёзном происшествии на работе просят не говорить вне компании. Вы согласитесь?
+terminal/terminal_question_confidentiality.ogg
+#EXTINF:4.551,Терминал: Связь с дежурным пропала, но тест продолжается. Ваше первое действие?
+terminal/terminal_question_communication.ogg
+#EXTINF:4.690,Терминал: За дверью закрытой зоны коллега просит о помощи. Что сделаете первым?
+terminal/terminal_question_colleague.ogg
+#EXTINF:5.898,Терминал: Вы считаете установку опасной. Руководитель требует продолжить испытание. Что сделаете?
+terminal/terminal_question_responsibility.ogg
+#EXTINF:5.991,Терминал: Если остановить аварию и спасти людей можно только ценой вашей жизни, вы готовы это сделать?
+terminal/terminal_question_sacrifice.ogg
+#EXTINF:4.737,Терминал: Есть ли кто-нибудь, кто начнёт вас искать, если сегодня вы не вернётесь домой?
+terminal/terminal_question_absence.ogg
+#EXTINF:3.158,Терминал: Найдите снимок, который отличается от остальных.
+terminal/terminal_frames.ogg
+#EXTINF:1.625,Терминал: Совместите отпечатки.
+terminal/terminal_alignment.ogg
+#EXTINF:2.786,Терминал: Это тот же снимок. Попробуйте ещё раз.
+terminal/terminal_frames_retry.ogg
+#EXTINF:1.161,Терминал: Ответ записан.
+terminal/terminal_answer_recorded.ogg
+#EXTINF:1.207,Терминал: Результат записан.
+terminal/terminal_result_recorded.ogg
+#EXTINF:3.344,Терминал: Собеседование завершено. Ожидайте сотрудника.
+terminal/terminal_complete.ogg

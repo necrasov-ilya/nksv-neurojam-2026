@@ -40,12 +40,17 @@ func build_lobby() -> void:
 	_block(Vector3(0, -0.16, -1.5), Vector3(32, 0.32, 33), "cream")
 	_block(Vector3(0, 8.16, -1.5), Vector3(32, 0.32, 33), "cream")
 	_block(Vector3(0, 4, -18), Vector3(32, 8, 0.35), "cream")
-	# Tall glazing sits behind the structural rhythm, not on a flat facade.
+	# Solid wall bays bound opaque window panes: this isolated lobby has no exterior backdrop.
 	for side in [-1.0, 1.0]:
 		_block(Vector3(side * 16, 0.48, -1.5), Vector3(0.32, 0.96, 33), "concrete")
-		_block(Vector3(side * 16, 7.55, -1.5), Vector3(0.32, 0.9, 33), "cream")
-		_block(Vector3(side * 16, 4.0, -1.5), Vector3(0.10, 6.1, 33), "clear_glass")
+		_block(Vector3(side * 16, 1.83, -1.5), Vector3(0.32, 1.74, 33), "cream")
+		_block(Vector3(side * 16, 6.75, -1.5), Vector3(0.32, 2.5, 33), "cream")
+		_block(Vector3(side * 16, 4.1, -16.7), Vector3(0.32, 2.8, 2.6), "cream")
+		_block(Vector3(side * 16, 4.1, 14.7), Vector3(0.32, 2.8, 0.6), "cream")
+		for bay in [Vector2(-12, 5.2), Vector2(-6, 5.2), Vector2(0, 5.2), Vector2(6, 5.2), Vector2(11.5, 4.2)]:
+			_block(Vector3(side * 16, 4.1, bay.x), Vector3(0.10, 2.8, bay.y), "glass")
 		for z in [-15.0, -9.0, -3.0, 3.0, 9.0, 14.0]:
+			_block(Vector3(side * 16, 4.1, z), Vector3(0.32, 2.8, 0.8), "cream")
 			_g.box(Vector3(side * 15.88, 4, z), Vector3(0.2, 6.3, 0.12), "petrol")
 			_g.box(Vector3(side * 15.78, 4.05, z + 0.28), Vector3(0.04, 5.4, 0.05), "teal")
 		for y in [2.7, 5.5]:
@@ -54,7 +59,17 @@ func build_lobby() -> void:
 			_column(Vector3(side * 12.5, 0, z))
 	# The entrance has an honest four-metre opening, clear of collision.
 	for side in [-1.0, 1.0]:
-		_block(Vector3(side * 9, 4, 15), Vector3(14, 8, 0.22), "clear_glass")
+		_block(Vector3(side * 9, 0.48, 15), Vector3(14, 0.96, 0.22), "concrete")
+		_block(Vector3(side * 9, 1.83, 15), Vector3(14, 1.74, 0.22), "cream")
+		_block(Vector3(side * 9, 6.75, 15), Vector3(14, 2.5, 0.22), "cream")
+		for x in [2.4, 9.0, 15.6]:
+			_block(Vector3(side * x, 4.1, 15), Vector3(0.8, 2.8, 0.22), "cream")
+		for x in [5.7, 12.3]:
+			_block(Vector3(side * x, 4.1, 15), Vector3(5.8, 2.8, 0.10), "glass")
+			for y in [2.7, 5.5]:
+				_g.box(Vector3(side * x, y, 14.83), Vector3(5.8, 0.12, 0.12), "petrol")
+		for x in [2.8, 8.6, 9.4, 15.2]:
+			_g.box(Vector3(side * x, 4.1, 14.83), Vector3(0.12, 2.8, 0.12), "petrol")
 		_block(Vector3(side * 2.1, 1.7, 15), Vector3(0.2, 3.4, 0.35), "petrol")
 		_g.box(Vector3(side * 8.9, 3.4, 14.87), Vector3(13.5, 0.16, 0.18), "cream")
 	_block(Vector3(0, 5.7, 15), Vector3(4, 4.6, 0.3), "teal")
@@ -131,11 +146,11 @@ func build_office() -> void:
 	_block(Vector3(4, 3.15, -14), Vector3(0.3, 0.9, 2), "cream")
 	for side in [-1.0, 1.0]:
 		var x := -2.95 if side < 0 else 3.8
-		var segments := [Vector2(-5, 34)] if side < 0 else [Vector2(-18.5, 7), Vector2(-0.5, 25)]
-		for segment in segments:
+		var trim_segments := [Vector2(-5, 34)] if side < 0 else [Vector2(-18.59, 6.82), Vector2(-0.41, 24.82)]
+		for segment in trim_segments:
 			_g.box(Vector3(x, 0.14, segment.x), Vector3(0.06, 0.28, segment.y), "petrol")
 			_g.box(Vector3(x, 1.05, segment.x), Vector3(0.07, 0.07, segment.y), "wood")
-			_g.box(Vector3(x, 3.3, segment.x), Vector3(0.09, 0.12, segment.y), "petrol")
+		_g.box(Vector3(x, 3.3, -5), Vector3(0.09, 0.12, 34), "petrol")
 	for z in [6.0, -2.0, -10.0, -18.0]:
 		_g.box(Vector3(0.3, 3.5, z), Vector3(2.5, 0.13, 1.2), "petrol")
 		_g.box(Vector3(0.3, 3.42, z), Vector3(2.25, 0.035, 0.96), "white")
@@ -196,7 +211,29 @@ func _reception(p: Vector3) -> void:
 	for x in range(-3, 4):
 		_g.box(p + Vector3(x, 0.68, 0.76), Vector3(0.52, 0.85, 0.07), "teal")
 		_g.box(p + Vector3(x, 0.25, 0.82), Vector3(0.04, 0.22, 0.06), "mustard")
-	_g.label("РЕСЕПШЕН", p + Vector3(0, 0.88, 0.81), 40, "petrol", Vector3.ZERO, 0.006)
+	# Raised light plaque clears the alternating front panels.
+	_g.box(p + Vector3(0, 0.86, 0.845), Vector3(3.30, 0.56, 0.065), "petrol")
+	_g.box(p + Vector3(0, 0.86, 0.882), Vector3(3.14, 0.42, 0.016), "cream")
+	var plaque := _g.label("РЕСЕПШЕН", p + Vector3(0, 0.86, 0.899), 48, "petrol", Vector3.ZERO, 0.007, 2.95, 0.32)
+	plaque.name = "ReceptionDeskPlaque"
+	plaque.no_depth_test = false
+	_g.box(p + Vector3(0, 0.39, 0.825), Vector3(6.85, 0.035, 0.025), "white")
+	# Overhead marker makes the destination readable from the entrance.
+	for x in [-2.0, 2.0]:
+		_g.cylinder(p + Vector3(x, 5.73, -0.1), 0.018, 2.54, "petrol")
+	_g.box(p + Vector3(0, 4.02, -0.1), Vector3(5.4, 0.84, 0.16), "petrol")
+	_g.box(p + Vector3(0, 4.02, -0.005), Vector3(5.18, 0.62, 0.024), "cream")
+	var marker := _g.label("РЕСЕПШЕН", p + Vector3(0, 4.02, 0.018), 64, "petrol", Vector3.ZERO, 0.009, 4.85, 0.46)
+	marker.name = "ReceptionOverheadSign"
+	marker.no_depth_test = false
+	var light := OmniLight3D.new()
+	light.name = "ReceptionAccentLight"
+	light.position = p + Vector3(0, 2.6, 1.1)
+	light.light_color = Color("eee8ff")
+	light.light_energy = 0.65
+	light.omni_range = 5.0
+	light.shadow_enabled = false
+	add_child(light)
 	_g.box(p + Vector3(0,1.46,0.38),Vector3(1.65,0.3,0.09),"petrol")
 	_g.label("ПРИЁМ ПОСЕТИТЕЛЕЙ",p + Vector3(0,1.46,0.44),28,"cream",Vector3.ZERO,0.005,1.45,0.2)
 	for x in [-2.2, 2.2]:
@@ -439,10 +476,19 @@ func _office_room() -> void:
 	for y in [1.04, 1.11, 1.18]:
 		_g.box(Vector3(13.8, y, -15.7), Vector3(0.5, 0.035, 0.7), "petrol")
 		_g.box(Vector3(13.8, y + 0.025, -15.7), Vector3(0.43, 0.015, 0.62), "cream")
-	_g.cylinder(Vector3(13.8, 1.25, -14.3), 0.25, 0.12, "mustard", Vector3(PI / 2, 0, 0))
-	_g.cylinder(Vector3(13.8, 1.25, -14.22), 0.21, 0.035, "cream", Vector3(PI / 2, 0, 0))
-	_rod(Vector3(13.8, 1.25, -14.19), Vector3(13.8, 1.40, -14.19), 0.012, "petrol")
-	_rod(Vector3(13.8, 1.25, -14.18), Vector3(13.93, 1.25, -14.18), 0.012, "petrol")
+	# The complete clock shares one frame; its dial faces -X into the room.
+	var clock = Geometry.new()
+	clock.name = "OfficeDeskClock"
+	clock.position = Vector3(13.8, 1.25, -14.3)
+	clock.rotation.y = -PI / 2
+	add_child(clock)
+	clock.cylinder(Vector3.ZERO, 0.25, 0.12, "mustard", Vector3(PI / 2, 0, 0))
+	clock.cylinder(Vector3(0, 0, 0.074), 0.21, 0.02, "cream", Vector3(PI / 2, 0, 0))
+	clock.box(Vector3(0, 0.068, 0.096), Vector3(0.015, 0.145, 0.012), "petrol")
+	clock.box(Vector3(0.064, 0, 0.096), Vector3(0.14, 0.015, 0.012), "petrol")
+	clock.cylinder(Vector3(0, 0, 0.101), 0.023, 0.012, "petrol", Vector3(PI / 2, 0, 0))
+	clock.box(Vector3(0, -0.27, 0), Vector3(0.34, 0.08, 0.20), "petrol")
+	clock.flush()
 	# The south wall is a furnished waiting area, not a second interaction task.
 	_sofa(Vector3(9.5, 0, -10.05), 0, "teal")
 	_wall_art(Vector3(9.5, 2.4, -9.20), PI, 2.3)
@@ -485,7 +531,8 @@ func _office_hinged_door() -> void:
 	add_child(office_door)
 	var door_geometry = Geometry.new()
 	office_door.add_child(door_geometry)
-	door_geometry.box(Vector3(0, 1.35, 1), Vector3(0.11, 2.7, 1.98), "wood")
+	# Leave clearance at both jambs and under the lintel.
+	door_geometry.box(Vector3(0, 1.335, 1), Vector3(0.11, 2.65, 1.94), "wood")
 	for z in [0.16, 1.84]:
 		door_geometry.box(Vector3(-0.065, 1.35, z), Vector3(0.025, 2.4, 0.045), "cream")
 	for y in [0.14, 2.55]:
@@ -501,17 +548,24 @@ func _office_hinged_door() -> void:
 	var body := AnimatableBody3D.new()
 	body.name = "DoorCollision"
 	body.sync_to_physics = false
-	body.position = Vector3(0, 1.35, 1)
+	body.position = Vector3(0, 1.335, 1)
 	var shape := BoxShape3D.new()
-	shape.size = Vector3(0.11, 2.7, 1.98)
+	shape.size = Vector3(0.11, 2.65, 1.94)
 	var collider := CollisionShape3D.new()
 	collider.shape = shape
 	body.add_child(collider)
 	office_door.add_child(body)
 	door_geometry.flush()
-	for z in [-15.08, -12.92]:
-		_g.box(Vector3(3.93, 1.43, z), Vector3(0.28, 2.86, 0.16), "petrol")
-	_g.box(Vector3(3.93, 2.82, -14), Vector3(0.28, 0.16, 2.3), "petrol")
+	# Both face casings stand clear of the wall; jamb end faces no
+	# longer coincide with the cream wall's ends at z=-15 and z=-13.
+	for x in [3.815, 4.195]:
+		for z in [-15.08, -12.92]:
+			_g.box(Vector3(x, 1.35, z), Vector3(0.05, 2.70, 0.20), "petrol")
+		_g.box(Vector3(x, 2.78, -14), Vector3(0.05, 0.16, 2.36), "petrol")
+	# Thin reveals close the wall thickness without sharing a wall plane.
+	for z in [-14.995, -13.005]:
+		_g.box(Vector3(4.005, 1.34, z), Vector3(0.30, 2.68, 0.02), "petrol")
+	_g.box(Vector3(4.005, 2.687, -14), Vector3(0.30, 0.014, 1.972), "petrol")
 	_g.label("СОБЕСЕДОВАНИЕ", Vector3(3.80, 3.13, -14), 30, "petrol", Vector3(0, -PI / 2, 0), 0.004)
 
 func _desk(p: Vector3) -> void:

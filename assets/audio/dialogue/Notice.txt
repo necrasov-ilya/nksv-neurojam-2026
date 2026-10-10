@@ -1,0 +1,9 @@
+Built with Fish Audio
+This model is licensed under the Fish Audio Research License, Copyright © 39 AI, INC. All Rights Reserved.
+
+Audio generated locally with Fish Speech S2-Pro on 2026-10-10.
+Voice references are synthetic Fish outputs, not recordings of third-party speakers.
+No model weights or source code are distributed in this directory.
+Generation used a runtime BF16 decoder and CUDA autocast during reference encoding to fit GPU memory.
+WAV files are original generation outputs. Ogg files have constant gain adjustment and 5/10 ms edge fades.
+The exact text, prompts, seeds, settings, processing and checksums are recorded in manifest.json.

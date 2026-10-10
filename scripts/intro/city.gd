@@ -8,12 +8,17 @@ const WAGON_CABIN := [Vector2(-1.83, 1.0), Vector2(1.34, 1.0), Vector2(0.69, 1.7
 const CAR_WHEEL_RADIUS := 0.43
 const ROOF_PROFILE := [Vector2(-0.5, 0), Vector2(0.5, 0), Vector2(0.5, 0.12), Vector2(0.36, 1.0), Vector2(-0.36, 1.0), Vector2(-0.5, 0.12)]
 const CANOPY_PROFILE := [Vector2(-1.6, 0), Vector2(1.6, 0), Vector2(1.6, 0.18), Vector2(1.0, 0.42), Vector2(-1.0, 0.42), Vector2(-1.6, 0.18)]
+const CROSSING_APPROACHES := [
+	{"action": "street_crossing", "origin": Vector3(29.5, 0, -69), "yaw": 0.0},
+	{"action": "street_crossing_far", "origin": Vector3(29.5, 0, -91), "yaw": PI},
+]
 var pedestrian_routes: Array = []
 var street_anchors: Dictionary = {}
 var street_driver: Node3D
-var street_crossing_display: Label3D
-var street_crossing_lamp: Node3D
-var street_crossing_button: Node3D
+var street_crossings: Dictionary = {}
+var cafe_seats: Array[Dictionary] = []
+var cafe_staff_routes: Array = []
+var cafe_staff_stops: Array = []
 var street_ad_display: Label3D
 var street_ad_button: Node3D
 var _g
@@ -476,7 +481,9 @@ func _street_life() -> void:
 		_lamp(Vector3(x, 0, -91.3), 0)
 		if x < 123:
 			if x < 48 or x > 90:
-				_tree(Vector3(x + 5, 0, -62), 1.0)
+				# This row meets the avenue block's end walls at z=-62.
+				# Leave room for the full crown, not just the trunk.
+				_tree(Vector3(x + 5, 0, -65.7), 1.0)
 			_tree(Vector3(x + 5, 0, -98), 1.0)
 	# Inset drainage marks sit at the road edge, away from the walking route.
 	for z in [102.0, 54.0, 6.0, -42.0, -114.0]:
@@ -503,18 +510,23 @@ func _street_life() -> void:
 		_bicycle(Vector3(27.5 + i * 3.0, 0, 64.35), 0, i)
 	for z in [73.0, 85.0, 95.0]:
 		for x in [28.0, 38.0]:
-			_cafe_table(Vector3(x, 0, z))
+			_cafe_table(Vector3(x, 0, z), true)
+	cafe_staff_routes = [
+		[Vector3(51, 0, 94), Vector3(42, 0, 94), Vector3(42, 0, 90), Vector3(33, 0, 90), Vector3(33, 0, 95), Vector3(29.6, 0, 95), Vector3(33, 0, 95), Vector3(33, 0, 85), Vector3(29.6, 0, 85), Vector3(33, 0, 85), Vector3(33, 0, 73), Vector3(29.6, 0, 73), Vector3(33, 0, 73), Vector3(33, 0, 69), Vector3(42, 0, 69), Vector3(42, 0, 90), Vector3(51, 0, 90)],
+		[Vector3(51, 0, 92), Vector3(42, 0, 92), Vector3(42, 0, 95), Vector3(39.6, 0, 95), Vector3(42, 0, 95), Vector3(42, 0, 85), Vector3(39.6, 0, 85), Vector3(42, 0, 85), Vector3(42, 0, 73), Vector3(39.6, 0, 73), Vector3(42, 0, 73), Vector3(42, 0, 92)],
+	]
+	cafe_staff_stops = [PackedInt32Array([0, 5, 8, 11]), PackedInt32Array([0, 3, 6, 9])]
 	# Platform cafe furniture stands ahead of the facade and clear of the avenue route.
 	for x in [69.0, 77.0, 85.0]:
-		_cafe_table(Vector3(x, 0, -62.0))
+		_cafe_table(Vector3(x, 0, -62.0), false)
 	for x in [55.0, 96.0]:
 		_tree(Vector3(x, 0, -61.8), 0.85)
 	_menu_board(Vector3(23.5, 0, 79.0), -PI / 2)
 	_menu_board(Vector3(90.0, 0, -61.0), PI)
 	_paving_patch(Vector3(33, 0, 84), 21, 31)
 	_paving_patch(Vector3(77, 0, -62), 22, 5)
-	for o in [Vector3(-18, 0, -64), Vector3(18, 0, -96), Vector3(27, 0, -63), Vector3(-27, 0, -98)]:
-		_traffic_signal(o)
+	for o in [Vector3(-18, 0, -64), Vector3(18, 0, -96), Vector3(-27, 0, -98)]:
+		_traffic_signal(o, 0.0, _g)
 	for z in [-157.0, -5.0, 145.0]:
 		for side in [-1, 1]:
 			_planter(Vector3(side * 26, 0, z + 21), Vector3(6, 0.7, 2))
@@ -575,39 +587,47 @@ func _street_interaction_points() -> void:
 	_stationary_civilian("StreetCafePatronB", cafe_b, atan2(cafe_delta.x, cafe_delta.z), 11)
 	street_anchors["street_cafe"] = Vector3(25.3, 1.42, 85.3)
 
-	_crossing_control(Vector3(27, 0, -63))
+	for approach in CROSSING_APPROACHES:
+		_crossing_control(approach["origin"], approach["yaw"], approach["action"])
 	_street_ad_stand(Vector3(155, 0, -68))
 
-func _crossing_control(o: Vector3) -> void:
-	var r := -PI / 2
+func _crossing_control(o: Vector3, r: float, action: String) -> void:
 	var mount := Node3D.new()
-	mount.name = "StreetCrossingControl"
+	mount.name = action.to_pascal_case() + "Control"
 	mount.position = o
 	mount.rotation.y = r
 	add_child(mount)
-	# The existing traffic pole carries a west-facing civic control, off the route.
-	_b(o, r, Vector3(0, 1.72, 0.16), Vector3(1.5, 1.90, 0.28), "petrol")
-	_s(o, r, Vector3(0, 1.72, 0.16), Vector3(1.5, 1.90, 0.28))
-	_b(o, r, Vector3(0, 1.72, 0.31), Vector3(1.36, 1.74, 0.035), "cream")
-	_b(o, r, Vector3(0, 2.14, 0.337), Vector3(1.29, 0.65, 0.02), "dark")
-	street_crossing_display = _g.label("НАЖМИТЕ", _p(o, r, Vector3(0, 2.14, 0.36)), 28, "cream", Vector3(0, r, 0), 0.009, 1.24, 0.54)
-	street_crossing_display.name = "StreetCrossingResponse"
-	_sign(o, r, Vector3(0, 1.62, 0.35), "ПЕШЕХОДНЫЙ ПЕРЕХОД\nНАЖМИТЕ КНОПКУ", 20, "petrol", 0.007, 1.20, 0.25, "StreetCrossingInstruction")
-	_c(o, r, Vector3(0, 1.08, 0.347), 0.16, 0.03, "steel", Vector3(PI / 2, 0, 0))
-	street_crossing_button = _street_button(mount, Vector3(0, 1.08, 0.379), "StreetCrossingButton")
-	for x in [-0.61, 0.61]:
-		for y in [0.94, 2.50]:
-			_c(o, r, Vector3(x, y, 0.341), 0.022, 0.014, "steel", Vector3(PI / 2, 0, 0))
-	_c(o, r, Vector3(0, 2.53, 0.34), 0.065, 0.025, "dark", Vector3(PI / 2, 0, 0))
+	# The button faces its own pavement; the signal faces across the zebra.
+	var signal_head = Geometry.new()
+	signal_head.name = "StreetCrossingSignal"
+	signal_head.rotation.y = PI
+	mount.add_child(signal_head)
+	_traffic_signal(Vector3.ZERO, 0.0, signal_head)
+	signal_head.flush()
+	# A shallow pole-mounted housing, not a freestanding notice board.
+	_b(o, r, Vector3(0, 1.42, 0.12), Vector3(0.56, 0.88, 0.14), "petrol")
+	_s(o, r, Vector3(0, 1.42, 0.12), Vector3(0.56, 0.88, 0.14))
+	_b(o, r, Vector3(0, 1.42, 0.196), Vector3(0.51, 0.83, 0.016), "cream")
+	_b(o, r, Vector3(0, 1.59, 0.21), Vector3(0.50, 0.25, 0.016), "dark")
+	_b(o, r, Vector3(0, 1.88, 0.18), Vector3(0.60, 0.035, 0.25), "petrol")
+	var display: Label3D = _g.label("НАЖМИТЕ", _p(o, r, Vector3(0, 1.59, 0.225)), 28, "cream", Vector3(0, r, 0), 0.0036, 0.48, 0.22)
+	display.name = action.to_pascal_case() + "Response"
+	_sign(o, r, Vector3(0.03, 1.78, 0.219), "ПЕРЕХОД", 20, "petrol", 0.0028, 0.35, 0.09, action.to_pascal_case() + "Instruction")
+	_c(o, r, Vector3(0, 1.17, 0.215), 0.14, 0.025, "steel", Vector3(PI / 2, 0, 0))
+	var button := _street_button(mount, Vector3(0, 1.17, 0.248), action.to_pascal_case() + "Button")
+	for x in [-0.235, 0.235]:
+		for y in [1.03, 1.82]:
+			_c(o, r, Vector3(x, y, 0.211), 0.012, 0.008, "steel", Vector3(PI / 2, 0, 0))
+	_c(o, r, Vector3(-0.20, 1.78, 0.215), 0.035, 0.014, "dark", Vector3(PI / 2, 0, 0))
 	var lamp = Geometry.new()
-	lamp.name = "StreetCrossingLamp"
+	lamp.name = action.to_pascal_case() + "Lamp"
 	mount.add_child(lamp)
-	lamp.position = Vector3(0, 2.53, 0.365)
-	lamp.cylinder(Vector3.ZERO, 0.048, 0.014, "cross_green", Vector3(PI / 2, 0, 0))
+	lamp.position = Vector3(-0.20, 1.78, 0.229)
+	lamp.cylinder(Vector3.ZERO, 0.027, 0.008, "cross_green", Vector3(PI / 2, 0, 0))
 	lamp.flush()
 	lamp.visible = false
-	street_crossing_lamp = lamp
-	street_anchors["street_crossing"] = Vector3(26.55, 1.50, -63)
+	street_crossings[action] = {"display": display, "display_size": Vector2(0.48, 0.22), "lamp": lamp, "button": button}
+	street_anchors[action] = _p(o, r, button.position)
 
 func _street_ad_stand(o: Vector3) -> void:
 	var r := -PI / 2
@@ -700,7 +720,7 @@ func _planter(o: Vector3, size: Vector3) -> void:
 		if posmod(x + roundi(o.z), 3) == 0:
 			_g.ellipsoid(o + Vector3(x + 0.15, size.y + 0.82, 0.12), Vector3(0.25, 0.18, 0.28), "flower")
 
-func _cafe_table(o: Vector3) -> void:
+func _cafe_table(o: Vector3, seat_guests: bool) -> void:
 	var variety := posmod(roundi(o.x + o.z), 3)
 	_g.cylinder(o + Vector3(0, 0.78, 0), 0.74, 0.1, "wood")
 	_g.cylinder(o + Vector3(0, 0.714, 0), 0.68, 0.035, "petrol")
@@ -711,6 +731,8 @@ func _cafe_table(o: Vector3) -> void:
 	_g.solid(o + Vector3(0, 0.44, 0), Vector3(1.45, 0.88, 1.45))
 	for side in [-1, 1]:
 		_cafe_chair(o + Vector3(0, 0, side * 1.3), PI if side > 0 else 0, "teal" if variety != 1 else "cream")
+		if seat_guests:
+			cafe_seats.append({"position": o + Vector3(0, 0, side * 1.3), "yaw": PI if side < 0 else 0.0, "seat_height": 0.505})
 	for x in [-0.27, 0.27]:
 		_g.cylinder(o + Vector3(x, 0.843, 0), 0.12, 0.025, "cream")
 		_g.cylinder(o + Vector3(x, 0.91, 0), 0.078, 0.12, "cream")
@@ -796,12 +818,13 @@ func _direction_sign(o: Vector3, turn: bool) -> void:
 	_sign(o, PI, Vector3(0, 3.5, 0.23), reverse_text, 30, "cream", 0.01, 3.30, 0.68, "DirectionSignBackText")
 	_g.solid(o + Vector3(0, 1.2, 0), Vector3(0.18, 2.4, 0.18))
 
-func _traffic_signal(o: Vector3) -> void:
-	_g.cylinder(o + Vector3(0, 1.8, 0), 0.07, 3.6, "petrol", Vector3.ZERO)
-	_g.box(o + Vector3(0, 3.2, 0), Vector3(0.4, 0.9, 0.3), "dark")
+func _traffic_signal(o: Vector3, r: float, g) -> void:
+	_c(o, r, Vector3(0, 1.8, 0), 0.07, 3.6, "petrol", Vector3.ZERO, g)
+	_b(o, r, Vector3(0, 3.2, 0), Vector3(0.4, 0.9, 0.3), "dark", g)
 	for n in 3:
-		_g.cylinder(o + Vector3(0, 3.47 - n * 0.27, 0.18), 0.105, 0.06, ["brick", "mustard", "leaf"][n], Vector3(PI / 2, 0, 0))
-	_g.solid(o + Vector3(0, 1.5, 0), Vector3(0.18, 3, 0.18))
+		_c(o, r, Vector3(0, 3.47 - n * 0.27, 0.18), 0.105, 0.06, ["brick", "mustard", "leaf"][n], Vector3(PI / 2, 0, 0), g)
+		_b(o, r, Vector3(0, 3.47 - n * 0.27 + 0.115, 0.22), Vector3(0.25, 0.025, 0.19), "dark", g)
+	g.solid(o + Vector3(0, 1.5, 0), Vector3(0.18, 3, 0.18))
 
 func _stop(o: Vector3) -> void:
 	var r := -PI / 2

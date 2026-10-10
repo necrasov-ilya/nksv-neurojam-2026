@@ -1,0 +1,22 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/interview/interview.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/textures/interview/interview-room.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/textures/interview/equipment-check.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/textures/interview/staff-break-room.png" id="4"]
+[ext_resource type="Texture2D" path="res://assets/textures/interview/observation-room.png" id="5"]
+[ext_resource type="Texture2D" path="res://assets/textures/interview/archive.png" id="6"]
+[ext_resource type="Texture2D" path="res://assets/textures/interview/restricted-vestibule.png" id="7"]
+[ext_resource type="Texture2D" path="res://assets/textures/interview/systems-hall.png" id="8"]
+[ext_resource type="Texture2D" path="res://assets/textures/interview/maintenance-chamber.png" id="9"]
+
+[node name="Interview" type="Control"]
+texture_filter = 1
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+backgrounds = Array[Texture2D]([ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("2"), ExtResource("7"), ExtResource("8"), ExtResource("9"), ExtResource("2")])

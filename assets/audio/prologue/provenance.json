@@ -1,0 +1,3486 @@
+{
+  "schema_version": 1,
+  "project": "LATENTPUNK",
+  "created_utc": "2026-10-10",
+  "narration": {
+    "original_source_name": "assets/12312312.mp3",
+    "source_removed": true,
+    "source_removal_reason": "Participant explicitly requested deletion after validated processed/dry splitting; decoded waveform correlation and full playlist-to-city playback were verified before deletion.",
+    "source_sha256": "91813ac998bbf0196eef20aeb3f3f1414806de5a72e4e6e64ecf026ade547b75",
+    "source_bytes": 1689504,
+    "source_decoded_duration_seconds": 78.71947916666667,
+    "source_rights": "User-provided original recording; original MP3 and its import/cache deleted at participant request after validation. No license grant inferred.",
+    "output": "res://assets/audio/prologue/narration.ogg",
+    "output_duration_seconds": 74.12,
+    "timeline": {
+      "source_start_seconds": 0.0,
+      "source_end_seconds": 74.12,
+      "leading_trim_seconds": 0.0,
+      "following_segment": "res://assets/audio/prologue/arrival_dry.ogg",
+      "internal_cuts": [],
+      "time_stretch": 1.0,
+      "subtitle_time_origin": "decoded narration start"
+    },
+    "format": {
+      "codec": "Ogg Vorbis",
+      "quality": 6,
+      "sample_rate_hz": 48000,
+      "channels": 2
+    },
+    "mastering": {
+      "source_fold_down": "Identical source channels are folded to mono before processing. The dry voice is centered in stereo; only the filtered reflection layer differs between left and right.",
+      "high_pass_hz": 70,
+      "eq": [
+        {
+          "hz": 260,
+          "q": 0.9,
+          "gain_db": -1.2
+        },
+        {
+          "hz": 2500,
+          "q": 0.8,
+          "gain_db": 1.2
+        }
+      ],
+      "compression": {
+        "threshold_linear": 0.1,
+        "ratio": 1.6,
+        "attack_ms": 18,
+        "release_ms": 150,
+        "makeup_linear": 1
+      },
+      "loudness": {
+        "target_integrated_lufs": -18.5,
+        "ceiling_dbtp": -2.0,
+        "mode": "two-pass measured linear normalization",
+        "pre_normalization_integrated_lufs": -23.18,
+        "pre_normalization_true_peak_dbtp": -10.42,
+        "pre_normalization_lra_lu": 2.3,
+        "pre_normalization_threshold_lufs": -33.29,
+        "offset_db": 0.0
+      },
+      "fades": {
+        "in_seconds": 0.003,
+        "out_start_seconds": 74.04,
+        "out_duration_seconds": 0.08
+      },
+      "denoising": "Not applied in this render; preserve consonants and breaths.",
+      "spatial_and_tape_effects": {
+        "design_intent": "Calm sci-fi/cassette narration with a dominant centered dry voice, warm filtered saturation on a doubled layer, asymmetric short early reflections and a delayed bloom. Audition is left to the user; this is a processing specification, not a listening-quality claim.",
+        "dry_gain_linear": 1.0,
+        "wet_high_pass_hz": 180,
+        "wet_low_pass_hz": 4200,
+        "wet_saturation": {
+          "type": "tanh soft clipping",
+          "drive_gain_linear": 3.0,
+          "threshold_linear": 0.45,
+          "output_gain_linear": 1.0,
+          "oversample_factor": 4,
+          "post_gain_linear": 0.3333333333333333,
+          "applied_to": "wet layer only"
+        },
+        "reflection_taps": [
+          {
+            "role": "early reflection A",
+            "left_delay_ms": 21,
+            "right_delay_ms": 33,
+            "gain_linear": 0.29
+          },
+          {
+            "role": "early reflection B",
+            "left_delay_ms": 49,
+            "right_delay_ms": 67,
+            "gain_linear": 0.18
+          },
+          {
+            "role": "short delayed bloom",
+            "left_delay_ms": 107,
+            "right_delay_ms": 137,
+            "gain_linear": 0.25
+          }
+        ],
+        "mix": "Unnormalized additive mix: dry 1.0 plus wet taps 0.29, 0.18 and 0.25; the wet branch contains no undelayed signal and no recursive feedback. Tap sum is not the measured wet/dry ratio because filtering, saturation and delayed phase interaction change RMS.",
+        "timing": "Dry onset and internal sample timeline remain unchanged. This processed segment ends at 74.12 seconds; the final address line is a separate unprocessed clip.",
+        "excluded": "No pitch shifting, time stretching, wow/flutter, added hiss, external samples or dissonant modulation."
+      },
+      "signal_measurements": {
+        "method": "Final Vorbis decoded by ffmpeg: loudnorm input metrics measure integrated loudness, true peak and LRA; float32 decoding at 48000 Hz measures exact sample count.",
+        "decoded_samples_per_channel": 3557760,
+        "decoded_duration_seconds": 74.12,
+        "integrated_lufs": -18.53,
+        "true_peak_dbtp": -5.77,
+        "loudness_range_lu": 2.2,
+        "peak_policy": "-2 dBTP is a safety ceiling, not a forced peak level; actual peak is -5.77 dBTP."
+      }
+    },
+    "ffmpeg_filter_complex": "[0:a]atrim=end=74.12,asetpts=PTS-STARTPTS,pan=mono|c0=0.5*c0+0.5*c1,highpass=f=70,equalizer=f=260:t=q:w=0.9:g=-1.2,equalizer=f=2500:t=q:w=0.8:g=1.2,acompressor=threshold=0.1:ratio=1.6:attack=18:release=150:makeup=1,asplit=2[dry_mono][wet_mono];[dry_mono]pan=stereo|c0=c0|c1=c0[dry];[wet_mono]highpass=f=180,lowpass=f=4200,volume=3,asoftclip=type=tanh:threshold=0.45:output=1:oversample=4,volume=0.3333333333333333,pan=stereo|c0=c0|c1=c0,asplit=3[room_a][room_b][bloom];[room_a]adelay=21|33[early_a];[room_b]adelay=49|67[early_b];[bloom]adelay=107|137[late];[dry][early_a][early_b][late]amix=inputs=4:weights=1 0.29 0.18 0.25:normalize=0:duration=longest,atrim=end=74.12,asetpts=PTS-STARTPTS,loudnorm=I=-18.5:TP=-2:LRA=9:measured_I=-23.18:measured_TP=-10.42:measured_LRA=2.30:measured_thresh=-33.29:offset=0:linear=true,aresample=48000,afade=t=in:d=0.003,afade=t=out:st=74.04:d=0.08,atrim=end=74.12[master]",
+    "ffmpeg_recipe": {
+      "working_directory": "repository root",
+      "toolchain": "ffmpeg n9.0.2; libavfilter 12.1.102; libavcodec 63.1.102; libavformat 63.1.102; libavutil 61.1.102; libswresample 7.1.102; libvorbis",
+      "first_pass": "Use the filter-complex graph through the second asetpts=PTS-STARTPTS (after amix and atrim), append ,loudnorm=I=-18.5:TP=-2:LRA=9:print_format=json[measured], map [measured] and output -f null -. Its input measurements are recorded under mastering.loudness.",
+      "render_argv_prefix": [
+        "ffmpeg", "-hide_banner", "-nostdin", "-y", "-threads", "1", "-filter_complex_threads", "1", "-i", "assets/12312312.mp3", "-filter_complex"
+      ],
+      "render_filter_argument": "Exact ffmpeg_filter_complex string above.",
+      "render_argv_suffix": [
+        "-map", "[master]", "-map_metadata", "-1", "-ar", "48000", "-ac", "2", "-c:a", "libvorbis", "-q:a", "6", "-fflags", "+bitexact", "-flags:a", "+bitexact", "-serial_offset", "0", "assets/audio/prologue/narration.ogg"
+      ],
+      "reconstruction": "Historical render recipe: concatenate prefix, ffmpeg_filter_complex and suffix. The original MP3 was explicitly deleted after validation; regeneration requires restoring the recording with the stored source hash. Do not regenerate from an encoded OGG.",
+      "post_encode_loudness_command": "ffmpeg -hide_banner -nostdin -i assets/audio/prologue/narration.ogg -af loudnorm=I=-18.5:TP=-2:LRA=9:print_format=json -f null -",
+      "determinism": "Fixed filter parameters, source hash, measured normalization values, single-thread filter execution, bitexact encoder/container flags and Ogg serial offset 0 specify the deterministic render recipe. Output hash identifies this exact render; byte identity across different encoder/toolchain versions is not promised. No repeat-render verification was run."
+    },
+    "output_sha256": "c1f0844c1277780bdffbda9418f2466fb6eab22628882ff3fb9f486f49180d26",
+    "output_bytes": 1578580
+  },
+  "arrival_dry": {
+    "output": "res://assets/audio/prologue/arrival_dry.ogg",
+    "source_start_seconds": 74.12,
+    "source_end_seconds": 78.6,
+    "duration_seconds": 4.48,
+    "processing": "Original waveform only: constant +4.82 dB gain for matching voice level, 3 ms onset and 5 ms endpoint fades for click-free boundaries. No EQ, compression, saturation, reflections, echo, reverb, pitch shift or time stretch.",
+    "ffmpeg_audio_filter": "atrim=start=74.12:end=78.6,asetpts=PTS-STARTPTS,volume=4.82dB,afade=t=in:d=0.003,afade=t=out:st=4.475:d=0.005",
+    "format": {"codec": "Ogg Vorbis", "quality": 6, "sample_rate_hz": 48000, "channels": 2},
+    "signal_measurements": {
+      "decoded_samples_per_channel": 215040,
+      "integrated_lufs": -18.55,
+      "true_peak_dbtp": -7.48,
+      "loudness_range_lu": 1.4,
+      "original_waveform_correlation_after_constant_gain": 0.9972429900230331,
+      "maximum_left_right_sample_difference": 0.0
+    },
+    "output_sha256": "1875619f63dd9e2f2999b70ce8a9626c0cf51509ec8bdfa3fa2b11e58abb138c",
+    "output_bytes": 88895
+  },
+  "playback": {
+    "type": "AudioStreamPlaylist",
+    "streams": ["res://assets/audio/prologue/narration.ogg", "res://assets/audio/prologue/arrival_dry.ogg"],
+    "fade_time_seconds": 0.0,
+    "loop": false,
+    "shuffle": false,
+    "duration_seconds": 78.6,
+    "subtitle_time_origin": "playlist start; original cue times unchanged"
+  },
+  "logo_impact": {
+    "output": "res://assets/audio/prologue/logo_impact.ogg",
+    "duration_seconds": 2.6,
+    "origin": "Original procedural layered synthesis created specifically for this project. No external samples or sound recordings.",
+    "rights": "Original project sound-design contribution; no third-party recording restrictions or attribution requirements.",
+    "character": "Soft rounded low pum, warm consonant bloom and a restrained stereo tail. No rising horror sweep, harsh transient, dissonance or long echo.",
+    "format": {
+      "codec": "Ogg Vorbis",
+      "quality": 6,
+      "sample_rate_hz": 48000,
+      "channels": 2
+    },
+    "recipe": {
+      "sample_rate_hz": 48000,
+      "duration_seconds": 2.6,
+      "numpy_rng": "default_rng / PCG64",
+      "noise_seed": 12312312,
+      "body": {
+        "frequency_hz": "58 + 36 * exp(-t / 0.072)",
+        "phase_radians": "2*pi*cumsum(frequency)/sample_rate",
+        "amplitude": 0.8,
+        "envelope": "(1-exp(-t/0.012))*exp(-t/0.24)",
+        "second_harmonic": {
+          "amplitude": 0.08,
+          "phase_offset_radians": 0.3,
+          "envelope": "(1-exp(-t/0.020))*exp(-t/0.13)"
+        }
+      },
+      "air": {
+        "source": "zero-mean Gaussian noise",
+        "fft_multiplier": "exp(-(frequency/950)^4)*(1-exp(-(frequency/80)^2))",
+        "normalized_peak": 1,
+        "amplitude": 0.022,
+        "envelope": "(1-exp(-t/0.008))*exp(-t/0.09)"
+      },
+      "bloom": {
+        "partials_hz_gain_decay_seconds": [
+          [
+            196,
+            0.033,
+            0.65
+          ],
+          [
+            293.664768,
+            0.016,
+            0.52
+          ],
+          [
+            392,
+            0.01,
+            0.46
+          ]
+        ],
+        "attack_expression": "1-exp(-t/0.035)",
+        "decay_expression": "exp(-t/partial_decay)",
+        "left_bloom_taps_seconds_gain": [
+          [
+            0.047,
+            0.11
+          ],
+          [
+            0.093,
+            0.06
+          ],
+          [
+            0.149,
+            0.028
+          ]
+        ],
+        "right_bloom_taps_seconds_gain": [
+          [
+            0.061,
+            0.1
+          ],
+          [
+            0.107,
+            0.055
+          ],
+          [
+            0.173,
+            0.025
+          ]
+        ]
+      },
+      "post_processing": [
+        "Remove each channel mean/DC",
+        "Multiply by min(1,t/0.005) for start and min(1,(2.6-t)/0.22) for end",
+        "Normalize stereo sample peak to -10 dBFS",
+        "Convert PCM16 with 32767 multiplier",
+        "Encode once with libvorbis q6"
+      ]
+    },
+    "output_sha256": "61c0447e7b1018d95b162912e9de91a60d520c7124684ff82d107a83f4a2ea00",
+    "output_bytes": 47206
+  },
+  "bed": {
+    "included": false,
+    "reason": "Existing spatial city ambience provides the gradual handoff; an extra prologue bed would obscure the intimate recording and duplicate ambience."
+  },
+  "transcription": {
+    "method": "Actual source recording decoded by ffmpeg, transcribed with faster-whisper 1.2.1 / OpenAI Whisper large-v3 / CTranslate2 4.8.2 int8 CPU, explicit Russian language, beam_size 5, word_timestamps true, VAD false. No initial prompt or proposed narrative was supplied.",
+    "source_model": "https://huggingface.co/Systran/faster-whisper-large-v3",
+    "model_origin": "https://github.com/openai/whisper",
+    "recognition_only": "ASR is used only for resource preparation; game has no Python, model, network or transcription dependency.",
+    "full_transcript": "Вот знаете, ещё лет 10 назад нейросети едва умели рисовать нормально картинки. Потом появились видео, виртуальные персонажи, а теперь вот, целые миры. Со своей физикой, природой, обитателями. Причём самое забавное, что всё это создаётся буквально за считанные секунды. Я вот не знаю, к счастью это или нет, но сейчас такие технологии используют практически везде. От развлечений и образования до проектирования целых городов. И подготовки специалистов, конечно же. Ну а крупнейший разработчик всего этого — LATENT SYSTEMS. Вот как раз-таки к ним сегодня я и иду на собеседование. Но на должность тестировщика. Дело в том, что сгенерировать мир — это одно, а вот заставить его нормально работать — это прям совсем другое. Иногда модели неправильно рассчитывают физику, иногда создают объекты, которых вообще не должно существовать. Поэтому перед выпуском каждую симуляцию проверяют непосредственно люди. Заходят внутрь, смотрят, как всё работает и составляют отчёт. Звучит на самом деле интереснее, чем весь день сидеть за таблицами. Хотя отчёты, наверное, тоже нужно будет писать. Вакансии обещают обучение и довольно неплохую зарплату. Посмотрим, что расскажут мне на месте. Так, Центральный проспект, 18, где-то здесь.",
+    "normalization": "Only punctuation, ё spelling, proper-name capitalization and hyphenation are normalized. Fillers, spoken deviations, unusual phrasing and word order are retained.",
+    "proper_names": [
+      {
+        "recognized": "Latent Systems",
+        "display": "LATENT SYSTEMS",
+        "reference": "Existing city signage scripts/intro/city.gd"
+      },
+      {
+        "recognized": "центральный проспект, 18",
+        "display": "Центральный проспект, 18",
+        "reference": "Existing city address scripts/intro/city.gd"
+      }
+    ],
+    "independent_refinement": {
+      "method": "Same real ASR model, independently cropped audio, beam_size 8, no preceding text or initial prompt; confirms «но на должность», «Вакансии обещают» and closing address without substituting a proposed script.",
+      "results": [
+        {
+          "source_start": 33.3,
+          "source_end": 39.0,
+          "text": "Вот как раз таки к ним сегодня я и иду на собеседование, но на должность тестировщика.",
+          "words": [
+            {
+              "text": " Вот",
+              "start": 33.3,
+              "end": 33.74,
+              "probability": 0.8947688341140747
+            },
+            {
+              "text": " как",
+              "start": 33.74,
+              "end": 33.98,
+              "probability": 0.994522213935852
+            },
+            {
+              "text": " раз",
+              "start": 33.98,
+              "end": 34.22,
+              "probability": 0.9971799850463867
+            },
+            {
+              "text": " таки",
+              "start": 34.22,
+              "end": 34.58,
+              "probability": 0.8599421381950378
+            },
+            {
+              "text": " к",
+              "start": 34.58,
+              "end": 34.64,
+              "probability": 0.9957778453826904
+            },
+            {
+              "text": " ним",
+              "start": 34.64,
+              "end": 34.84,
+              "probability": 0.999365508556366
+            },
+            {
+              "text": " сегодня",
+              "start": 34.84,
+              "end": 35.2,
+              "probability": 0.9197469353675842
+            },
+            {
+              "text": " я",
+              "start": 35.2,
+              "end": 35.58,
+              "probability": 0.9544402956962585
+            },
+            {
+              "text": " и",
+              "start": 35.58,
+              "end": 35.74,
+              "probability": 0.9996598958969116
+            },
+            {
+              "text": " иду",
+              "start": 35.74,
+              "end": 36.04,
+              "probability": 0.9992214739322662
+            },
+            {
+              "text": " на",
+              "start": 36.04,
+              "end": 36.12,
+              "probability": 0.9984380602836609
+            },
+            {
+              "text": " собеседование,",
+              "start": 36.12,
+              "end": 37.0,
+              "probability": 0.9991526156663895
+            },
+            {
+              "text": " но",
+              "start": 37.04,
+              "end": 37.26,
+              "probability": 0.9973753690719604
+            },
+            {
+              "text": " на",
+              "start": 37.26,
+              "end": 37.5,
+              "probability": 0.9992154836654663
+            },
+            {
+              "text": " должность",
+              "start": 37.5,
+              "end": 38.06,
+              "probability": 0.99964439868927
+            },
+            {
+              "text": " тестировщика.",
+              "start": 38.06,
+              "end": 38.92,
+              "probability": 0.9994121789932251
+            }
+          ]
+        },
+        {
+          "source_start": 63.25,
+          "source_end": 73.1,
+          "text": "Хотя отчеты, наверное, тоже нужно будет писать.",
+          "words": [
+            {
+              "text": " Хотя",
+              "start": 63.25,
+              "end": 63.83,
+              "probability": 0.935809314250946
+            },
+            {
+              "text": " отчеты,",
+              "start": 63.83,
+              "end": 64.69,
+              "probability": 0.9200228254000345
+            },
+            {
+              "text": " наверное,",
+              "start": 64.69,
+              "end": 64.93,
+              "probability": 0.9992167949676514
+            },
+            {
+              "text": " тоже",
+              "start": 65.21,
+              "end": 65.51,
+              "probability": 0.9990307092666626
+            },
+            {
+              "text": " нужно",
+              "start": 65.51,
+              "end": 65.95,
+              "probability": 0.9975872039794922
+            },
+            {
+              "text": " будет",
+              "start": 65.95,
+              "end": 66.33,
+              "probability": 0.9996820688247681
+            },
+            {
+              "text": " писать.",
+              "start": 66.33,
+              "end": 66.95,
+              "probability": 0.9999350309371948
+            }
+          ]
+        },
+        {
+          "source_start": 63.25,
+          "source_end": 73.1,
+          "text": "Вакансии обещают обучение и довольно неплохую зарплату.",
+          "words": [
+            {
+              "text": " Вакансии",
+              "start": 66.99,
+              "end": 67.65,
+              "probability": 0.9769090265035629
+            },
+            {
+              "text": " обещают",
+              "start": 67.65,
+              "end": 68.15,
+              "probability": 0.9997774561246237
+            },
+            {
+              "text": " обучение",
+              "start": 68.15,
+              "end": 68.81,
+              "probability": 0.9987309177716573
+            },
+            {
+              "text": " и",
+              "start": 68.81,
+              "end": 69.11,
+              "probability": 0.9960262775421143
+            },
+            {
+              "text": " довольно",
+              "start": 69.11,
+              "end": 69.47,
+              "probability": 0.9993390440940857
+            },
+            {
+              "text": " неплохую",
+              "start": 69.47,
+              "end": 70.11,
+              "probability": 0.9997046788533529
+            },
+            {
+              "text": " зарплату.",
+              "start": 70.11,
+              "end": 70.69,
+              "probability": 0.9999486804008484
+            }
+          ]
+        },
+        {
+          "source_start": 63.25,
+          "source_end": 73.1,
+          "text": "Посмотрим, что расскажут мне на месте.",
+          "words": [
+            {
+              "text": " Посмотрим,",
+              "start": 70.71,
+              "end": 71.39,
+              "probability": 0.9998321731885275
+            },
+            {
+              "text": " что",
+              "start": 71.39,
+              "end": 71.59,
+              "probability": 0.9998959302902222
+            },
+            {
+              "text": " расскажут",
+              "start": 71.59,
+              "end": 72.23,
+              "probability": 0.9982911944389343
+            },
+            {
+              "text": " мне",
+              "start": 72.23,
+              "end": 72.41,
+              "probability": 0.9995915293693542
+            },
+            {
+              "text": " на",
+              "start": 72.41,
+              "end": 72.61,
+              "probability": 0.9997609257698059
+            },
+            {
+              "text": " месте.",
+              "start": 72.61,
+              "end": 72.81,
+              "probability": 0.9997852444648743
+            }
+          ]
+        },
+        {
+          "source_start": 73.5,
+          "source_end": 78.719479,
+          "text": "Так, центральный проспект, 18, где-то здесь.",
+          "words": [
+            {
+              "text": " Так,",
+              "start": 73.5,
+              "end": 74.3,
+              "probability": 0.8819632530212402
+            },
+            {
+              "text": " центральный",
+              "start": 74.4,
+              "end": 75.6,
+              "probability": 0.8170223534107208
+            },
+            {
+              "text": " проспект,",
+              "start": 75.6,
+              "end": 76.26,
+              "probability": 0.9998812476793925
+            },
+            {
+              "text": " 18,",
+              "start": 76.3,
+              "end": 76.86,
+              "probability": 0.9773617386817932
+            },
+            {
+              "text": " где",
+              "start": 77.34,
+              "end": 77.62,
+              "probability": 0.9997782111167908
+            },
+            {
+              "text": "-то",
+              "start": 77.62,
+              "end": 77.82,
+              "probability": 0.9994636476039886
+            },
+            {
+              "text": " здесь.",
+              "start": 77.82,
+              "end": 77.92,
+              "probability": 0.999916672706604
+            }
+          ]
+        }
+      ]
+    },
+    "raw_asr": {
+      "model": "faster-whisper large-v3 int8 CPU",
+      "language": "ru",
+      "language_probability": 1,
+      "source_duration": 78.7195,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 5.02,
+          "text": "Вот знаете, еще лет 10 назад нейросети едва умели рисовать нормально картинки.",
+          "avg_logprob": -0.0965801941541334,
+          "no_speech_prob": 0.002819253597408533,
+          "words": [
+            {
+              "start": 0.0,
+              "end": 0.1,
+              "text": " Вот",
+              "probability": 0.9899700284004211
+            },
+            {
+              "start": 0.1,
+              "end": 0.44,
+              "text": " знаете,",
+              "probability": 0.9974320530891418
+            },
+            {
+              "start": 0.74,
+              "end": 1.1,
+              "text": " еще",
+              "probability": 0.7676495313644409
+            },
+            {
+              "start": 1.1,
+              "end": 1.26,
+              "text": " лет",
+              "probability": 0.9998316764831543
+            },
+            {
+              "start": 1.26,
+              "end": 1.6,
+              "text": " 10",
+              "probability": 0.9371050000190735
+            },
+            {
+              "start": 1.6,
+              "end": 1.92,
+              "text": " назад",
+              "probability": 0.997980535030365
+            },
+            {
+              "start": 1.92,
+              "end": 2.5,
+              "text": " нейросети",
+              "probability": 0.9964860479036967
+            },
+            {
+              "start": 2.5,
+              "end": 3.06,
+              "text": " едва",
+              "probability": 0.9997555017471313
+            },
+            {
+              "start": 3.06,
+              "end": 3.46,
+              "text": " умели",
+              "probability": 0.9999065399169922
+            },
+            {
+              "start": 3.46,
+              "end": 3.92,
+              "text": " рисовать",
+              "probability": 0.9996599853038788
+            },
+            {
+              "start": 3.92,
+              "end": 4.22,
+              "text": " нормально",
+              "probability": 0.9809853434562683
+            },
+            {
+              "start": 4.22,
+              "end": 5.02,
+              "text": " картинки.",
+              "probability": 0.9998041689395905
+            }
+          ]
+        },
+        {
+          "start": 5.14,
+          "end": 10.16,
+          "text": "Потом появились видео виртуальные персонажи, а теперь вот, целые миры.",
+          "avg_logprob": -0.0965801941541334,
+          "no_speech_prob": 0.002819253597408533,
+          "words": [
+            {
+              "start": 5.14,
+              "end": 5.44,
+              "text": " Потом",
+              "probability": 0.9998929500579834
+            },
+            {
+              "start": 5.44,
+              "end": 5.98,
+              "text": " появились",
+              "probability": 0.9998451173305511
+            },
+            {
+              "start": 5.98,
+              "end": 6.36,
+              "text": " видео",
+              "probability": 0.9989756345748901
+            },
+            {
+              "start": 6.36,
+              "end": 6.88,
+              "text": " виртуальные",
+              "probability": 0.8518707305192947
+            },
+            {
+              "start": 6.88,
+              "end": 7.68,
+              "text": " персонажи,",
+              "probability": 0.9997266829013824
+            },
+            {
+              "start": 7.68,
+              "end": 8.0,
+              "text": " а",
+              "probability": 0.9806164503097534
+            },
+            {
+              "start": 8.0,
+              "end": 8.28,
+              "text": " теперь",
+              "probability": 0.9999740123748779
+            },
+            {
+              "start": 8.28,
+              "end": 8.6,
+              "text": " вот,",
+              "probability": 0.9984190464019775
+            },
+            {
+              "start": 8.8,
+              "end": 9.42,
+              "text": " целые",
+              "probability": 0.9597306847572327
+            },
+            {
+              "start": 9.42,
+              "end": 10.16,
+              "text": " миры.",
+              "probability": 0.9992212653160095
+            }
+          ]
+        },
+        {
+          "start": 10.700000000000001,
+          "end": 12.9,
+          "text": "Со своей физикой, природой, обитателями.",
+          "avg_logprob": -0.0965801941541334,
+          "no_speech_prob": 0.002819253597408533,
+          "words": [
+            {
+              "start": 10.4,
+              "end": 10.74,
+              "text": " Со",
+              "probability": 0.9991913437843323
+            },
+            {
+              "start": 10.74,
+              "end": 10.96,
+              "text": " своей",
+              "probability": 0.9999698400497437
+            },
+            {
+              "start": 10.96,
+              "end": 11.56,
+              "text": " физикой,",
+              "probability": 0.9999434153238932
+            },
+            {
+              "start": 11.56,
+              "end": 12.14,
+              "text": " природой,",
+              "probability": 0.9996959169705709
+            },
+            {
+              "start": 12.16,
+              "end": 12.9,
+              "text": " обитателями.",
+              "probability": 0.9998809993267059
+            }
+          ]
+        },
+        {
+          "start": 12.98,
+          "end": 17.62,
+          "text": "Причем самое забавное, что все это создается буквально за считанные секунды.",
+          "avg_logprob": -0.0965801941541334,
+          "no_speech_prob": 0.002819253597408533,
+          "words": [
+            {
+              "start": 12.98,
+              "end": 13.54,
+              "text": " Причем",
+              "probability": 0.9997547070185343
+            },
+            {
+              "start": 13.54,
+              "end": 13.96,
+              "text": " самое",
+              "probability": 0.9665823578834534
+            },
+            {
+              "start": 13.96,
+              "end": 14.66,
+              "text": " забавное,",
+              "probability": 0.9998610417048136
+            },
+            {
+              "start": 14.66,
+              "end": 14.86,
+              "text": " что",
+              "probability": 0.9999896287918091
+            },
+            {
+              "start": 14.86,
+              "end": 15.14,
+              "text": " все",
+              "probability": 0.9912183880805969
+            },
+            {
+              "start": 15.14,
+              "end": 15.44,
+              "text": " это",
+              "probability": 0.9999853372573853
+            },
+            {
+              "start": 15.44,
+              "end": 15.92,
+              "text": " создается",
+              "probability": 0.9977591931819916
+            },
+            {
+              "start": 15.92,
+              "end": 16.46,
+              "text": " буквально",
+              "probability": 0.9996998310089111
+            },
+            {
+              "start": 16.46,
+              "end": 16.6,
+              "text": " за",
+              "probability": 0.9995957016944885
+            },
+            {
+              "start": 16.6,
+              "end": 17.0,
+              "text": " считанные",
+              "probability": 0.9988742470741272
+            },
+            {
+              "start": 17.0,
+              "end": 17.62,
+              "text": " секунды.",
+              "probability": 0.9999549388885498
+            }
+          ]
+        },
+        {
+          "start": 17.72,
+          "end": 23.14,
+          "text": "Я вот не знаю, к счастью это или нет, но сейчас такие технологии используют практически везде.",
+          "avg_logprob": -0.0965801941541334,
+          "no_speech_prob": 0.002819253597408533,
+          "words": [
+            {
+              "start": 17.72,
+              "end": 17.92,
+              "text": " Я",
+              "probability": 0.9920462369918823
+            },
+            {
+              "start": 17.92,
+              "end": 18.18,
+              "text": " вот",
+              "probability": 0.9999688863754272
+            },
+            {
+              "start": 18.18,
+              "end": 18.56,
+              "text": " не",
+              "probability": 0.9996453523635864
+            },
+            {
+              "start": 18.56,
+              "end": 19.02,
+              "text": " знаю,",
+              "probability": 0.9999957084655762
+            },
+            {
+              "start": 19.04,
+              "end": 19.18,
+              "text": " к",
+              "probability": 0.9999583959579468
+            },
+            {
+              "start": 19.18,
+              "end": 19.58,
+              "text": " счастью",
+              "probability": 0.9999741315841675
+            },
+            {
+              "start": 19.58,
+              "end": 19.7,
+              "text": " это",
+              "probability": 0.9965677261352539
+            },
+            {
+              "start": 19.7,
+              "end": 19.86,
+              "text": " или",
+              "probability": 0.9999943971633911
+            },
+            {
+              "start": 19.86,
+              "end": 20.1,
+              "text": " нет,",
+              "probability": 0.9999657869338989
+            },
+            {
+              "start": 20.24,
+              "end": 20.42,
+              "text": " но",
+              "probability": 0.9999690055847168
+            },
+            {
+              "start": 20.42,
+              "end": 20.84,
+              "text": " сейчас",
+              "probability": 0.9999860525131226
+            },
+            {
+              "start": 20.84,
+              "end": 21.16,
+              "text": " такие",
+              "probability": 0.9999549388885498
+            },
+            {
+              "start": 21.16,
+              "end": 21.78,
+              "text": " технологии",
+              "probability": 0.9999876618385315
+            },
+            {
+              "start": 21.78,
+              "end": 22.24,
+              "text": " используют",
+              "probability": 0.9999766945838928
+            },
+            {
+              "start": 22.24,
+              "end": 22.52,
+              "text": " практически",
+              "probability": 0.9995056390762329
+            },
+            {
+              "start": 22.52,
+              "end": 23.14,
+              "text": " везде.",
+              "probability": 0.9999881982803345
+            }
+          ]
+        },
+        {
+          "start": 23.22,
+          "end": 27.4,
+          "text": "От развлечений и образования до проектирования целых городов.",
+          "avg_logprob": -0.0965801941541334,
+          "no_speech_prob": 0.002819253597408533,
+          "words": [
+            {
+              "start": 23.22,
+              "end": 23.54,
+              "text": " От",
+              "probability": 0.9997196793556213
+            },
+            {
+              "start": 23.54,
+              "end": 24.18,
+              "text": " развлечений",
+              "probability": 0.9312452971935272
+            },
+            {
+              "start": 24.18,
+              "end": 24.3,
+              "text": " и",
+              "probability": 0.9905312657356262
+            },
+            {
+              "start": 24.3,
+              "end": 24.86,
+              "text": " образования",
+              "probability": 0.9999001920223236
+            },
+            {
+              "start": 24.86,
+              "end": 25.18,
+              "text": " до",
+              "probability": 0.9166238903999329
+            },
+            {
+              "start": 25.18,
+              "end": 25.98,
+              "text": " проектирования",
+              "probability": 0.9999404549598694
+            },
+            {
+              "start": 25.98,
+              "end": 26.54,
+              "text": " целых",
+              "probability": 0.9997186958789825
+            },
+            {
+              "start": 26.54,
+              "end": 27.4,
+              "text": " городов.",
+              "probability": 0.9985521733760834
+            }
+          ]
+        },
+        {
+          "start": 27.5,
+          "end": 29.86,
+          "text": "И подготовки специалистов, конечно же.",
+          "avg_logprob": -0.0965801941541334,
+          "no_speech_prob": 0.002819253597408533,
+          "words": [
+            {
+              "start": 27.5,
+              "end": 27.8,
+              "text": " И",
+              "probability": 0.36443647742271423
+            },
+            {
+              "start": 27.8,
+              "end": 28.46,
+              "text": " подготовки",
+              "probability": 0.9993684887886047
+            },
+            {
+              "start": 28.46,
+              "end": 29.26,
+              "text": " специалистов,",
+              "probability": 0.9998966256777445
+            },
+            {
+              "start": 29.26,
+              "end": 29.48,
+              "text": " конечно",
+              "probability": 0.9999948740005493
+            },
+            {
+              "start": 29.48,
+              "end": 29.86,
+              "text": " же.",
+              "probability": 0.9999955892562866
+            }
+          ]
+        },
+        {
+          "start": 30.0,
+          "end": 33.1,
+          "text": "Ну а крупнейший разработчик всего этого, Latent Systems.",
+          "avg_logprob": -0.05921270534396172,
+          "no_speech_prob": 0.0002511067723389715,
+          "words": [
+            {
+              "start": 30.0,
+              "end": 30.26,
+              "text": " Ну",
+              "probability": 0.9104414582252502
+            },
+            {
+              "start": 30.26,
+              "end": 30.34,
+              "text": " а",
+              "probability": 0.9459935426712036
+            },
+            {
+              "start": 30.34,
+              "end": 30.88,
+              "text": " крупнейший",
+              "probability": 0.9991880257924398
+            },
+            {
+              "start": 30.88,
+              "end": 31.5,
+              "text": " разработчик",
+              "probability": 0.9995593428611755
+            },
+            {
+              "start": 31.5,
+              "end": 31.72,
+              "text": " всего",
+              "probability": 0.9954696893692017
+            },
+            {
+              "start": 31.72,
+              "end": 32.12,
+              "text": " этого,",
+              "probability": 0.999360978603363
+            },
+            {
+              "start": 32.28,
+              "end": 32.76,
+              "text": " Latent",
+              "probability": 0.9345461428165436
+            },
+            {
+              "start": 32.76,
+              "end": 33.1,
+              "text": " Systems.",
+              "probability": 0.9964920878410339
+            }
+          ]
+        },
+        {
+          "start": 33.56,
+          "end": 36.98,
+          "text": "Вот как раз таки к ним сегодня я и иду на собеседование.",
+          "avg_logprob": -0.05921270534396172,
+          "no_speech_prob": 0.0002511067723389715,
+          "words": [
+            {
+              "start": 33.56,
+              "end": 33.82,
+              "text": " Вот",
+              "probability": 0.9996811151504517
+            },
+            {
+              "start": 33.82,
+              "end": 33.98,
+              "text": " как",
+              "probability": 0.9993498921394348
+            },
+            {
+              "start": 33.98,
+              "end": 34.24,
+              "text": " раз",
+              "probability": 0.9998648166656494
+            },
+            {
+              "start": 34.24,
+              "end": 34.54,
+              "text": " таки",
+              "probability": 0.8837762475013733
+            },
+            {
+              "start": 34.54,
+              "end": 34.64,
+              "text": " к",
+              "probability": 0.9993857145309448
+            },
+            {
+              "start": 34.64,
+              "end": 34.84,
+              "text": " ним",
+              "probability": 0.9999411106109619
+            },
+            {
+              "start": 34.84,
+              "end": 35.2,
+              "text": " сегодня",
+              "probability": 0.965344250202179
+            },
+            {
+              "start": 35.2,
+              "end": 35.58,
+              "text": " я",
+              "probability": 0.9946829676628113
+            },
+            {
+              "start": 35.58,
+              "end": 35.76,
+              "text": " и",
+              "probability": 0.9999666213989258
+            },
+            {
+              "start": 35.76,
+              "end": 36.02,
+              "text": " иду",
+              "probability": 0.9997895658016205
+            },
+            {
+              "start": 36.02,
+              "end": 36.12,
+              "text": " на",
+              "probability": 0.9999045133590698
+            },
+            {
+              "start": 36.12,
+              "end": 36.98,
+              "text": " собеседование.",
+              "probability": 0.9998472481966019
+            }
+          ]
+        },
+        {
+          "start": 37.06,
+          "end": 38.94,
+          "text": "Но на должность тестировщика.",
+          "avg_logprob": -0.05921270534396172,
+          "no_speech_prob": 0.0002511067723389715,
+          "words": [
+            {
+              "start": 37.06,
+              "end": 37.28,
+              "text": " Но",
+              "probability": 0.9988792538642883
+            },
+            {
+              "start": 37.28,
+              "end": 37.5,
+              "text": " на",
+              "probability": 0.9992620348930359
+            },
+            {
+              "start": 37.5,
+              "end": 38.04,
+              "text": " должность",
+              "probability": 0.9999454617500305
+            },
+            {
+              "start": 38.04,
+              "end": 38.94,
+              "text": " тестировщика.",
+              "probability": 0.9998592734336853
+            }
+          ]
+        },
+        {
+          "start": 39.04,
+          "end": 45.02,
+          "text": "Дело в том, что сгенерировать мир это одно, а вот заставить его нормально работать это прям совсем другое.",
+          "avg_logprob": -0.05921270534396172,
+          "no_speech_prob": 0.0002511067723389715,
+          "words": [
+            {
+              "start": 39.04,
+              "end": 39.58,
+              "text": " Дело",
+              "probability": 0.999899685382843
+            },
+            {
+              "start": 39.58,
+              "end": 39.64,
+              "text": " в",
+              "probability": 0.9999822378158569
+            },
+            {
+              "start": 39.64,
+              "end": 39.8,
+              "text": " том,",
+              "probability": 0.9999874830245972
+            },
+            {
+              "start": 39.82,
+              "end": 40.06,
+              "text": " что",
+              "probability": 0.9999865293502808
+            },
+            {
+              "start": 40.06,
+              "end": 40.72,
+              "text": " сгенерировать",
+              "probability": 0.9998352378606796
+            },
+            {
+              "start": 40.72,
+              "end": 40.98,
+              "text": " мир",
+              "probability": 0.999799907207489
+            },
+            {
+              "start": 40.98,
+              "end": 41.3,
+              "text": " это",
+              "probability": 0.9408296346664429
+            },
+            {
+              "start": 41.3,
+              "end": 41.62,
+              "text": " одно,",
+              "probability": 0.9999717473983765
+            },
+            {
+              "start": 41.78,
+              "end": 41.88,
+              "text": " а",
+              "probability": 0.9998468160629272
+            },
+            {
+              "start": 41.88,
+              "end": 42.02,
+              "text": " вот",
+              "probability": 0.999354898929596
+            },
+            {
+              "start": 42.02,
+              "end": 42.5,
+              "text": " заставить",
+              "probability": 0.999990185101827
+            },
+            {
+              "start": 42.5,
+              "end": 42.64,
+              "text": " его",
+              "probability": 0.9999833106994629
+            },
+            {
+              "start": 42.64,
+              "end": 42.94,
+              "text": " нормально",
+              "probability": 0.999923825263977
+            },
+            {
+              "start": 42.94,
+              "end": 43.36,
+              "text": " работать",
+              "probability": 0.9999821186065674
+            },
+            {
+              "start": 43.36,
+              "end": 43.7,
+              "text": " это",
+              "probability": 0.7243517637252808
+            },
+            {
+              "start": 43.7,
+              "end": 43.96,
+              "text": " прям",
+              "probability": 0.9834061861038208
+            },
+            {
+              "start": 43.96,
+              "end": 44.22,
+              "text": " совсем",
+              "probability": 0.9999908208847046
+            },
+            {
+              "start": 44.22,
+              "end": 45.02,
+              "text": " другое.",
+              "probability": 0.9999798933664957
+            }
+          ]
+        },
+        {
+          "start": 45.1,
+          "end": 51.0,
+          "text": "Иногда модели неправильно рассчитывают физику, иногда создают объекты, которых вообще не должно существовать.",
+          "avg_logprob": -0.05921270534396172,
+          "no_speech_prob": 0.0002511067723389715,
+          "words": [
+            {
+              "start": 45.1,
+              "end": 45.44,
+              "text": " Иногда",
+              "probability": 0.9998666346073151
+            },
+            {
+              "start": 45.44,
+              "end": 45.9,
+              "text": " модели",
+              "probability": 0.9999656677246094
+            },
+            {
+              "start": 45.9,
+              "end": 46.46,
+              "text": " неправильно",
+              "probability": 0.9999736547470093
+            },
+            {
+              "start": 46.46,
+              "end": 47.04,
+              "text": " рассчитывают",
+              "probability": 0.999911348025004
+            },
+            {
+              "start": 47.04,
+              "end": 47.66,
+              "text": " физику,",
+              "probability": 0.9983527064323425
+            },
+            {
+              "start": 47.68,
+              "end": 47.92,
+              "text": " иногда",
+              "probability": 0.9999439716339111
+            },
+            {
+              "start": 47.92,
+              "end": 48.48,
+              "text": " создают",
+              "probability": 0.9997265736262003
+            },
+            {
+              "start": 48.48,
+              "end": 48.98,
+              "text": " объекты,",
+              "probability": 0.9999838670094808
+            },
+            {
+              "start": 48.98,
+              "end": 49.18,
+              "text": " которых",
+              "probability": 0.9989014863967896
+            },
+            {
+              "start": 49.18,
+              "end": 49.66,
+              "text": " вообще",
+              "probability": 0.9999759197235107
+            },
+            {
+              "start": 49.66,
+              "end": 49.96,
+              "text": " не",
+              "probability": 0.9999698400497437
+            },
+            {
+              "start": 49.96,
+              "end": 50.16,
+              "text": " должно",
+              "probability": 0.9996144771575928
+            },
+            {
+              "start": 50.16,
+              "end": 51.0,
+              "text": " существовать.",
+              "probability": 0.9999629259109497
+            }
+          ]
+        },
+        {
+          "start": 51.16,
+          "end": 54.9,
+          "text": "Поэтому перед выпуском каждую симуляцию проверяют непосредственно люди.",
+          "avg_logprob": -0.05921270534396172,
+          "no_speech_prob": 0.0002511067723389715,
+          "words": [
+            {
+              "start": 51.16,
+              "end": 51.58,
+              "text": " Поэтому",
+              "probability": 0.9998816251754761
+            },
+            {
+              "start": 51.58,
+              "end": 51.88,
+              "text": " перед",
+              "probability": 0.9999791383743286
+            },
+            {
+              "start": 51.88,
+              "end": 52.5,
+              "text": " выпуском",
+              "probability": 0.9999799132347107
+            },
+            {
+              "start": 52.5,
+              "end": 52.9,
+              "text": " каждую",
+              "probability": 0.9993552565574646
+            },
+            {
+              "start": 52.9,
+              "end": 53.42,
+              "text": " симуляцию",
+              "probability": 0.9999156395594279
+            },
+            {
+              "start": 53.42,
+              "end": 53.9,
+              "text": " проверяют",
+              "probability": 0.9999262690544128
+            },
+            {
+              "start": 53.9,
+              "end": 54.62,
+              "text": " непосредственно",
+              "probability": 0.9999523758888245
+            },
+            {
+              "start": 54.62,
+              "end": 54.9,
+              "text": " люди.",
+              "probability": 0.9998838901519775
+            }
+          ]
+        },
+        {
+          "start": 55.28,
+          "end": 58.84,
+          "text": "Заходят внутрь, смотрят как все работает и составляют отчет.",
+          "avg_logprob": -0.05921270534396172,
+          "no_speech_prob": 0.0002511067723389715,
+          "words": [
+            {
+              "start": 55.28,
+              "end": 55.88,
+              "text": " Заходят",
+              "probability": 0.9988119602203369
+            },
+            {
+              "start": 55.88,
+              "end": 56.36,
+              "text": " внутрь,",
+              "probability": 0.9999622106552124
+            },
+            {
+              "start": 56.36,
+              "end": 56.82,
+              "text": " смотрят",
+              "probability": 0.999967098236084
+            },
+            {
+              "start": 56.82,
+              "end": 56.98,
+              "text": " как",
+              "probability": 0.9030599594116211
+            },
+            {
+              "start": 56.98,
+              "end": 57.12,
+              "text": " все",
+              "probability": 0.8433164358139038
+            },
+            {
+              "start": 57.12,
+              "end": 57.52,
+              "text": " работает",
+              "probability": 0.988649845123291
+            },
+            {
+              "start": 57.52,
+              "end": 57.82,
+              "text": " и",
+              "probability": 0.9940343499183655
+            },
+            {
+              "start": 57.82,
+              "end": 58.44,
+              "text": " составляют",
+              "probability": 0.9999317725499471
+            },
+            {
+              "start": 58.44,
+              "end": 58.84,
+              "text": " отчет.",
+              "probability": 0.9994349280993143
+            }
+          ]
+        },
+        {
+          "start": 58.84,
+          "end": 63.2,
+          "text": "Звучит на самом деле интереснее, чем весь день сидеть за таблицами.",
+          "avg_logprob": -0.10040770006436174,
+          "no_speech_prob": 0.006443762686103582,
+          "words": [
+            {
+              "start": 58.84,
+              "end": 59.76,
+              "text": " Звучит",
+              "probability": 0.9797498732805252
+            },
+            {
+              "start": 59.76,
+              "end": 59.9,
+              "text": " на",
+              "probability": 0.8197973966598511
+            },
+            {
+              "start": 59.9,
+              "end": 60.12,
+              "text": " самом",
+              "probability": 0.9996798038482666
+            },
+            {
+              "start": 60.12,
+              "end": 60.36,
+              "text": " деле",
+              "probability": 0.9996616840362549
+            },
+            {
+              "start": 60.36,
+              "end": 61.1,
+              "text": " интереснее,",
+              "probability": 0.9890728294849396
+            },
+            {
+              "start": 61.12,
+              "end": 61.4,
+              "text": " чем",
+              "probability": 0.998417854309082
+            },
+            {
+              "start": 61.4,
+              "end": 61.62,
+              "text": " весь",
+              "probability": 0.9916138648986816
+            },
+            {
+              "start": 61.62,
+              "end": 61.88,
+              "text": " день",
+              "probability": 0.9997263550758362
+            },
+            {
+              "start": 61.88,
+              "end": 62.4,
+              "text": " сидеть",
+              "probability": 0.9995024502277374
+            },
+            {
+              "start": 62.4,
+              "end": 62.56,
+              "text": " за",
+              "probability": 0.9990181922912598
+            },
+            {
+              "start": 62.56,
+              "end": 63.2,
+              "text": " таблицами.",
+              "probability": 0.9998766660690308
+            }
+          ]
+        },
+        {
+          "start": 63.36,
+          "end": 66.94,
+          "text": "Хотя отчеты, наверное, тоже нужно будет писать.",
+          "avg_logprob": -0.10040770006436174,
+          "no_speech_prob": 0.006443762686103582,
+          "words": [
+            {
+              "start": 63.36,
+              "end": 63.84,
+              "text": " Хотя",
+              "probability": 0.9981800317764282
+            },
+            {
+              "start": 63.84,
+              "end": 64.68,
+              "text": " отчеты,",
+              "probability": 0.9069477121035258
+            },
+            {
+              "start": 64.7,
+              "end": 64.94,
+              "text": " наверное,",
+              "probability": 0.9989991784095764
+            },
+            {
+              "start": 65.2,
+              "end": 65.52,
+              "text": " тоже",
+              "probability": 0.9981504082679749
+            },
+            {
+              "start": 65.52,
+              "end": 65.94,
+              "text": " нужно",
+              "probability": 0.9977055191993713
+            },
+            {
+              "start": 65.94,
+              "end": 66.32,
+              "text": " будет",
+              "probability": 0.9996393918991089
+            },
+            {
+              "start": 66.32,
+              "end": 66.94,
+              "text": " писать.",
+              "probability": 0.9999142289161682
+            }
+          ]
+        },
+        {
+          "start": 67.02,
+          "end": 70.68,
+          "text": "Вакансии обещают обучение и довольно неплохую зарплату.",
+          "avg_logprob": -0.10040770006436174,
+          "no_speech_prob": 0.006443762686103582,
+          "words": [
+            {
+              "start": 67.02,
+              "end": 67.64,
+              "text": " Вакансии",
+              "probability": 0.957004964351654
+            },
+            {
+              "start": 67.64,
+              "end": 68.14,
+              "text": " обещают",
+              "probability": 0.9997749725977579
+            },
+            {
+              "start": 68.14,
+              "end": 68.86,
+              "text": " обучение",
+              "probability": 0.9977420369784037
+            },
+            {
+              "start": 68.86,
+              "end": 69.12,
+              "text": " и",
+              "probability": 0.9963877201080322
+            },
+            {
+              "start": 69.12,
+              "end": 69.44,
+              "text": " довольно",
+              "probability": 0.9988669157028198
+            },
+            {
+              "start": 69.44,
+              "end": 70.1,
+              "text": " неплохую",
+              "probability": 0.9997539122899374
+            },
+            {
+              "start": 70.1,
+              "end": 70.68,
+              "text": " зарплату.",
+              "probability": 0.9999164342880249
+            }
+          ]
+        },
+        {
+          "start": 70.76,
+          "end": 72.92,
+          "text": "Посмотрим, что расскажут мне на месте.",
+          "avg_logprob": -0.10040770006436174,
+          "no_speech_prob": 0.006443762686103582,
+          "words": [
+            {
+              "start": 70.76,
+              "end": 71.4,
+              "text": " Посмотрим,",
+              "probability": 0.9997037649154663
+            },
+            {
+              "start": 71.4,
+              "end": 71.58,
+              "text": " что",
+              "probability": 0.9998754262924194
+            },
+            {
+              "start": 71.58,
+              "end": 72.24,
+              "text": " расскажут",
+              "probability": 0.9985487461090088
+            },
+            {
+              "start": 72.24,
+              "end": 72.4,
+              "text": " мне",
+              "probability": 0.9991784691810608
+            },
+            {
+              "start": 72.4,
+              "end": 72.6,
+              "text": " на",
+              "probability": 0.9996570348739624
+            },
+            {
+              "start": 72.6,
+              "end": 72.92,
+              "text": " месте.",
+              "probability": 0.9997777342796326
+            }
+          ]
+        },
+        {
+          "start": 74.32,
+          "end": 77.9,
+          "text": "Так, центральный проспект, 18, где-то здесь.",
+          "avg_logprob": -0.10040770006436174,
+          "no_speech_prob": 0.006443762686103582,
+          "words": [
+            {
+              "start": 74.32,
+              "end": 74.96,
+              "text": " Так,",
+              "probability": 0.9944010376930237
+            },
+            {
+              "start": 74.96,
+              "end": 75.6,
+              "text": " центральный",
+              "probability": 0.7873818874359131
+            },
+            {
+              "start": 75.6,
+              "end": 76.28,
+              "text": " проспект,",
+              "probability": 0.9999014933904012
+            },
+            {
+              "start": 76.3,
+              "end": 76.86,
+              "text": " 18,",
+              "probability": 0.992258608341217
+            },
+            {
+              "start": 77.3,
+              "end": 77.6,
+              "text": " где",
+              "probability": 0.999911904335022
+            },
+            {
+              "start": 77.6,
+              "end": 77.82,
+              "text": "-то",
+              "probability": 0.9999604225158691
+            },
+            {
+              "start": 77.82,
+              "end": 77.9,
+              "text": " здесь.",
+              "probability": 0.9998974800109863
+            }
+          ]
+        }
+      ],
+      "elapsed_seconds": 43.55481399100063
+    },
+    "normalized_words": [
+      {
+        "start": 0.0,
+        "end": 0.1,
+        "text": " Вот",
+        "probability": 0.9899700284004211,
+        "segment_index": 0
+      },
+      {
+        "start": 0.1,
+        "end": 0.44,
+        "text": " знаете,",
+        "probability": 0.9974320530891418,
+        "segment_index": 0
+      },
+      {
+        "start": 0.74,
+        "end": 1.1,
+        "text": " ещё",
+        "probability": 0.7676495313644409,
+        "segment_index": 0
+      },
+      {
+        "start": 1.1,
+        "end": 1.26,
+        "text": " лет",
+        "probability": 0.9998316764831543,
+        "segment_index": 0
+      },
+      {
+        "start": 1.26,
+        "end": 1.6,
+        "text": " 10",
+        "probability": 0.9371050000190735,
+        "segment_index": 0
+      },
+      {
+        "start": 1.6,
+        "end": 1.92,
+        "text": " назад",
+        "probability": 0.997980535030365,
+        "segment_index": 0
+      },
+      {
+        "start": 1.92,
+        "end": 2.5,
+        "text": " нейросети",
+        "probability": 0.9964860479036967,
+        "segment_index": 0
+      },
+      {
+        "start": 2.5,
+        "end": 3.06,
+        "text": " едва",
+        "probability": 0.9997555017471313,
+        "segment_index": 0
+      },
+      {
+        "start": 3.06,
+        "end": 3.46,
+        "text": " умели",
+        "probability": 0.9999065399169922,
+        "segment_index": 0
+      },
+      {
+        "start": 3.46,
+        "end": 3.92,
+        "text": " рисовать",
+        "probability": 0.9996599853038788,
+        "segment_index": 0
+      },
+      {
+        "start": 3.92,
+        "end": 4.22,
+        "text": " нормально",
+        "probability": 0.9809853434562683,
+        "segment_index": 0
+      },
+      {
+        "start": 4.22,
+        "end": 5.02,
+        "text": " картинки.",
+        "probability": 0.9998041689395905,
+        "segment_index": 0
+      },
+      {
+        "start": 5.14,
+        "end": 5.44,
+        "text": " Потом",
+        "probability": 0.9998929500579834,
+        "segment_index": 1
+      },
+      {
+        "start": 5.44,
+        "end": 5.98,
+        "text": " появились",
+        "probability": 0.9998451173305511,
+        "segment_index": 1
+      },
+      {
+        "start": 5.98,
+        "end": 6.36,
+        "text": " видео,",
+        "probability": 0.9989756345748901,
+        "segment_index": 1
+      },
+      {
+        "start": 6.36,
+        "end": 6.88,
+        "text": " виртуальные",
+        "probability": 0.8518707305192947,
+        "segment_index": 1
+      },
+      {
+        "start": 6.88,
+        "end": 7.68,
+        "text": " персонажи,",
+        "probability": 0.9997266829013824,
+        "segment_index": 1
+      },
+      {
+        "start": 7.68,
+        "end": 8.0,
+        "text": " а",
+        "probability": 0.9806164503097534,
+        "segment_index": 1
+      },
+      {
+        "start": 8.0,
+        "end": 8.28,
+        "text": " теперь",
+        "probability": 0.9999740123748779,
+        "segment_index": 1
+      },
+      {
+        "start": 8.28,
+        "end": 8.6,
+        "text": " вот,",
+        "probability": 0.9984190464019775,
+        "segment_index": 1
+      },
+      {
+        "start": 8.8,
+        "end": 9.42,
+        "text": " целые",
+        "probability": 0.9597306847572327,
+        "segment_index": 1
+      },
+      {
+        "start": 9.42,
+        "end": 10.16,
+        "text": " миры.",
+        "probability": 0.9992212653160095,
+        "segment_index": 1
+      },
+      {
+        "start": 10.4,
+        "end": 10.74,
+        "text": " Со",
+        "probability": 0.9991913437843323,
+        "segment_index": 2
+      },
+      {
+        "start": 10.74,
+        "end": 10.96,
+        "text": " своей",
+        "probability": 0.9999698400497437,
+        "segment_index": 2
+      },
+      {
+        "start": 10.96,
+        "end": 11.56,
+        "text": " физикой,",
+        "probability": 0.9999434153238932,
+        "segment_index": 2
+      },
+      {
+        "start": 11.56,
+        "end": 12.14,
+        "text": " природой,",
+        "probability": 0.9996959169705709,
+        "segment_index": 2
+      },
+      {
+        "start": 12.16,
+        "end": 12.9,
+        "text": " обитателями.",
+        "probability": 0.9998809993267059,
+        "segment_index": 2
+      },
+      {
+        "start": 12.98,
+        "end": 13.54,
+        "text": " Причём",
+        "probability": 0.9997547070185343,
+        "segment_index": 3
+      },
+      {
+        "start": 13.54,
+        "end": 13.96,
+        "text": " самое",
+        "probability": 0.9665823578834534,
+        "segment_index": 3
+      },
+      {
+        "start": 13.96,
+        "end": 14.66,
+        "text": " забавное,",
+        "probability": 0.9998610417048136,
+        "segment_index": 3
+      },
+      {
+        "start": 14.66,
+        "end": 14.86,
+        "text": " что",
+        "probability": 0.9999896287918091,
+        "segment_index": 3
+      },
+      {
+        "start": 14.86,
+        "end": 15.14,
+        "text": " всё",
+        "probability": 0.9912183880805969,
+        "segment_index": 3
+      },
+      {
+        "start": 15.14,
+        "end": 15.44,
+        "text": " это",
+        "probability": 0.9999853372573853,
+        "segment_index": 3
+      },
+      {
+        "start": 15.44,
+        "end": 15.92,
+        "text": " создаётся",
+        "probability": 0.9977591931819916,
+        "segment_index": 3
+      },
+      {
+        "start": 15.92,
+        "end": 16.46,
+        "text": " буквально",
+        "probability": 0.9996998310089111,
+        "segment_index": 3
+      },
+      {
+        "start": 16.46,
+        "end": 16.6,
+        "text": " за",
+        "probability": 0.9995957016944885,
+        "segment_index": 3
+      },
+      {
+        "start": 16.6,
+        "end": 17.0,
+        "text": " считанные",
+        "probability": 0.9988742470741272,
+        "segment_index": 3
+      },
+      {
+        "start": 17.0,
+        "end": 17.62,
+        "text": " секунды.",
+        "probability": 0.9999549388885498,
+        "segment_index": 3
+      },
+      {
+        "start": 17.72,
+        "end": 17.92,
+        "text": " Я",
+        "probability": 0.9920462369918823,
+        "segment_index": 4
+      },
+      {
+        "start": 17.92,
+        "end": 18.18,
+        "text": " вот",
+        "probability": 0.9999688863754272,
+        "segment_index": 4
+      },
+      {
+        "start": 18.18,
+        "end": 18.56,
+        "text": " не",
+        "probability": 0.9996453523635864,
+        "segment_index": 4
+      },
+      {
+        "start": 18.56,
+        "end": 19.02,
+        "text": " знаю,",
+        "probability": 0.9999957084655762,
+        "segment_index": 4
+      },
+      {
+        "start": 19.04,
+        "end": 19.18,
+        "text": " к",
+        "probability": 0.9999583959579468,
+        "segment_index": 4
+      },
+      {
+        "start": 19.18,
+        "end": 19.58,
+        "text": " счастью",
+        "probability": 0.9999741315841675,
+        "segment_index": 4
+      },
+      {
+        "start": 19.58,
+        "end": 19.7,
+        "text": " это",
+        "probability": 0.9965677261352539,
+        "segment_index": 4
+      },
+      {
+        "start": 19.7,
+        "end": 19.86,
+        "text": " или",
+        "probability": 0.9999943971633911,
+        "segment_index": 4
+      },
+      {
+        "start": 19.86,
+        "end": 20.1,
+        "text": " нет,",
+        "probability": 0.9999657869338989,
+        "segment_index": 4
+      },
+      {
+        "start": 20.24,
+        "end": 20.42,
+        "text": " но",
+        "probability": 0.9999690055847168,
+        "segment_index": 4
+      },
+      {
+        "start": 20.42,
+        "end": 20.84,
+        "text": " сейчас",
+        "probability": 0.9999860525131226,
+        "segment_index": 4
+      },
+      {
+        "start": 20.84,
+        "end": 21.16,
+        "text": " такие",
+        "probability": 0.9999549388885498,
+        "segment_index": 4
+      },
+      {
+        "start": 21.16,
+        "end": 21.78,
+        "text": " технологии",
+        "probability": 0.9999876618385315,
+        "segment_index": 4
+      },
+      {
+        "start": 21.78,
+        "end": 22.24,
+        "text": " используют",
+        "probability": 0.9999766945838928,
+        "segment_index": 4
+      },
+      {
+        "start": 22.24,
+        "end": 22.52,
+        "text": " практически",
+        "probability": 0.9995056390762329,
+        "segment_index": 4
+      },
+      {
+        "start": 22.52,
+        "end": 23.14,
+        "text": " везде.",
+        "probability": 0.9999881982803345,
+        "segment_index": 4
+      },
+      {
+        "start": 23.22,
+        "end": 23.54,
+        "text": " От",
+        "probability": 0.9997196793556213,
+        "segment_index": 5
+      },
+      {
+        "start": 23.54,
+        "end": 24.18,
+        "text": " развлечений",
+        "probability": 0.9312452971935272,
+        "segment_index": 5
+      },
+      {
+        "start": 24.18,
+        "end": 24.3,
+        "text": " и",
+        "probability": 0.9905312657356262,
+        "segment_index": 5
+      },
+      {
+        "start": 24.3,
+        "end": 24.86,
+        "text": " образования",
+        "probability": 0.9999001920223236,
+        "segment_index": 5
+      },
+      {
+        "start": 24.86,
+        "end": 25.18,
+        "text": " до",
+        "probability": 0.9166238903999329,
+        "segment_index": 5
+      },
+      {
+        "start": 25.18,
+        "end": 25.98,
+        "text": " проектирования",
+        "probability": 0.9999404549598694,
+        "segment_index": 5
+      },
+      {
+        "start": 25.98,
+        "end": 26.54,
+        "text": " целых",
+        "probability": 0.9997186958789825,
+        "segment_index": 5
+      },
+      {
+        "start": 26.54,
+        "end": 27.4,
+        "text": " городов.",
+        "probability": 0.9985521733760834,
+        "segment_index": 5
+      },
+      {
+        "start": 27.5,
+        "end": 27.8,
+        "text": " И",
+        "probability": 0.36443647742271423,
+        "segment_index": 6
+      },
+      {
+        "start": 27.8,
+        "end": 28.46,
+        "text": " подготовки",
+        "probability": 0.9993684887886047,
+        "segment_index": 6
+      },
+      {
+        "start": 28.46,
+        "end": 29.26,
+        "text": " специалистов,",
+        "probability": 0.9998966256777445,
+        "segment_index": 6
+      },
+      {
+        "start": 29.26,
+        "end": 29.48,
+        "text": " конечно",
+        "probability": 0.9999948740005493,
+        "segment_index": 6
+      },
+      {
+        "start": 29.48,
+        "end": 29.86,
+        "text": " же.",
+        "probability": 0.9999955892562866,
+        "segment_index": 6
+      },
+      {
+        "start": 30.0,
+        "end": 30.26,
+        "text": " Ну",
+        "probability": 0.9104414582252502,
+        "segment_index": 7
+      },
+      {
+        "start": 30.26,
+        "end": 30.34,
+        "text": " а",
+        "probability": 0.9459935426712036,
+        "segment_index": 7
+      },
+      {
+        "start": 30.34,
+        "end": 30.88,
+        "text": " крупнейший",
+        "probability": 0.9991880257924398,
+        "segment_index": 7
+      },
+      {
+        "start": 30.88,
+        "end": 31.5,
+        "text": " разработчик",
+        "probability": 0.9995593428611755,
+        "segment_index": 7
+      },
+      {
+        "start": 31.5,
+        "end": 31.72,
+        "text": " всего",
+        "probability": 0.9954696893692017,
+        "segment_index": 7
+      },
+      {
+        "start": 31.72,
+        "end": 32.12,
+        "text": " этого —",
+        "probability": 0.999360978603363,
+        "segment_index": 7
+      },
+      {
+        "start": 32.28,
+        "end": 32.76,
+        "text": " LATENT",
+        "probability": 0.9345461428165436,
+        "segment_index": 7
+      },
+      {
+        "start": 32.76,
+        "end": 33.1,
+        "text": " SYSTEMS.",
+        "probability": 0.9964920878410339,
+        "segment_index": 7
+      },
+      {
+        "start": 33.56,
+        "end": 33.82,
+        "text": " Вот",
+        "probability": 0.9996811151504517,
+        "segment_index": 8
+      },
+      {
+        "start": 33.82,
+        "end": 33.98,
+        "text": " как",
+        "probability": 0.9993498921394348,
+        "segment_index": 8
+      },
+      {
+        "start": 33.98,
+        "end": 34.24,
+        "text": " раз",
+        "probability": 0.9998648166656494,
+        "segment_index": 8
+      },
+      {
+        "start": 34.24,
+        "end": 34.54,
+        "text": " таки",
+        "probability": 0.8837762475013733,
+        "segment_index": 8
+      },
+      {
+        "start": 34.54,
+        "end": 34.64,
+        "text": " к",
+        "probability": 0.9993857145309448,
+        "segment_index": 8
+      },
+      {
+        "start": 34.64,
+        "end": 34.84,
+        "text": " ним",
+        "probability": 0.9999411106109619,
+        "segment_index": 8
+      },
+      {
+        "start": 34.84,
+        "end": 35.2,
+        "text": " сегодня",
+        "probability": 0.965344250202179,
+        "segment_index": 8
+      },
+      {
+        "start": 35.2,
+        "end": 35.58,
+        "text": " я",
+        "probability": 0.9946829676628113,
+        "segment_index": 8
+      },
+      {
+        "start": 35.58,
+        "end": 35.76,
+        "text": " и",
+        "probability": 0.9999666213989258,
+        "segment_index": 8
+      },
+      {
+        "start": 35.76,
+        "end": 36.02,
+        "text": " иду",
+        "probability": 0.9997895658016205,
+        "segment_index": 8
+      },
+      {
+        "start": 36.02,
+        "end": 36.12,
+        "text": " на",
+        "probability": 0.9999045133590698,
+        "segment_index": 8
+      },
+      {
+        "start": 36.12,
+        "end": 36.98,
+        "text": " собеседование.",
+        "probability": 0.9998472481966019,
+        "segment_index": 8
+      },
+      {
+        "start": 37.06,
+        "end": 37.28,
+        "text": " Но",
+        "probability": 0.9988792538642883,
+        "segment_index": 9
+      },
+      {
+        "start": 37.28,
+        "end": 37.5,
+        "text": " на",
+        "probability": 0.9992620348930359,
+        "segment_index": 9
+      },
+      {
+        "start": 37.5,
+        "end": 38.04,
+        "text": " должность",
+        "probability": 0.9999454617500305,
+        "segment_index": 9
+      },
+      {
+        "start": 38.04,
+        "end": 38.94,
+        "text": " тестировщика.",
+        "probability": 0.9998592734336853,
+        "segment_index": 9
+      },
+      {
+        "start": 39.04,
+        "end": 39.58,
+        "text": " Дело",
+        "probability": 0.999899685382843,
+        "segment_index": 10
+      },
+      {
+        "start": 39.58,
+        "end": 39.64,
+        "text": " в",
+        "probability": 0.9999822378158569,
+        "segment_index": 10
+      },
+      {
+        "start": 39.64,
+        "end": 39.8,
+        "text": " том,",
+        "probability": 0.9999874830245972,
+        "segment_index": 10
+      },
+      {
+        "start": 39.82,
+        "end": 40.06,
+        "text": " что",
+        "probability": 0.9999865293502808,
+        "segment_index": 10
+      },
+      {
+        "start": 40.06,
+        "end": 40.72,
+        "text": " сгенерировать",
+        "probability": 0.9998352378606796,
+        "segment_index": 10
+      },
+      {
+        "start": 40.72,
+        "end": 40.98,
+        "text": " мир —",
+        "probability": 0.999799907207489,
+        "segment_index": 10
+      },
+      {
+        "start": 40.98,
+        "end": 41.3,
+        "text": " это",
+        "probability": 0.9408296346664429,
+        "segment_index": 10
+      },
+      {
+        "start": 41.3,
+        "end": 41.62,
+        "text": " одно,",
+        "probability": 0.9999717473983765,
+        "segment_index": 10
+      },
+      {
+        "start": 41.78,
+        "end": 41.88,
+        "text": " а",
+        "probability": 0.9998468160629272,
+        "segment_index": 10
+      },
+      {
+        "start": 41.88,
+        "end": 42.02,
+        "text": " вот",
+        "probability": 0.999354898929596,
+        "segment_index": 10
+      },
+      {
+        "start": 42.02,
+        "end": 42.5,
+        "text": " заставить",
+        "probability": 0.999990185101827,
+        "segment_index": 10
+      },
+      {
+        "start": 42.5,
+        "end": 42.64,
+        "text": " его",
+        "probability": 0.9999833106994629,
+        "segment_index": 10
+      },
+      {
+        "start": 42.64,
+        "end": 42.94,
+        "text": " нормально",
+        "probability": 0.999923825263977,
+        "segment_index": 10
+      },
+      {
+        "start": 42.94,
+        "end": 43.36,
+        "text": " работать —",
+        "probability": 0.9999821186065674,
+        "segment_index": 10
+      },
+      {
+        "start": 43.36,
+        "end": 43.7,
+        "text": " это",
+        "probability": 0.7243517637252808,
+        "segment_index": 10
+      },
+      {
+        "start": 43.7,
+        "end": 43.96,
+        "text": " прям",
+        "probability": 0.9834061861038208,
+        "segment_index": 10
+      },
+      {
+        "start": 43.96,
+        "end": 44.22,
+        "text": " совсем",
+        "probability": 0.9999908208847046,
+        "segment_index": 10
+      },
+      {
+        "start": 44.22,
+        "end": 45.02,
+        "text": " другое.",
+        "probability": 0.9999798933664957,
+        "segment_index": 10
+      },
+      {
+        "start": 45.1,
+        "end": 45.44,
+        "text": " Иногда",
+        "probability": 0.9998666346073151,
+        "segment_index": 11
+      },
+      {
+        "start": 45.44,
+        "end": 45.9,
+        "text": " модели",
+        "probability": 0.9999656677246094,
+        "segment_index": 11
+      },
+      {
+        "start": 45.9,
+        "end": 46.46,
+        "text": " неправильно",
+        "probability": 0.9999736547470093,
+        "segment_index": 11
+      },
+      {
+        "start": 46.46,
+        "end": 47.04,
+        "text": " рассчитывают",
+        "probability": 0.999911348025004,
+        "segment_index": 11
+      },
+      {
+        "start": 47.04,
+        "end": 47.66,
+        "text": " физику,",
+        "probability": 0.9983527064323425,
+        "segment_index": 11
+      },
+      {
+        "start": 47.68,
+        "end": 47.92,
+        "text": " иногда",
+        "probability": 0.9999439716339111,
+        "segment_index": 11
+      },
+      {
+        "start": 47.92,
+        "end": 48.48,
+        "text": " создают",
+        "probability": 0.9997265736262003,
+        "segment_index": 11
+      },
+      {
+        "start": 48.48,
+        "end": 48.98,
+        "text": " объекты,",
+        "probability": 0.9999838670094808,
+        "segment_index": 11
+      },
+      {
+        "start": 48.98,
+        "end": 49.18,
+        "text": " которых",
+        "probability": 0.9989014863967896,
+        "segment_index": 11
+      },
+      {
+        "start": 49.18,
+        "end": 49.66,
+        "text": " вообще",
+        "probability": 0.9999759197235107,
+        "segment_index": 11
+      },
+      {
+        "start": 49.66,
+        "end": 49.96,
+        "text": " не",
+        "probability": 0.9999698400497437,
+        "segment_index": 11
+      },
+      {
+        "start": 49.96,
+        "end": 50.16,
+        "text": " должно",
+        "probability": 0.9996144771575928,
+        "segment_index": 11
+      },
+      {
+        "start": 50.16,
+        "end": 51.0,
+        "text": " существовать.",
+        "probability": 0.9999629259109497,
+        "segment_index": 11
+      },
+      {
+        "start": 51.16,
+        "end": 51.58,
+        "text": " Поэтому",
+        "probability": 0.9998816251754761,
+        "segment_index": 12
+      },
+      {
+        "start": 51.58,
+        "end": 51.88,
+        "text": " перед",
+        "probability": 0.9999791383743286,
+        "segment_index": 12
+      },
+      {
+        "start": 51.88,
+        "end": 52.5,
+        "text": " выпуском",
+        "probability": 0.9999799132347107,
+        "segment_index": 12
+      },
+      {
+        "start": 52.5,
+        "end": 52.9,
+        "text": " каждую",
+        "probability": 0.9993552565574646,
+        "segment_index": 12
+      },
+      {
+        "start": 52.9,
+        "end": 53.42,
+        "text": " симуляцию",
+        "probability": 0.9999156395594279,
+        "segment_index": 12
+      },
+      {
+        "start": 53.42,
+        "end": 53.9,
+        "text": " проверяют",
+        "probability": 0.9999262690544128,
+        "segment_index": 12
+      },
+      {
+        "start": 53.9,
+        "end": 54.62,
+        "text": " непосредственно",
+        "probability": 0.9999523758888245,
+        "segment_index": 12
+      },
+      {
+        "start": 54.62,
+        "end": 54.9,
+        "text": " люди.",
+        "probability": 0.9998838901519775,
+        "segment_index": 12
+      },
+      {
+        "start": 55.28,
+        "end": 55.88,
+        "text": " Заходят",
+        "probability": 0.9988119602203369,
+        "segment_index": 13
+      },
+      {
+        "start": 55.88,
+        "end": 56.36,
+        "text": " внутрь,",
+        "probability": 0.9999622106552124,
+        "segment_index": 13
+      },
+      {
+        "start": 56.36,
+        "end": 56.82,
+        "text": " смотрят,",
+        "probability": 0.999967098236084,
+        "segment_index": 13
+      },
+      {
+        "start": 56.82,
+        "end": 56.98,
+        "text": " как",
+        "probability": 0.9030599594116211,
+        "segment_index": 13
+      },
+      {
+        "start": 56.98,
+        "end": 57.12,
+        "text": " всё",
+        "probability": 0.8433164358139038,
+        "segment_index": 13
+      },
+      {
+        "start": 57.12,
+        "end": 57.52,
+        "text": " работает",
+        "probability": 0.988649845123291,
+        "segment_index": 13
+      },
+      {
+        "start": 57.52,
+        "end": 57.82,
+        "text": " и",
+        "probability": 0.9940343499183655,
+        "segment_index": 13
+      },
+      {
+        "start": 57.82,
+        "end": 58.44,
+        "text": " составляют",
+        "probability": 0.9999317725499471,
+        "segment_index": 13
+      },
+      {
+        "start": 58.44,
+        "end": 58.84,
+        "text": " отчёт.",
+        "probability": 0.9994349280993143,
+        "segment_index": 13
+      },
+      {
+        "start": 58.84,
+        "end": 59.76,
+        "text": " Звучит",
+        "probability": 0.9797498732805252,
+        "segment_index": 14
+      },
+      {
+        "start": 59.76,
+        "end": 59.9,
+        "text": " на",
+        "probability": 0.8197973966598511,
+        "segment_index": 14
+      },
+      {
+        "start": 59.9,
+        "end": 60.12,
+        "text": " самом",
+        "probability": 0.9996798038482666,
+        "segment_index": 14
+      },
+      {
+        "start": 60.12,
+        "end": 60.36,
+        "text": " деле",
+        "probability": 0.9996616840362549,
+        "segment_index": 14
+      },
+      {
+        "start": 60.36,
+        "end": 61.1,
+        "text": " интереснее,",
+        "probability": 0.9890728294849396,
+        "segment_index": 14
+      },
+      {
+        "start": 61.12,
+        "end": 61.4,
+        "text": " чем",
+        "probability": 0.998417854309082,
+        "segment_index": 14
+      },
+      {
+        "start": 61.4,
+        "end": 61.62,
+        "text": " весь",
+        "probability": 0.9916138648986816,
+        "segment_index": 14
+      },
+      {
+        "start": 61.62,
+        "end": 61.88,
+        "text": " день",
+        "probability": 0.9997263550758362,
+        "segment_index": 14
+      },
+      {
+        "start": 61.88,
+        "end": 62.4,
+        "text": " сидеть",
+        "probability": 0.9995024502277374,
+        "segment_index": 14
+      },
+      {
+        "start": 62.4,
+        "end": 62.56,
+        "text": " за",
+        "probability": 0.9990181922912598,
+        "segment_index": 14
+      },
+      {
+        "start": 62.56,
+        "end": 63.2,
+        "text": " таблицами.",
+        "probability": 0.9998766660690308,
+        "segment_index": 14
+      },
+      {
+        "start": 63.36,
+        "end": 63.84,
+        "text": " Хотя",
+        "probability": 0.9981800317764282,
+        "segment_index": 15
+      },
+      {
+        "start": 63.84,
+        "end": 64.68,
+        "text": " отчёты,",
+        "probability": 0.9069477121035258,
+        "segment_index": 15
+      },
+      {
+        "start": 64.7,
+        "end": 64.94,
+        "text": " наверное,",
+        "probability": 0.9989991784095764,
+        "segment_index": 15
+      },
+      {
+        "start": 65.2,
+        "end": 65.52,
+        "text": " тоже",
+        "probability": 0.9981504082679749,
+        "segment_index": 15
+      },
+      {
+        "start": 65.52,
+        "end": 65.94,
+        "text": " нужно",
+        "probability": 0.9977055191993713,
+        "segment_index": 15
+      },
+      {
+        "start": 65.94,
+        "end": 66.32,
+        "text": " будет",
+        "probability": 0.9996393918991089,
+        "segment_index": 15
+      },
+      {
+        "start": 66.32,
+        "end": 66.94,
+        "text": " писать.",
+        "probability": 0.9999142289161682,
+        "segment_index": 15
+      },
+      {
+        "start": 67.02,
+        "end": 67.64,
+        "text": " Вакансии",
+        "probability": 0.957004964351654,
+        "segment_index": 16
+      },
+      {
+        "start": 67.64,
+        "end": 68.14,
+        "text": " обещают",
+        "probability": 0.9997749725977579,
+        "segment_index": 16
+      },
+      {
+        "start": 68.14,
+        "end": 68.86,
+        "text": " обучение",
+        "probability": 0.9977420369784037,
+        "segment_index": 16
+      },
+      {
+        "start": 68.86,
+        "end": 69.12,
+        "text": " и",
+        "probability": 0.9963877201080322,
+        "segment_index": 16
+      },
+      {
+        "start": 69.12,
+        "end": 69.44,
+        "text": " довольно",
+        "probability": 0.9988669157028198,
+        "segment_index": 16
+      },
+      {
+        "start": 69.44,
+        "end": 70.1,
+        "text": " неплохую",
+        "probability": 0.9997539122899374,
+        "segment_index": 16
+      },
+      {
+        "start": 70.1,
+        "end": 70.68,
+        "text": " зарплату.",
+        "probability": 0.9999164342880249,
+        "segment_index": 16
+      },
+      {
+        "start": 70.76,
+        "end": 71.4,
+        "text": " Посмотрим,",
+        "probability": 0.9997037649154663,
+        "segment_index": 17
+      },
+      {
+        "start": 71.4,
+        "end": 71.58,
+        "text": " что",
+        "probability": 0.9998754262924194,
+        "segment_index": 17
+      },
+      {
+        "start": 71.58,
+        "end": 72.24,
+        "text": " расскажут",
+        "probability": 0.9985487461090088,
+        "segment_index": 17
+      },
+      {
+        "start": 72.24,
+        "end": 72.4,
+        "text": " мне",
+        "probability": 0.9991784691810608,
+        "segment_index": 17
+      },
+      {
+        "start": 72.4,
+        "end": 72.6,
+        "text": " на",
+        "probability": 0.9996570348739624,
+        "segment_index": 17
+      },
+      {
+        "start": 72.6,
+        "end": 72.92,
+        "text": " месте.",
+        "probability": 0.9997777342796326,
+        "segment_index": 17
+      },
+      {
+        "start": 74.32,
+        "end": 74.96,
+        "text": " Так,",
+        "probability": 0.9944010376930237,
+        "segment_index": 18
+      },
+      {
+        "start": 74.96,
+        "end": 75.6,
+        "text": " Центральный",
+        "probability": 0.7873818874359131,
+        "segment_index": 18
+      },
+      {
+        "start": 75.6,
+        "end": 76.28,
+        "text": " проспект,",
+        "probability": 0.9999014933904012,
+        "segment_index": 18
+      },
+      {
+        "start": 76.3,
+        "end": 76.86,
+        "text": " 18,",
+        "probability": 0.992258608341217,
+        "segment_index": 18
+      },
+      {
+        "start": 77.3,
+        "end": 77.6,
+        "text": " где",
+        "probability": 0.999911904335022,
+        "segment_index": 18
+      },
+      {
+        "start": 77.6,
+        "end": 77.82,
+        "text": "-то",
+        "probability": 0.9999604225158691,
+        "segment_index": 18
+      },
+      {
+        "start": 77.82,
+        "end": 77.9,
+        "text": " здесь.",
+        "probability": 0.9998974800109863,
+        "segment_index": 18
+      }
+    ],
+    "cue_policy": "Hand-selected short semantic phrases aligned to word timestamps, up to 49 visible characters before punctuation polishing. No cue overlaps; at most 0.4 seconds reading hold after speech, clamped to the next phrase. Caption 37 onset adjusted from ASR 74.32 to actual waveform onset 74.12 after digital silence. Final caption held until mastered audio finishes.",
+    "cues": [
+      {
+        "start": 0.0,
+        "word_end": 1.92,
+        "text": "Вот знаете, ещё лет 10 назад",
+        "source_segment_index": 0,
+        "word_index_range": [
+          0,
+          6
+        ],
+        "end": 1.92
+      },
+      {
+        "start": 1.92,
+        "word_end": 5.02,
+        "text": "нейросети едва умели рисовать нормально картинки.",
+        "source_segment_index": 0,
+        "word_index_range": [
+          6,
+          12
+        ],
+        "end": 5.14
+      },
+      {
+        "start": 5.14,
+        "word_end": 6.36,
+        "text": "Потом появились видео,",
+        "source_segment_index": 1,
+        "word_index_range": [
+          0,
+          3
+        ],
+        "end": 6.36
+      },
+      {
+        "start": 6.36,
+        "word_end": 7.68,
+        "text": "виртуальные персонажи,",
+        "source_segment_index": 1,
+        "word_index_range": [
+          3,
+          5
+        ],
+        "end": 7.68
+      },
+      {
+        "start": 7.68,
+        "word_end": 10.16,
+        "text": "а теперь вот, целые миры.",
+        "source_segment_index": 1,
+        "word_index_range": [
+          5,
+          10
+        ],
+        "end": 10.4
+      },
+      {
+        "start": 10.4,
+        "word_end": 12.9,
+        "text": "Со своей физикой, природой, обитателями.",
+        "source_segment_index": 2,
+        "word_index_range": [
+          0,
+          5
+        ],
+        "end": 12.98
+      },
+      {
+        "start": 12.98,
+        "word_end": 14.66,
+        "text": "Причём самое забавное,",
+        "source_segment_index": 3,
+        "word_index_range": [
+          0,
+          3
+        ],
+        "end": 14.66
+      },
+      {
+        "start": 14.66,
+        "word_end": 15.92,
+        "text": "что всё это создаётся",
+        "source_segment_index": 3,
+        "word_index_range": [
+          3,
+          7
+        ],
+        "end": 15.92
+      },
+      {
+        "start": 15.92,
+        "word_end": 17.62,
+        "text": "буквально за считанные секунды.",
+        "source_segment_index": 3,
+        "word_index_range": [
+          7,
+          11
+        ],
+        "end": 17.72
+      },
+      {
+        "start": 17.72,
+        "word_end": 20.1,
+        "text": "Я вот не знаю, к счастью это или нет,",
+        "source_segment_index": 4,
+        "word_index_range": [
+          0,
+          9
+        ],
+        "end": 20.24
+      },
+      {
+        "start": 20.24,
+        "word_end": 21.78,
+        "text": "но сейчас такие технологии",
+        "source_segment_index": 4,
+        "word_index_range": [
+          9,
+          13
+        ],
+        "end": 21.78
+      },
+      {
+        "start": 21.78,
+        "word_end": 23.14,
+        "text": "используют практически везде.",
+        "source_segment_index": 4,
+        "word_index_range": [
+          13,
+          16
+        ],
+        "end": 23.22
+      },
+      {
+        "start": 23.22,
+        "word_end": 24.86,
+        "text": "От развлечений и образования",
+        "source_segment_index": 5,
+        "word_index_range": [
+          0,
+          4
+        ],
+        "end": 24.86
+      },
+      {
+        "start": 24.86,
+        "word_end": 27.4,
+        "text": "до проектирования целых городов.",
+        "source_segment_index": 5,
+        "word_index_range": [
+          4,
+          8
+        ],
+        "end": 27.5
+      },
+      {
+        "start": 27.5,
+        "word_end": 29.86,
+        "text": "И подготовки специалистов, конечно же.",
+        "source_segment_index": 6,
+        "word_index_range": [
+          0,
+          5
+        ],
+        "end": 30.0
+      },
+      {
+        "start": 30.0,
+        "word_end": 32.12,
+        "text": "Ну а крупнейший разработчик всего этого —",
+        "source_segment_index": 7,
+        "word_index_range": [
+          0,
+          6
+        ],
+        "end": 32.28
+      },
+      {
+        "start": 32.28,
+        "word_end": 33.1,
+        "text": "LATENT SYSTEMS.",
+        "source_segment_index": 7,
+        "word_index_range": [
+          6,
+          8
+        ],
+        "end": 33.5
+      },
+      {
+        "start": 33.56,
+        "word_end": 34.84,
+        "text": "Вот как раз-таки к ним",
+        "source_segment_index": 8,
+        "word_index_range": [
+          0,
+          6
+        ],
+        "end": 34.84
+      },
+      {
+        "start": 34.84,
+        "word_end": 36.98,
+        "text": "сегодня я и иду на собеседование.",
+        "source_segment_index": 8,
+        "word_index_range": [
+          6,
+          12
+        ],
+        "end": 37.06
+      },
+      {
+        "start": 37.06,
+        "word_end": 38.94,
+        "text": "Но на должность тестировщика.",
+        "source_segment_index": 9,
+        "word_index_range": [
+          0,
+          4
+        ],
+        "end": 39.04
+      },
+      {
+        "start": 39.04,
+        "word_end": 41.62,
+        "text": "Дело в том, что сгенерировать мир — это одно,",
+        "source_segment_index": 10,
+        "word_index_range": [
+          0,
+          8
+        ],
+        "end": 41.78
+      },
+      {
+        "start": 41.78,
+        "word_end": 43.36,
+        "text": "а вот заставить его нормально работать —",
+        "source_segment_index": 10,
+        "word_index_range": [
+          8,
+          14
+        ],
+        "end": 43.36
+      },
+      {
+        "start": 43.36,
+        "word_end": 45.02,
+        "text": "это прям совсем другое.",
+        "source_segment_index": 10,
+        "word_index_range": [
+          14,
+          18
+        ],
+        "end": 45.1
+      },
+      {
+        "start": 45.1,
+        "word_end": 47.66,
+        "text": "Иногда модели неправильно рассчитывают физику,",
+        "source_segment_index": 11,
+        "word_index_range": [
+          0,
+          5
+        ],
+        "end": 47.68
+      },
+      {
+        "start": 47.68,
+        "word_end": 48.98,
+        "text": "иногда создают объекты,",
+        "source_segment_index": 11,
+        "word_index_range": [
+          5,
+          8
+        ],
+        "end": 48.98
+      },
+      {
+        "start": 48.98,
+        "word_end": 51.0,
+        "text": "которых вообще не должно существовать.",
+        "source_segment_index": 11,
+        "word_index_range": [
+          8,
+          13
+        ],
+        "end": 51.16
+      },
+      {
+        "start": 51.16,
+        "word_end": 53.42,
+        "text": "Поэтому перед выпуском каждую симуляцию",
+        "source_segment_index": 12,
+        "word_index_range": [
+          0,
+          5
+        ],
+        "end": 53.42
+      },
+      {
+        "start": 53.42,
+        "word_end": 54.9,
+        "text": "проверяют непосредственно люди.",
+        "source_segment_index": 12,
+        "word_index_range": [
+          5,
+          8
+        ],
+        "end": 55.28
+      },
+      {
+        "start": 55.28,
+        "word_end": 57.52,
+        "text": "Заходят внутрь, смотрят, как всё работает",
+        "source_segment_index": 13,
+        "word_index_range": [
+          0,
+          6
+        ],
+        "end": 57.52
+      },
+      {
+        "start": 57.52,
+        "word_end": 58.84,
+        "text": "и составляют отчёт.",
+        "source_segment_index": 13,
+        "word_index_range": [
+          6,
+          9
+        ],
+        "end": 58.84
+      },
+      {
+        "start": 58.84,
+        "word_end": 61.1,
+        "text": "Звучит на самом деле интереснее,",
+        "source_segment_index": 14,
+        "word_index_range": [
+          0,
+          5
+        ],
+        "end": 61.12
+      },
+      {
+        "start": 61.12,
+        "word_end": 63.2,
+        "text": "чем весь день сидеть за таблицами.",
+        "source_segment_index": 14,
+        "word_index_range": [
+          5,
+          11
+        ],
+        "end": 63.36
+      },
+      {
+        "start": 63.36,
+        "word_end": 66.94,
+        "text": "Хотя отчёты, наверное, тоже нужно будет писать.",
+        "source_segment_index": 15,
+        "word_index_range": [
+          0,
+          7
+        ],
+        "end": 67.02
+      },
+      {
+        "start": 67.02,
+        "word_end": 68.86,
+        "text": "Вакансии обещают обучение",
+        "source_segment_index": 16,
+        "word_index_range": [
+          0,
+          3
+        ],
+        "end": 68.86
+      },
+      {
+        "start": 68.86,
+        "word_end": 70.68,
+        "text": "и довольно неплохую зарплату.",
+        "source_segment_index": 16,
+        "word_index_range": [
+          3,
+          7
+        ],
+        "end": 70.76
+      },
+      {
+        "start": 70.76,
+        "word_end": 72.92,
+        "text": "Посмотрим, что расскажут мне на месте.",
+        "source_segment_index": 17,
+        "word_index_range": [
+          0,
+          6
+        ],
+        "end": 73.32
+      },
+      {
+        "start": 74.12,
+        "word_end": 76.86,
+        "text": "Так, Центральный проспект, 18,",
+        "source_segment_index": 18,
+        "word_index_range": [
+          0,
+          4
+        ],
+        "end": 77.26
+      },
+      {
+        "start": 77.3,
+        "word_end": 77.9,
+        "text": "где-то здесь.",
+        "source_segment_index": 18,
+        "word_index_range": [
+          4,
+          7
+        ],
+        "end": 78.6
+      }
+    ],
+    "cue_resource": "res://scripts/intro/prologue_cues.gd",
+    "timeline_seconds": "All ASR and caption times are seconds relative to decoded original audio; mastered narration starts at the same 0.0 without stretching or internal cuts."
+  }
+}

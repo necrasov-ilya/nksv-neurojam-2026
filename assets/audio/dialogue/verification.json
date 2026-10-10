@@ -1,0 +1,776 @@
+{
+  "method": "faster-whisper large-v3, CTranslate2 int8 CPU, explicit Russian, beam_size 5, no reference text or initial prompt, no VAD",
+  "lines": [
+    {
+      "id": "driver_01",
+      "file": "driver/driver_01.wav",
+      "expected": "На собеседование? Тогда пешком. Мы тут тоже ждём, когда нас позовут.",
+      "recognized": "На собеседование? Тогда пешком. Мы тут тоже ждем, когда нас позовут.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 4.62,
+          "text": "На собеседование? Тогда пешком. Мы тут тоже ждем, когда нас позовут.",
+          "avg_logprob": -0.06835090283017892,
+          "no_speech_prob": 0.0009376630187034607
+        }
+      ],
+      "input_sha256": "2ac9c5040b3ce77554f2be9d6f1793d36eb885ede43c171a08df1a105b7ec1d2"
+    },
+    {
+      "id": "driver_02",
+      "file": "driver/driver_02.wav",
+      "expected": "Четырнадцатый этаж — не автобусная остановка. Дальше на лифте, без пересадок.",
+      "recognized": "14 этаж, не автобусная остановка. Дальше на лифте, без пересадок.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 5.24,
+          "text": "14 этаж, не автобусная остановка. Дальше на лифте, без пересадок.",
+          "avg_logprob": -0.08983305918759313,
+          "no_speech_prob": 0.0005500151310116053
+        }
+      ],
+      "input_sha256": "88e6514b7e5482cc41690c92b7e361a3a36a0ddff9d615c633849698102c4dfa"
+    },
+    {
+      "id": "cafe_female_01",
+      "file": "cafe_female/cafe_female_01.wav",
+      "expected": "Нейросеть придумала мне рецепт ужина.",
+      "recognized": "Нейросеть придумала мне рецепт ужина.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.18,
+          "text": "Нейросеть придумала мне рецепт ужина.",
+          "avg_logprob": -0.03446616845972398,
+          "no_speech_prob": 0.0001453863806091249
+        }
+      ],
+      "input_sha256": "5f984b83be6126ad932e2d9ec160b2350118cc8457a18df4d6dc97e913f36b64"
+    },
+    {
+      "id": "cafe_male_01",
+      "file": "cafe_male/cafe_male_01.wav",
+      "expected": "И как?",
+      "recognized": "И как?",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 0.44,
+          "text": "И как?",
+          "avg_logprob": -0.4738989472389221,
+          "no_speech_prob": 0.4964316189289093
+        }
+      ],
+      "input_sha256": "18f130d021ba3ae5cbe6fbaf3c3ac109dd597473133c6c6da3d75cd653c53189"
+    },
+    {
+      "id": "cafe_female_02",
+      "file": "cafe_female/cafe_female_02.wav",
+      "expected": "Вкусно. Теперь прошу рецепт чистой посуды.",
+      "recognized": "Вкусно! Теперь прошу рецепт чистой посуды.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.86,
+          "text": "Вкусно! Теперь прошу рецепт чистой посуды.",
+          "avg_logprob": -0.10253557115793228,
+          "no_speech_prob": 0.00038385987863875926
+        }
+      ],
+      "input_sha256": "ae4ed603f2370294d6c0f80ffa5af382fe849bfb7c064ca7feeddd28eb522a2d"
+    },
+    {
+      "id": "cafe_male_02",
+      "file": "cafe_male/cafe_male_02.wav",
+      "expected": "Тут, боюсь, опять ручной труд.",
+      "recognized": "Тут боюсь опять ручной труд.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 1.8,
+          "text": "Тут боюсь опять ручной труд.",
+          "avg_logprob": -0.10632765479385853,
+          "no_speech_prob": 0.004524581599980593
+        }
+      ],
+      "input_sha256": "d007cfe8b6cc21f9e3c1b4aa7bfd14781b924104e2eaa6ec8cebda07647f7d88"
+    },
+    {
+      "id": "cafe_female_03",
+      "file": "cafe_female/cafe_female_03.wav",
+      "expected": "Попросила нейросеть упростить рецепт.",
+      "recognized": "попросила нейросеть упростить рецепт.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.18,
+          "text": "попросила нейросеть упростить рецепт.",
+          "avg_logprob": -0.09707491538103889,
+          "no_speech_prob": 0.0029244888573884964
+        }
+      ],
+      "input_sha256": "5e03c6abff8617ad69942f6a92d46b1ed7692a5a879fdb29a1aeeb9234c628a5"
+    },
+    {
+      "id": "cafe_male_03",
+      "file": "cafe_male/cafe_male_03.wav",
+      "expected": "Она убрала лишние ингредиенты?",
+      "recognized": "Она убрала лишние ингредиенты.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 1.8,
+          "text": "Она убрала лишние ингредиенты.",
+          "avg_logprob": -0.14175243249961308,
+          "no_speech_prob": 0.004911821335554123
+        }
+      ],
+      "input_sha256": "c79fb64df9d793b1fd12b186b69dc4889a41bb70899a0153eec8e4c58fb3b183"
+    },
+    {
+      "id": "cafe_female_04",
+      "file": "cafe_female/cafe_female_04.wav",
+      "expected": "Нет, добавила ещё две кастрюли.",
+      "recognized": "Нет, добавила еще две кастрюли.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.2,
+          "text": "Нет, добавила еще две кастрюли.",
+          "avg_logprob": -0.09439905782540639,
+          "no_speech_prob": 0.00015217557665891945
+        }
+      ],
+      "input_sha256": "786ff8deb292237acd9d6536bccf81c797c0c6fd29a71cda51a4f57116d5aae1"
+    },
+    {
+      "id": "cafe_male_04",
+      "file": "cafe_male/cafe_male_04.wav",
+      "expected": "Значит, посуду моет автор запроса.",
+      "recognized": "Значит, посуду моет автор запроса.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.56,
+          "text": "Значит, посуду моет автор запроса.",
+          "avg_logprob": -0.08568644290789962,
+          "no_speech_prob": 0.03258022293448448
+        }
+      ],
+      "input_sha256": "e6d752e2a40c2ca35eda628ab62daadaf2a9c94517a91f67c6503408a24c6454"
+    },
+    {
+      "id": "cafe_female_05",
+      "file": "cafe_female/cafe_female_05.wav",
+      "expected": "Нейросеть назвала мой ужин экспериментальным.",
+      "recognized": "Нейросеть назвала мой ужин экспериментальным.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.6,
+          "text": "Нейросеть назвала мой ужин экспериментальным.",
+          "avg_logprob": -0.035439743715174055,
+          "no_speech_prob": 0.0005123139126226306
+        }
+      ],
+      "input_sha256": "03401e20730f89f28efcf94fcde5f47734f035ba77cd1091efeb1272e8ba78b7"
+    },
+    {
+      "id": "cafe_male_05",
+      "file": "cafe_male/cafe_male_05.wav",
+      "expected": "А кто моет посуду после эксперимента?",
+      "recognized": "А кто моет посуду после эксперимента?",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.34,
+          "text": "А кто моет посуду после эксперимента?",
+          "avg_logprob": -0.02530671829978625,
+          "no_speech_prob": 0.0038747808430343866
+        }
+      ],
+      "input_sha256": "b9f3d731f4ad5f8c09d9e076df229f8cbcac9eb04fa625ce5aef30fc188ba648"
+    },
+    {
+      "id": "cafe_female_06",
+      "file": "cafe_female/cafe_female_06.wav",
+      "expected": "В рецепте об этом ни слова.",
+      "recognized": "В рецепте об этом ни слова.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 1.5,
+          "text": "В рецепте об этом ни слова.",
+          "avg_logprob": -0.04251701900592217,
+          "no_speech_prob": 0.0001436505262972787
+        }
+      ],
+      "input_sha256": "fe5ad5beccdceacb3a8fd6fcf54140ac21a3e56b4ac1a9c5091e1b8fd55d4bda"
+    },
+    {
+      "id": "cafe_male_06",
+      "file": "cafe_male/cafe_male_06.wav",
+      "expected": "Понятно. Опять мы — человеческая поддержка.",
+      "recognized": "Понятно. Опять мы человеческая поддержка.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 3.04,
+          "text": "Понятно. Опять мы человеческая поддержка.",
+          "avg_logprob": -0.09650014340877533,
+          "no_speech_prob": 0.04045116901397705
+        }
+      ],
+      "input_sha256": "eb2a2a403c84b830b9404a37c76be387ae0771a020bf6d758e32e8821345a6c3"
+    },
+    {
+      "id": "receptionist_01",
+      "file": "receptionist/receptionist_01.wav",
+      "expected": "Доброе утро. Поднимитесь на четырнадцатый этаж. Кабинет четырнадцать ноль шесть, направо по коридору.",
+      "recognized": "Доброе утро, поднимитесь на 14 этаж, кабинет 1406, направо по коридору.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 6.24,
+          "text": "Доброе утро, поднимитесь на 14 этаж, кабинет 1406, направо по коридору.",
+          "avg_logprob": -0.089805037263901,
+          "no_speech_prob": 0.0065233842469751835
+        }
+      ],
+      "input_sha256": "30366793d0bfd43450ed77539cf8a1343765e0f9232dd4ae9297d5d3c228292e"
+    },
+    {
+      "id": "terminal_question_motivation",
+      "file": "terminal/terminal_question_motivation.wav",
+      "expected": "Что для вас важнее всего в этой работе?",
+      "recognized": "Что для вас важнее всего в этой работе?",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.24,
+          "text": "Что для вас важнее всего в этой работе?",
+          "avg_logprob": -0.12444585668189186,
+          "no_speech_prob": 0.002652800176292658
+        }
+      ],
+      "input_sha256": "68d639a2088c7f408e56aaeb9d2ac8fe49f1e5f9acbaf44f881a99bbedf568b6"
+    },
+    {
+      "id": "terminal_question_verification",
+      "file": "terminal/terminal_question_verification.wav",
+      "expected": "Вы нашли ошибку, которую не удаётся повторить. Что сделаете первым?",
+      "recognized": "Вы нашли ошибку, которую не удается повторить. Что сделаете первым?",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.68,
+          "text": "Вы нашли ошибку, которую не удается повторить.",
+          "avg_logprob": -0.09709536874045928,
+          "no_speech_prob": 0.0025174682959914207
+        },
+        {
+          "start": 3.14,
+          "end": 5.74,
+          "text": "Что сделаете первым?",
+          "avg_logprob": -0.09709536874045928,
+          "no_speech_prob": 0.0025174682959914207
+        }
+      ],
+      "input_sha256": "7d35b3a4ed9ca676f08cd1bf180e4f1d1d47885c4068cd22999d3f322a885d59"
+    },
+    {
+      "id": "terminal_question_isolation",
+      "file": "terminal/terminal_question_isolation.wav",
+      "expected": "Вам подходит смена, во время которой вы работаете один?",
+      "recognized": "Вам подходит смена, во время которой вы работаете один.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 3.52,
+          "text": "Вам подходит смена, во время которой вы работаете один.",
+          "avg_logprob": -0.059725109268637264,
+          "no_speech_prob": 0.000472378364065662
+        }
+      ],
+      "input_sha256": "dbc4b18a6998e427466d311782535db5d98e8574fa6b7a4e0a0ff5488812879f"
+    },
+    {
+      "id": "terminal_question_observation",
+      "file": "terminal/terminal_question_observation.wav",
+      "expected": "Вы согласны на непрерывную запись ваших действий во время смены?",
+      "recognized": "Вы согласны на непрерывную запись ваших действий во время смены.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 3.8200000000000003,
+          "text": "Вы согласны на непрерывную запись ваших действий во время смены.",
+          "avg_logprob": -0.06756023414756941,
+          "no_speech_prob": 0.0009858893463388085
+        }
+      ],
+      "input_sha256": "63fa4afa81a42e6fa30ae9388b7419c98261e7504238cc71e2f87e82b754f44f"
+    },
+    {
+      "id": "terminal_question_confidentiality",
+      "file": "terminal/terminal_question_confidentiality.wav",
+      "expected": "О серьёзном происшествии на работе просят не говорить вне компании. Вы согласитесь?",
+      "recognized": "О серьезном происшествии на работе просят не говорить вне компании. Вы согласитесь?",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 5.0200000000000005,
+          "text": "О серьезном происшествии на работе просят не говорить вне компании. Вы согласитесь?",
+          "avg_logprob": -0.12551792621612548,
+          "no_speech_prob": 0.000457422953331843
+        }
+      ],
+      "input_sha256": "87fd2db5bacbbb5ee0e4c87c427724be8b1aa7ffa15ee4a64b292fcda46e24bf"
+    },
+    {
+      "id": "terminal_question_colleague",
+      "file": "terminal/terminal_question_colleague.wav",
+      "expected": "За дверью закрытой зоны коллега просит о помощи. Что сделаете первым?",
+      "recognized": "За дверью закрытой зоны коллега просит о помощи. Что сделаете первым?",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.96,
+          "text": "За дверью закрытой зоны коллега просит о помощи.",
+          "avg_logprob": -0.10454099445507445,
+          "no_speech_prob": 0.0006383554427884519
+        },
+        {
+          "start": 3.2800000000000002,
+          "end": 4.5,
+          "text": "Что сделаете первым?",
+          "avg_logprob": -0.10454099445507445,
+          "no_speech_prob": 0.0006383554427884519
+        }
+      ],
+      "input_sha256": "399d53178e3c39551f88cf81ac35d419b8a24e5042aedfb31320e7165bf11767"
+    },
+    {
+      "id": "terminal_question_responsibility",
+      "file": "terminal/terminal_question_responsibility.wav",
+      "expected": "Вы считаете установку опасной. Руководитель требует продолжить испытание. Что сделаете?",
+      "recognized": "Вы считаете установку опасной. Руководитель требует продолжить испытание. Что сделаете?",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 1.98,
+          "text": "Вы считаете установку опасной.",
+          "avg_logprob": -0.12065424794150938,
+          "no_speech_prob": 0.0008715876610949636
+        },
+        {
+          "start": 2.16,
+          "end": 4.62,
+          "text": "Руководитель требует продолжить испытание.",
+          "avg_logprob": -0.12065424794150938,
+          "no_speech_prob": 0.0008715876610949636
+        },
+        {
+          "start": 4.9,
+          "end": 5.66,
+          "text": "Что сделаете?",
+          "avg_logprob": -0.12065424794150938,
+          "no_speech_prob": 0.0008715876610949636
+        }
+      ],
+      "input_sha256": "90f21e7c8ed969d224a8580f9280302d24ce70deeb2e894adf2512b557215fdc"
+    },
+    {
+      "id": "terminal_question_sacrifice",
+      "file": "terminal/terminal_question_sacrifice.wav",
+      "expected": "Если остановить аварию и спасти людей можно только ценой вашей жизни, вы готовы это сделать?",
+      "recognized": "Если остановить аварию и спасти людей можно только ценой вашей жизни, вы готовы это сделать.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 5.72,
+          "text": "Если остановить аварию и спасти людей можно только ценой вашей жизни, вы готовы это сделать.",
+          "avg_logprob": -0.04918648688881486,
+          "no_speech_prob": 0.0001568904990563169
+        }
+      ],
+      "input_sha256": "5a64e8462620f452533362d993e3feba1d185a9b518b5b72520bcebe0ec65ee5"
+    },
+    {
+      "id": "terminal_question_absence",
+      "file": "terminal/terminal_question_absence.wav",
+      "expected": "Есть ли кто-нибудь, кто начнёт вас искать, если сегодня вы не вернётесь домой?",
+      "recognized": "Есть ли кто-нибудь, кто начнет вас искать, если сегодня вы не вернетесь домой?",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 4.5200000000000005,
+          "text": "Есть ли кто-нибудь, кто начнет вас искать, если сегодня вы не вернетесь домой?",
+          "avg_logprob": -0.06454657316207886,
+          "no_speech_prob": 0.0010629405733197927
+        }
+      ],
+      "input_sha256": "8eea14fa3eb0eadd4c15c42826dbaefc1668d4bcdc14ced8d47018468c8a1eb4"
+    },
+    {
+      "id": "terminal_frames",
+      "file": "terminal/terminal_frames.wav",
+      "expected": "Найдите снимок, который отличается от остальных.",
+      "recognized": "Найдите снимок, который отличается от остальных.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.92,
+          "text": "Найдите снимок, который отличается от остальных.",
+          "avg_logprob": -0.07510990956250359,
+          "no_speech_prob": 0.0009755426435731351
+        }
+      ],
+      "input_sha256": "fd5f0eb8790f58298489bcd203e8483bdd1b8d7c16ef47b72a31ce1fd9e1f918"
+    },
+    {
+      "id": "terminal_alignment",
+      "file": "terminal/terminal_alignment.wav",
+      "expected": "Совместите отпечатки.",
+      "recognized": "Совместите отпечатки.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 1.44,
+          "text": "Совместите отпечатки.",
+          "avg_logprob": -0.10643588548356836,
+          "no_speech_prob": 0.0011497719679027796
+        }
+      ],
+      "input_sha256": "9022addbe2f575a88331ce0fd9e284821ece6677804930c6c8c9b1a57e9203f0"
+    },
+    {
+      "id": "terminal_frames_retry",
+      "file": "terminal/terminal_frames_retry.wav",
+      "expected": "Это тот же снимок. Попробуйте ещё раз.",
+      "recognized": "Это тот же снимок. Попробуйте еще раз.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.56,
+          "text": "Это тот же снимок. Попробуйте еще раз.",
+          "avg_logprob": -0.09762248257175088,
+          "no_speech_prob": 0.0016715229721739888
+        }
+      ],
+      "input_sha256": "a9b085da0c2614120009997c44fc9a2ebc5e0123f28eae46cbbc28ee17c20b6c"
+    },
+    {
+      "id": "terminal_answer_recorded",
+      "file": "terminal/terminal_answer_recorded.wav",
+      "expected": "Ответ записан.",
+      "recognized": "Ответ записан.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 0.98,
+          "text": "Ответ записан.",
+          "avg_logprob": -0.08483442664146423,
+          "no_speech_prob": 0.0019020732725039124
+        }
+      ],
+      "input_sha256": "975ee1eedfd5fba310cb83cb85d5eaf53022ca4d39aa388f10e2c4da877aa432"
+    },
+    {
+      "id": "terminal_result_recorded",
+      "file": "terminal/terminal_result_recorded.wav",
+      "expected": "Результат записан.",
+      "recognized": "Результат записан.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 1.18,
+          "text": "Результат записан.",
+          "avg_logprob": -0.09097888734605578,
+          "no_speech_prob": 0.001212043804116547
+        }
+      ],
+      "input_sha256": "fe6472e100405e01d4be221bae9d6169c6594ccd75f8ba78616753d87612ad95"
+    },
+    {
+      "id": "terminal_complete",
+      "file": "terminal/terminal_complete.wav",
+      "expected": "Собеседование завершено. Ожидайте сотрудника.",
+      "recognized": "Собеседование завершено. Ожидайте сотрудника.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 1.48,
+          "text": "Собеседование завершено.",
+          "avg_logprob": -0.10250425054913476,
+          "no_speech_prob": 0.0003287126892246306
+        },
+        {
+          "start": 1.9000000000000001,
+          "end": 3.14,
+          "text": "Ожидайте сотрудника.",
+          "avg_logprob": -0.10250425054913476,
+          "no_speech_prob": 0.0003287126892246306
+        }
+      ],
+      "input_sha256": "110cadc78ca12eaa3dd567f4a755970967db8dce680da1c9022fe2f27cca66ad"
+    },
+    {
+      "id": "terminal_question_communication",
+      "file": "terminal/terminal_question_communication.wav",
+      "expected": "Связь с дежурным пропала, но тест продолжается. Ваше первое действие?",
+      "recognized": "Связь с дежурным пропала, но тест продолжается. Ваше первое действие.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.68,
+          "text": "Связь с дежурным пропала, но тест продолжается.",
+          "avg_logprob": -0.10744548666066137,
+          "no_speech_prob": 0.0002581450971774757
+        },
+        {
+          "start": 3.08,
+          "end": 4.34,
+          "text": "Ваше первое действие.",
+          "avg_logprob": -0.10744548666066137,
+          "no_speech_prob": 0.0002581450971774757
+        }
+      ],
+      "input_sha256": "55d7dbebc91d872d57cd81ada59c0b2c5e0e45ed8c980559c1e712621ef44997"
+    }
+  ],
+  "references": [
+    {
+      "id": "Водитель",
+      "file": "references/driver.wav",
+      "expected": "На собеседование? Тогда пешком. Мы тут тоже ждём, когда нас позовут. Четырнадцатый этаж — не автобусная остановка. Дальше на лифте, без пересадок.",
+      "recognized": "На собеседование? Тогда пешком. Мы тут тоже ждём, когда нас позовут. 14-й этаж, не автобусная остановка. Дальше на лифте, без пересадок.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 4.84,
+          "text": "На собеседование? Тогда пешком. Мы тут тоже ждём, когда нас позовут.",
+          "avg_logprob": -0.080868510662445,
+          "no_speech_prob": 0.001242858124896884
+        },
+        {
+          "start": 5.28,
+          "end": 10.52,
+          "text": "14-й этаж, не автобусная остановка. Дальше на лифте, без пересадок.",
+          "avg_logprob": -0.080868510662445,
+          "no_speech_prob": 0.001242858124896884
+        }
+      ]
+    },
+    {
+      "id": "Посетительница",
+      "file": "references/cafe_female.wav",
+      "expected": "Нейросеть придумала мне рецепт ужина. Вкусно. Теперь прошу рецепт чистой посуды. Попросила нейросеть упростить рецепт. Нет, добавила ещё две кастрюли.",
+      "recognized": "Нейросеть придумала мне рецепт ужина. Вкусно. Теперь прошу рецепт чистой посуды. Попросила нейросеть упростить рецепт. Нет. Добавила еще две кастрюли.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.24,
+          "text": "Нейросеть придумала мне рецепт ужина.",
+          "avg_logprob": -0.09864968485716316,
+          "no_speech_prob": 0.00019219296518713236
+        },
+        {
+          "start": 2.58,
+          "end": 3.1,
+          "text": "Вкусно.",
+          "avg_logprob": -0.09864968485716316,
+          "no_speech_prob": 0.00019219296518713236
+        },
+        {
+          "start": 3.38,
+          "end": 5.46,
+          "text": "Теперь прошу рецепт чистой посуды.",
+          "avg_logprob": -0.09864968485716316,
+          "no_speech_prob": 0.00019219296518713236
+        },
+        {
+          "start": 5.66,
+          "end": 7.82,
+          "text": "Попросила нейросеть упростить рецепт.",
+          "avg_logprob": -0.09864968485716316,
+          "no_speech_prob": 0.00019219296518713236
+        },
+        {
+          "start": 8.120000000000001,
+          "end": 8.36,
+          "text": "Нет.",
+          "avg_logprob": -0.09864968485716316,
+          "no_speech_prob": 0.00019219296518713236
+        },
+        {
+          "start": 8.68,
+          "end": 10.32,
+          "text": "Добавила еще две кастрюли.",
+          "avg_logprob": -0.09864968485716316,
+          "no_speech_prob": 0.00019219296518713236
+        }
+      ]
+    },
+    {
+      "id": "Посетитель",
+      "file": "references/cafe_male.wav",
+      "expected": "И как? Тут, боюсь, опять ручной труд. Она убрала лишние ингредиенты? Значит, посуду моет автор запроса. А кто моет посуду после эксперимента?",
+      "recognized": "И как? Тут, боюсь, опять ручной труд. Она убрала лишние ингредиенты, значит, посуду моет автор запроса. А кто моет посуду после эксперимента?",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.74,
+          "text": "И как? Тут, боюсь, опять ручной труд.",
+          "avg_logprob": -0.08311020595985547,
+          "no_speech_prob": 0.013699591159820557
+        },
+        {
+          "start": 3.12,
+          "end": 7.66,
+          "text": "Она убрала лишние ингредиенты, значит, посуду моет автор запроса.",
+          "avg_logprob": -0.08311020595985547,
+          "no_speech_prob": 0.013699591159820557
+        },
+        {
+          "start": 8.0,
+          "end": 10.34,
+          "text": "А кто моет посуду после эксперимента?",
+          "avg_logprob": -0.08311020595985547,
+          "no_speech_prob": 0.013699591159820557
+        }
+      ]
+    },
+    {
+      "id": "Администратор",
+      "file": "references/receptionist.wav",
+      "expected": "Доброе утро. Поднимитесь на четырнадцатый этаж. Кабинет четырнадцать ноль шесть, направо по коридору.",
+      "recognized": "Доброе утро. Поднимитесь на 14 этаж, кабинет 1406, направо по коридору.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 6.5,
+          "text": "Доброе утро. Поднимитесь на 14 этаж, кабинет 1406, направо по коридору.",
+          "avg_logprob": -0.10837573678262773,
+          "no_speech_prob": 0.005222479812800884
+        }
+      ]
+    },
+    {
+      "id": "Терминал",
+      "file": "references/terminal.wav",
+      "expected": "Что для вас важнее всего в этой работе? Вы нашли ошибку, которую не удаётся повторить. Что сделаете первым? Вам подходит смена, во время которой вы работаете один?",
+      "recognized": "Что для вас важнее всего в этой работе? Вы нашли ошибку, которую не удается повторить. Что сделаете первым? Вам подходит смена, во время которой вы работаете один.",
+      "word_edit_distance": 0,
+      "word_error_rate": 0.0,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.22,
+          "text": "Что для вас важнее всего в этой работе?",
+          "avg_logprob": -0.1320907124933207,
+          "no_speech_prob": 0.0009003113373182714
+        },
+        {
+          "start": 2.6,
+          "end": 5.22,
+          "text": "Вы нашли ошибку, которую не удается повторить.",
+          "avg_logprob": -0.1320907124933207,
+          "no_speech_prob": 0.0009003113373182714
+        },
+        {
+          "start": 5.78,
+          "end": 6.94,
+          "text": "Что сделаете первым?",
+          "avg_logprob": -0.1320907124933207,
+          "no_speech_prob": 0.0009003113373182714
+        },
+        {
+          "start": 7.4,
+          "end": 10.84,
+          "text": "Вам подходит смена, во время которой вы работаете один.",
+          "avg_logprob": -0.1320907124933207,
+          "no_speech_prob": 0.0009003113373182714
+        }
+      ]
+    }
+  ],
+  "text_normalization": "Case, punctuation and ё/е ignored; numeric spellings 14/14-й and 1406 normalized to source wording. No other word substitutions ignored.",
+  "summary": {
+    "verified_lines": 31,
+    "verified_references": 5,
+    "word_mismatches_after_numeric_normalization": 0,
+    "human_listening": false
+  }
+}

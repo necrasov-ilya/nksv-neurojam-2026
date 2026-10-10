@@ -11,6 +11,7 @@ config_version=5
 [application]
 
 config/name="LATENTPUNK: TEST SUBJECT 0"
+config/version="0.2.0-alpha"
 run/main_scene="res://scenes/start.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 boot_splash/bg_color=Color(0.019608, 0.027451, 0.047059, 1)
@@ -32,4 +33,5 @@ theme/custom="res://assets/fonts/interface_theme.tres"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 anti_aliasing/quality/msaa_3d=1
+textures/vram_compression/import_etc2_astc=true
 environment/defaults/default_clear_color=Color(0.075, 0.087, 0.108, 1)

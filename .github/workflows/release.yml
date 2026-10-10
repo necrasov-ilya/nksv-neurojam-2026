@@ -1,0 +1,159 @@
+name: Build alpha release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alpha-release
+  cancel-in-progress: false
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.release.outputs.publish }}
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check version and existing release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import subprocess
+          import json
+          import os
+          import urllib.error
+          import urllib.request
+
+          version = subprocess.check_output(
+              ["python3", ".github/scripts/export_release.py", "--print-version"], text=True
+          ).strip()
+          tag = "v" + version
+          repository = os.environ["GITHUB_REPOSITORY"]
+          request = urllib.request.Request(
+              f"https://api.github.com/repos/{repository}/releases/tags/{tag}",
+              headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                       "Accept": "application/vnd.github+json"},
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  release = json.load(response)
+          except urllib.error.HTTPError as error:
+              if error.code != 404:
+                  raise
+              publish = True
+          else:
+              publish = release["draft"]
+              if publish and release["target_commitish"] != os.environ["GITHUB_SHA"]:
+                  raise RuntimeError("A draft already reserves this version for another commit; bump config/version.")
+          if publish:
+              commit_request = urllib.request.Request(
+                  f"https://api.github.com/repos/{repository}/commits/{tag}",
+                  headers=request.headers,
+              )
+              try:
+                  with urllib.request.urlopen(commit_request, timeout=30) as response:
+                      tagged_commit = json.load(response)["sha"]
+              except urllib.error.HTTPError as error:
+                  if error.code != 404:
+                      raise
+              else:
+                  if tagged_commit != os.environ["GITHUB_SHA"]:
+                      raise RuntimeError("This tag already points to another commit; bump config/version.")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"version={version}\ntag={tag}\npublish={str(publish).lower()}\n")
+          print(f"{tag}: {'build and publish' if publish else 'already published; no overwrite'}")
+          PY
+
+  export:
+    needs: prepare
+    if: needs.prepare.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Godot and release templates
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/bin/godot
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-${{ runner.os }}-${{ env.GODOT_VERSION }}-release-templates-v1
+      - name: Install official Godot and templates
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          tools="$RUNNER_TEMP/godot"
+          templates="$HOME/.local/share/godot/export_templates/$GODOT_VERSION.stable"
+          mkdir -p "$tools" "$HOME/.local/bin" "$templates"
+          base="https://github.com/godotengine/godot-builds/releases/download/$GODOT_VERSION-stable"
+          curl -fL "$base/Godot_v$GODOT_VERSION-stable_linux.x86_64.zip" -o "$tools/godot.zip"
+          unzip -q "$tools/godot.zip" -d "$tools"
+          install -m 755 "$tools/Godot_v$GODOT_VERSION-stable_linux.x86_64" "$HOME/.local/bin/godot"
+          curl -fL "$base/Godot_v$GODOT_VERSION-stable_export_templates.tpz" -o "$tools/templates.tpz"
+          unzip -q -j "$tools/templates.tpz" \
+            templates/version.txt \
+            templates/linux_release.x86_64 \
+            templates/windows_release_x86_64.exe \
+            templates/macos.zip \
+            templates/web_nothreads_release.zip \
+            -d "$templates"
+      - name: Add Godot to PATH
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Export and package all platforms
+        run: python3 .github/scripts/export_release.py
+      - name: Check imported project
+        run: |
+          godot --headless --path . --script tests/smoke.gd
+          godot --headless --path . --script tests/interview.gd
+      - name: Upload release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: |
+            build/release/${{ needs.prepare.outputs.version }}/LATENTPUNK-*.zip
+            build/release/${{ needs.prepare.outputs.version }}/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    needs: [prepare, export]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets
+      - name: Publish complete prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          if state=$(gh release view "$RELEASE_TAG" --json isDraft,targetCommitish --jq '"\(.isDraft) \(.targetCommitish)"'); then
+            if [[ "$state" != "true $GITHUB_SHA" ]]; then
+              echo "::error::Release is published or belongs to another commit; refusing to overwrite."
+              exit 1
+            fi
+          else
+            gh release create "$RELEASE_TAG" \
+              --target "$GITHUB_SHA" \
+              --title "LATENTPUNK $RELEASE_VERSION" \
+              --notes-file paper/RELEASE_NOTES.md \
+              --draft --prerelease
+          fi
+          gh release upload "$RELEASE_TAG" release-assets/* --clobber
+          gh release edit "$RELEASE_TAG" --draft=false --prerelease

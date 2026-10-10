@@ -1,0 +1,1612 @@
+{
+  "model": "Fish Speech S2-Pro",
+  "generated_on": "2026-10-10",
+  "scope": "Implemented NPC dialogue and terminal interview prompts; no protagonist lines, player answers, UI controls, advertising/crossing signs or unimplemented narrative.",
+  "connected_to_game": true,
+  "lines": [
+    {
+      "id": "driver_01",
+      "speaker": "Водитель",
+      "text": "На собеседование? Тогда пешком. Мы тут тоже ждём, когда нас позовут.",
+      "source": "scripts/intro/street_extras.gd:16",
+      "category": "npc",
+      "wav": "driver/driver_01.wav",
+      "ogg": "driver/driver_01.ogg",
+      "tts_text": "На собеседование? Тогда пешком. Мы тут тоже ждём, когда нас позовут.",
+      "tts_prompt": "[male voice, relaxed, conversational] На собеседование? Тогда пешком. Мы тут тоже ждём, когда нас позовут.",
+      "seed": 4102,
+      "voice_reference": "references/driver.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 4.829751,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.152574,
+        "sha256": "2ac9c5040b3ce77554f2be9d6f1793d36eb885ede43c171a08df1a105b7ec1d2",
+        "bytes": 426028
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 4.829751,
+        "peak_amplitude": 0.793783,
+        "rms_amplitude": 0.120956,
+        "sha256": "49e9b7308635b6532fa00e6158c4fb1fe226cd4171b4cf5a0778a8dbe8ae6651",
+        "bytes": 68439
+      },
+      "processing": {
+        "filters": "volume=-2.02000000dB,afade=t=in:d=0.005,afade=t=out:st=4.81975100:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.02,
+        "source_loudness": {
+          "input_i": "-17.22",
+          "input_tp": "0.02",
+          "input_lra": "1.70",
+          "input_thresh": "-27.45",
+          "output_i": "-19.20",
+          "output_tp": "-2.25",
+          "output_lra": "0.70",
+          "output_thresh": "-29.29",
+          "normalization_type": "dynamic",
+          "target_offset": "0.20"
+        }
+      }
+    },
+    {
+      "id": "driver_02",
+      "speaker": "Водитель",
+      "text": "Четырнадцатый этаж — не автобусная остановка. Дальше на лифте, без пересадок.",
+      "source": "scripts/intro/street_extras.gd:18",
+      "category": "npc",
+      "wav": "driver/driver_02.wav",
+      "ogg": "driver/driver_02.ogg",
+      "tts_text": "Четырнадцатый этаж — не автобусная остановка. Дальше на лифте, без пересадок.",
+      "tts_prompt": "[male voice, relaxed, conversational] Четырнадцатый этаж — не автобусная остановка. Дальше на лифте, без пересадок.",
+      "seed": 4103,
+      "voice_reference": "references/driver.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 5.387029,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.134114,
+        "sha256": "88e6514b7e5482cc41690c92b7e361a3a36a0ddff9d615c633849698102c4dfa",
+        "bytes": 475180
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 5.387029,
+        "peak_amplitude": 0.786744,
+        "rms_amplitude": 0.106343,
+        "sha256": "277f99162a007ad89635dc8085dd89a0ba69dd9d5a1183a5a0055828426bbebe",
+        "bytes": 74008
+      },
+      "processing": {
+        "filters": "volume=-2.01000000dB,afade=t=in:d=0.005,afade=t=out:st=5.37702900:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.01,
+        "source_loudness": {
+          "input_i": "-18.27",
+          "input_tp": "0.01",
+          "input_lra": "3.70",
+          "input_thresh": "-28.90",
+          "output_i": "-19.80",
+          "output_tp": "-2.00",
+          "output_lra": "3.80",
+          "output_thresh": "-30.15",
+          "normalization_type": "dynamic",
+          "target_offset": "0.80"
+        }
+      }
+    },
+    {
+      "id": "cafe_female_01",
+      "speaker": "Посетительница",
+      "text": "Нейросеть придумала мне рецепт ужина.",
+      "source": "scripts/intro/street_extras.gd:22",
+      "category": "npc",
+      "wav": "cafe_female/cafe_female_01.wav",
+      "ogg": "cafe_female/cafe_female_01.ogg",
+      "tts_text": "Нейросеть придумала мне рецепт ужина.",
+      "tts_prompt": "[female voice, conversational] Нейросеть придумала мне рецепт ужина.",
+      "seed": 4204,
+      "voice_reference": "references/cafe_female.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.368435,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.258556,
+        "sha256": "5f984b83be6126ad932e2d9ec160b2350118cc8457a18df4d6dc97e913f36b64",
+        "bytes": 208940
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.368435,
+        "peak_amplitude": 0.490869,
+        "rms_amplitude": 0.127488,
+        "sha256": "44aa8a3aecd2864b5b947c1ec6e23951647667da3f79cbd190e05c47ed720bd2",
+        "bytes": 28930
+      },
+      "processing": {
+        "filters": "volume=-6.17000000dB,afade=t=in:d=0.005,afade=t=out:st=2.35843500:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -6.17,
+        "source_loudness": {
+          "input_i": "-12.83",
+          "input_tp": "0.01",
+          "input_lra": "0.00",
+          "input_thresh": "-22.83",
+          "output_i": "-19.01",
+          "output_tp": "-6.17",
+          "output_lra": "0.00",
+          "output_thresh": "-29.01",
+          "normalization_type": "linear",
+          "target_offset": "0.01"
+        }
+      }
+    },
+    {
+      "id": "cafe_male_01",
+      "speaker": "Посетитель",
+      "text": "И как?",
+      "source": "scripts/intro/street_extras.gd:23",
+      "category": "npc",
+      "wav": "cafe_male/cafe_male_01.wav",
+      "ogg": "cafe_male/cafe_male_01.ogg",
+      "tts_text": "И как?",
+      "tts_prompt": "[male voice, conversational, dry amusement] И как?",
+      "seed": 4305,
+      "voice_reference": "references/cafe_male.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 0.696599,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.17432,
+        "sha256": "18f130d021ba3ae5cbe6fbaf3c3ac109dd597473133c6c6da3d75cd653c53189",
+        "bytes": 61484
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 0.696599,
+        "peak_amplitude": 0.752261,
+        "rms_amplitude": 0.130826,
+        "sha256": "005c5dbd5522c4e136da53648eb550655279c19f40f2d580d74d425e7a7d7d2c",
+        "bytes": 11981
+      },
+      "processing": {
+        "filters": "volume=-2.55000000dB,afade=t=in:d=0.005,afade=t=out:st=0.68659900:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.55,
+        "source_loudness": {
+          "input_i": "-16.45",
+          "input_tp": "0.10",
+          "input_lra": "0.00",
+          "input_thresh": "-26.45",
+          "output_i": "-18.95",
+          "output_tp": "-2.45",
+          "output_lra": "0.00",
+          "output_thresh": "-28.95",
+          "normalization_type": "linear",
+          "target_offset": "-0.05"
+        }
+      }
+    },
+    {
+      "id": "cafe_female_02",
+      "speaker": "Посетительница",
+      "text": "Вкусно. Теперь прошу рецепт чистой посуды.",
+      "source": "scripts/intro/street_extras.gd:24",
+      "category": "npc",
+      "wav": "cafe_female/cafe_female_02.wav",
+      "ogg": "cafe_female/cafe_female_02.ogg",
+      "tts_text": "Вкусно. Теперь прошу рецепт чистой посуды.",
+      "tts_prompt": "[female voice, conversational] Вкусно. Теперь прошу рецепт чистой посуды.",
+      "seed": 4206,
+      "voice_reference": "references/cafe_female.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 3.018594,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.169796,
+        "sha256": "ae4ed603f2370294d6c0f80ffa5af382fe849bfb7c064ca7feeddd28eb522a2d",
+        "bytes": 266284
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 3.018594,
+        "peak_amplitude": 0.695415,
+        "rms_amplitude": 0.11612,
+        "sha256": "0a52d7e4e02fb7acf8e7a01796c269e1259d46d3ad83373bc402d0359ae569a6",
+        "bytes": 35622
+      },
+      "processing": {
+        "filters": "volume=-3.32000000dB,afade=t=in:d=0.005,afade=t=out:st=3.00859400:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -3.32,
+        "source_loudness": {
+          "input_i": "-15.68",
+          "input_tp": "0.01",
+          "input_lra": "0.20",
+          "input_thresh": "-25.68",
+          "output_i": "-18.71",
+          "output_tp": "-3.09",
+          "output_lra": "0.00",
+          "output_thresh": "-28.71",
+          "normalization_type": "dynamic",
+          "target_offset": "-0.29"
+        }
+      }
+    },
+    {
+      "id": "cafe_male_02",
+      "speaker": "Посетитель",
+      "text": "Тут, боюсь, опять ручной труд.",
+      "source": "scripts/intro/street_extras.gd:25",
+      "category": "npc",
+      "wav": "cafe_male/cafe_male_02.wav",
+      "ogg": "cafe_male/cafe_male_02.ogg",
+      "tts_text": "Тут, боюсь, опять ручной труд.",
+      "tts_prompt": "[male voice, conversational, dry amusement] Тут, боюсь, опять ручной труд.",
+      "seed": 4307,
+      "voice_reference": "references/cafe_male.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.089796,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.190268,
+        "sha256": "d007cfe8b6cc21f9e3c1b4aa7bfd14781b924104e2eaa6ec8cebda07647f7d88",
+        "bytes": 184364
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.089796,
+        "peak_amplitude": 0.620592,
+        "rms_amplitude": 0.117099,
+        "sha256": "5f6ce7b8ce7752cf5f4aab9fee0c042155596db573981df6df02b14d4044e1e9",
+        "bytes": 26555
+      },
+      "processing": {
+        "filters": "volume=-4.25000000dB,afade=t=in:d=0.005,afade=t=out:st=2.07979600:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -4.25,
+        "source_loudness": {
+          "input_i": "-14.75",
+          "input_tp": "0.04",
+          "input_lra": "0.00",
+          "input_thresh": "-24.75",
+          "output_i": "-18.99",
+          "output_tp": "-4.21",
+          "output_lra": "0.00",
+          "output_thresh": "-28.99",
+          "normalization_type": "linear",
+          "target_offset": "-0.01"
+        }
+      }
+    },
+    {
+      "id": "cafe_female_03",
+      "speaker": "Посетительница",
+      "text": "Попросила нейросеть упростить рецепт.",
+      "source": "scripts/intro/street_extras.gd:28",
+      "category": "npc",
+      "wav": "cafe_female/cafe_female_03.wav",
+      "ogg": "cafe_female/cafe_female_03.ogg",
+      "tts_text": "Попросила нейросеть упростить рецепт.",
+      "tts_prompt": "[female voice, conversational] Попросила нейросеть упростить рецепт.",
+      "seed": 4208,
+      "voice_reference": "references/cafe_female.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.275556,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.206987,
+        "sha256": "5e03c6abff8617ad69942f6a92d46b1ed7692a5a879fdb29a1aeeb9234c628a5",
+        "bytes": 200748
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.275556,
+        "peak_amplitude": 0.556588,
+        "rms_amplitude": 0.117027,
+        "sha256": "ee3f83779ac86a078eb2f371b4ba46c203175808d46adf65ae6e9544b8959010",
+        "bytes": 27543
+      },
+      "processing": {
+        "filters": "volume=-4.97000000dB,afade=t=in:d=0.005,afade=t=out:st=2.26555600:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -4.97,
+        "source_loudness": {
+          "input_i": "-14.03",
+          "input_tp": "0.07",
+          "input_lra": "0.00",
+          "input_thresh": "-24.03",
+          "output_i": "-19.01",
+          "output_tp": "-4.90",
+          "output_lra": "0.00",
+          "output_thresh": "-29.01",
+          "normalization_type": "linear",
+          "target_offset": "0.01"
+        }
+      }
+    },
+    {
+      "id": "cafe_male_03",
+      "speaker": "Посетитель",
+      "text": "Она убрала лишние ингредиенты?",
+      "source": "scripts/intro/street_extras.gd:29",
+      "category": "npc",
+      "wav": "cafe_male/cafe_male_03.wav",
+      "ogg": "cafe_male/cafe_male_03.ogg",
+      "tts_text": "Она убрала лишние ингредиенты?",
+      "tts_prompt": "[male voice, conversational, dry amusement] Она убрала лишние ингредиенты?",
+      "seed": 4309,
+      "voice_reference": "references/cafe_male.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.089796,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.262292,
+        "sha256": "c79fb64df9d793b1fd12b186b69dc4889a41bb70899a0153eec8e4c58fb3b183",
+        "bytes": 184364
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.089796,
+        "peak_amplitude": 0.448208,
+        "rms_amplitude": 0.118806,
+        "sha256": "334c51bd663884f45d72083952f702852bf5ac358c3c490b5e1a471093923b67",
+        "bytes": 25708
+      },
+      "processing": {
+        "filters": "volume=-6.92000000dB,afade=t=in:d=0.005,afade=t=out:st=2.07979600:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -6.92,
+        "source_loudness": {
+          "input_i": "-12.08",
+          "input_tp": "0.02",
+          "input_lra": "0.00",
+          "input_thresh": "-22.08",
+          "output_i": "-19.03",
+          "output_tp": "-6.90",
+          "output_lra": "0.00",
+          "output_thresh": "-29.03",
+          "normalization_type": "linear",
+          "target_offset": "0.03"
+        }
+      }
+    },
+    {
+      "id": "cafe_female_04",
+      "speaker": "Посетительница",
+      "text": "Нет, добавила ещё две кастрюли.",
+      "source": "scripts/intro/street_extras.gd:30",
+      "category": "npc",
+      "wav": "cafe_female/cafe_female_04.wav",
+      "ogg": "cafe_female/cafe_female_04.ogg",
+      "tts_text": "Нет, добавила ещё две кастрюли.",
+      "tts_prompt": "[female voice, conversational] Нет, добавила ещё две кастрюли.",
+      "seed": 4210,
+      "voice_reference": "references/cafe_female.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.414875,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.169956,
+        "sha256": "786ff8deb292237acd9d6536bccf81c797c0c6fd29a71cda51a4f57116d5aae1",
+        "bytes": 213036
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.414875,
+        "peak_amplitude": 0.738764,
+        "rms_amplitude": 0.129018,
+        "sha256": "7f5779124b57c6c54170a8521b8cb7402b880625b485a80cc5f843bf252675d1",
+        "bytes": 29487
+      },
+      "processing": {
+        "filters": "volume=-2.41000000dB,afade=t=in:d=0.005,afade=t=out:st=2.40487500:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.41,
+        "source_loudness": {
+          "input_i": "-16.59",
+          "input_tp": "0.00",
+          "input_lra": "0.00",
+          "input_thresh": "-26.59",
+          "output_i": "-19.01",
+          "output_tp": "-2.40",
+          "output_lra": "0.00",
+          "output_thresh": "-29.01",
+          "normalization_type": "linear",
+          "target_offset": "0.01"
+        }
+      }
+    },
+    {
+      "id": "cafe_male_04",
+      "speaker": "Посетитель",
+      "text": "Значит, посуду моет автор запроса.",
+      "source": "scripts/intro/street_extras.gd:31",
+      "category": "npc",
+      "wav": "cafe_male/cafe_male_04.wav",
+      "ogg": "cafe_male/cafe_male_04.ogg",
+      "tts_text": "Значит, посуду моет автор запроса.",
+      "tts_prompt": "[male voice, conversational, dry amusement] Значит, посуду моет автор запроса.",
+      "seed": 4311,
+      "voice_reference": "references/cafe_male.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.739955,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.213154,
+        "sha256": "e6d752e2a40c2ca35eda628ab62daadaf2a9c94517a91f67c6503408a24c6454",
+        "bytes": 241708
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.739955,
+        "peak_amplitude": 0.563809,
+        "rms_amplitude": 0.119059,
+        "sha256": "be8fe14bd275282725b7b18d1a2a01334b3ec196611a14adaf01422364cc93ad",
+        "bytes": 34443
+      },
+      "processing": {
+        "filters": "volume=-5.07000000dB,afade=t=in:d=0.005,afade=t=out:st=2.72995500:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -5.07,
+        "source_loudness": {
+          "input_i": "-13.93",
+          "input_tp": "-0.00",
+          "input_lra": "0.00",
+          "input_thresh": "-23.93",
+          "output_i": "-18.98",
+          "output_tp": "-5.08",
+          "output_lra": "0.00",
+          "output_thresh": "-28.98",
+          "normalization_type": "linear",
+          "target_offset": "-0.02"
+        }
+      }
+    },
+    {
+      "id": "cafe_female_05",
+      "speaker": "Посетительница",
+      "text": "Нейросеть назвала мой ужин экспериментальным.",
+      "source": "scripts/intro/street_extras.gd:34",
+      "category": "npc",
+      "wav": "cafe_female/cafe_female_05.wav",
+      "ogg": "cafe_female/cafe_female_05.ogg",
+      "tts_text": "Нейросеть назвала мой ужин экспериментальным.",
+      "tts_prompt": "[female voice, conversational] Нейросеть назвала мой ужин экспериментальным.",
+      "seed": 4212,
+      "voice_reference": "references/cafe_female.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.786395,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.2644,
+        "sha256": "03401e20730f89f28efcf94fcde5f47734f035ba77cd1091efeb1272e8ba78b7",
+        "bytes": 245804
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.786395,
+        "peak_amplitude": 0.48477,
+        "rms_amplitude": 0.128778,
+        "sha256": "cf8509a6fc931ccd33b380b6520fcc31312b94ed3a2c17b917c2fa0ef1274c6a",
+        "bytes": 31940
+      },
+      "processing": {
+        "filters": "volume=-6.29000000dB,afade=t=in:d=0.005,afade=t=out:st=2.77639500:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -6.29,
+        "source_loudness": {
+          "input_i": "-12.71",
+          "input_tp": "0.02",
+          "input_lra": "0.00",
+          "input_thresh": "-22.71",
+          "output_i": "-19.00",
+          "output_tp": "-6.27",
+          "output_lra": "0.00",
+          "output_thresh": "-29.00",
+          "normalization_type": "linear",
+          "target_offset": "0.00"
+        }
+      }
+    },
+    {
+      "id": "cafe_male_05",
+      "speaker": "Посетитель",
+      "text": "А кто моет посуду после эксперимента?",
+      "source": "scripts/intro/street_extras.gd:35",
+      "category": "npc",
+      "wav": "cafe_male/cafe_male_05.wav",
+      "ogg": "cafe_male/cafe_male_05.ogg",
+      "tts_text": "А кто моет посуду после эксперимента?",
+      "tts_prompt": "[male voice, conversational, dry amusement] А кто моет посуду после эксперимента?",
+      "seed": 4313,
+      "voice_reference": "references/cafe_male.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.600635,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.142118,
+        "sha256": "b9f3d731f4ad5f8c09d9e076df229f8cbcac9eb04fa625ce5aef30fc188ba648",
+        "bytes": 229420
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.600635,
+        "peak_amplitude": 0.774637,
+        "rms_amplitude": 0.110698,
+        "sha256": "cf6b8d8f2936b26d70fecfa288c511720a2bd9de3043100dc85f968341e8fe9e",
+        "bytes": 32543
+      },
+      "processing": {
+        "filters": "volume=-2.20000000dB,afade=t=in:d=0.005,afade=t=out:st=2.59063500:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.2,
+        "source_loudness": {
+          "input_i": "-16.80",
+          "input_tp": "-0.00",
+          "input_lra": "0.00",
+          "input_thresh": "-27.17",
+          "output_i": "-19.00",
+          "output_tp": "-2.20",
+          "output_lra": "0.00",
+          "output_thresh": "-29.37",
+          "normalization_type": "linear",
+          "target_offset": "-0.00"
+        }
+      }
+    },
+    {
+      "id": "cafe_female_06",
+      "speaker": "Посетительница",
+      "text": "В рецепте об этом ни слова.",
+      "source": "scripts/intro/street_extras.gd:36",
+      "category": "npc",
+      "wav": "cafe_female/cafe_female_06.wav",
+      "ogg": "cafe_female/cafe_female_06.ogg",
+      "tts_text": "В рецепте об этом ни слова.",
+      "tts_prompt": "[female voice, conversational] В рецепте об этом ни слова.",
+      "seed": 4214,
+      "voice_reference": "references/cafe_female.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 1.764717,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.230114,
+        "sha256": "fe5ad5beccdceacb3a8fd6fcf54140ac21a3e56b4ac1a9c5091e1b8fd55d4bda",
+        "bytes": 155692
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 1.764717,
+        "peak_amplitude": 0.511112,
+        "rms_amplitude": 0.119601,
+        "sha256": "615b54fd1e88d2b8bfd0291a4ba54c7dd8efefd71d6a39991cf0f41c6b7ed1c4",
+        "bytes": 21641
+      },
+      "processing": {
+        "filters": "volume=-5.71000000dB,afade=t=in:d=0.005,afade=t=out:st=1.75471700:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -5.71,
+        "source_loudness": {
+          "input_i": "-13.29",
+          "input_tp": "0.00",
+          "input_lra": "0.00",
+          "input_thresh": "-23.29",
+          "output_i": "-18.99",
+          "output_tp": "-5.71",
+          "output_lra": "0.00",
+          "output_thresh": "-28.99",
+          "normalization_type": "linear",
+          "target_offset": "-0.01"
+        }
+      }
+    },
+    {
+      "id": "cafe_male_06",
+      "speaker": "Посетитель",
+      "text": "Понятно. Опять мы — человеческая поддержка.",
+      "source": "scripts/intro/street_extras.gd:37",
+      "category": "npc",
+      "wav": "cafe_male/cafe_male_06.wav",
+      "ogg": "cafe_male/cafe_male_06.ogg",
+      "tts_text": "Понятно. Опять мы — человеческая поддержка.",
+      "tts_prompt": "[male voice, conversational, dry amusement] Понятно. Опять мы — человеческая поддержка.",
+      "seed": 4315,
+      "voice_reference": "references/cafe_male.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 3.250794,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.126653,
+        "sha256": "eb2a2a403c84b830b9404a37c76be387ae0771a020bf6d758e32e8821345a6c3",
+        "bytes": 286764
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 3.250794,
+        "peak_amplitude": 0.783891,
+        "rms_amplitude": 0.09995,
+        "sha256": "36ca0c382c073421251cb8ed67e8de56028873b24e30a2c4d7cbfe4c52bcdfab",
+        "bytes": 39573
+      },
+      "processing": {
+        "filters": "volume=-2.08000000dB,afade=t=in:d=0.005,afade=t=out:st=3.24079400:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.08,
+        "source_loudness": {
+          "input_i": "-18.11",
+          "input_tp": "0.08",
+          "input_lra": "0.70",
+          "input_thresh": "-28.55",
+          "output_i": "-19.16",
+          "output_tp": "-2.00",
+          "output_lra": "0.00",
+          "output_thresh": "-29.45",
+          "normalization_type": "dynamic",
+          "target_offset": "0.16"
+        }
+      }
+    },
+    {
+      "id": "receptionist_01",
+      "speaker": "Администратор",
+      "text": "Доброе утро. Поднимитесь на четырнадцатый этаж. Кабинет 1406, направо по коридору.",
+      "source": "scripts/intro/intro.gd:15",
+      "category": "npc",
+      "wav": "receptionist/receptionist_01.wav",
+      "ogg": "receptionist/receptionist_01.ogg",
+      "tts_text": "Доброе утро. Поднимитесь на четырнадцатый этаж. Кабинет четырнадцать ноль шесть, направо по коридору.",
+      "tts_prompt": "[female voice, calm, professional] Доброе утро. Поднимитесь на четырнадцатый этаж. Кабинет четырнадцать ноль шесть, направо по коридору.",
+      "seed": 4416,
+      "voice_reference": "references/receptionist.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 6.362268,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.151554,
+        "sha256": "30366793d0bfd43450ed77539cf8a1343765e0f9232dd4ae9297d5d3c228292e",
+        "bytes": 561196
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 6.362268,
+        "peak_amplitude": 0.798824,
+        "rms_amplitude": 0.120841,
+        "sha256": "7b0dcf2a9cc666e9c676fd9f71354c01d4fbe082761e1b7aefba1aa3e8a71d2c",
+        "bytes": 70560
+      },
+      "processing": {
+        "filters": "volume=-2.01000000dB,afade=t=in:d=0.005,afade=t=out:st=6.35226800:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.01,
+        "source_loudness": {
+          "input_i": "-17.66",
+          "input_tp": "0.01",
+          "input_lra": "4.30",
+          "input_thresh": "-27.90",
+          "output_i": "-20.25",
+          "output_tp": "-3.36",
+          "output_lra": "3.40",
+          "output_thresh": "-30.61",
+          "normalization_type": "dynamic",
+          "target_offset": "1.25"
+        }
+      }
+    },
+    {
+      "id": "terminal_question_motivation",
+      "speaker": "Терминал",
+      "text": "Что для вас важнее всего в этой работе?",
+      "source": "scripts/interview/questions.gd:7",
+      "category": "terminal",
+      "wav": "terminal/terminal_question_motivation.wav",
+      "ogg": "terminal/terminal_question_motivation.ogg",
+      "tts_text": "Что для вас важнее всего в этой работе?",
+      "tts_prompt": "[calm, neutral, measured delivery] Что для вас важнее всего в этой работе?",
+      "seed": 4517,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.414875,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.163524,
+        "sha256": "68d639a2088c7f408e56aaeb9d2ac8fe49f1e5f9acbaf44f881a99bbedf568b6",
+        "bytes": 213036
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.414875,
+        "peak_amplitude": 0.692249,
+        "rms_amplitude": 0.113866,
+        "sha256": "3b226baff5b67f47fc9b5dde731e085ee7ac60a1cd5efd8f319030cffa41256f",
+        "bytes": 28929
+      },
+      "processing": {
+        "filters": "volume=-3.16000000dB,afade=t=in:d=0.005,afade=t=out:st=2.40487500:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -3.16,
+        "source_loudness": {
+          "input_i": "-15.84",
+          "input_tp": "0.05",
+          "input_lra": "0.00",
+          "input_thresh": "-26.04",
+          "output_i": "-19.01",
+          "output_tp": "-3.11",
+          "output_lra": "0.00",
+          "output_thresh": "-29.21",
+          "normalization_type": "linear",
+          "target_offset": "0.01"
+        }
+      }
+    },
+    {
+      "id": "terminal_question_verification",
+      "speaker": "Терминал",
+      "text": "Вы нашли ошибку, которую не удаётся повторить. Что сделаете первым?",
+      "source": "scripts/interview/questions.gd:13",
+      "category": "terminal",
+      "wav": "terminal/terminal_question_verification.wav",
+      "ogg": "terminal/terminal_question_verification.ogg",
+      "tts_text": "Вы нашли ошибку, которую не удаётся повторить. Что сделаете первым?",
+      "tts_prompt": "[calm, neutral, measured delivery] Вы нашли ошибку, которую не удаётся повторить. Что сделаете первым?",
+      "seed": 4518,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 5.897868,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.156528,
+        "sha256": "7d35b3a4ed9ca676f08cd1bf180e4f1d1d47885c4068cd22999d3f322a885d59",
+        "bytes": 520236
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 5.897868,
+        "peak_amplitude": 0.771253,
+        "rms_amplitude": 0.120815,
+        "sha256": "437391f9d6e0db0671c80ab67d5ad1d1e59cf6fd69efdfb1995c654d0c1eb736",
+        "bytes": 65630
+      },
+      "processing": {
+        "filters": "volume=-2.28000000dB,afade=t=in:d=0.005,afade=t=out:st=5.88786800:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.28,
+        "source_loudness": {
+          "input_i": "-16.72",
+          "input_tp": "0.05",
+          "input_lra": "1.50",
+          "input_thresh": "-27.09",
+          "output_i": "-19.32",
+          "output_tp": "-2.82",
+          "output_lra": "1.70",
+          "output_thresh": "-29.64",
+          "normalization_type": "dynamic",
+          "target_offset": "0.32"
+        }
+      }
+    },
+    {
+      "id": "terminal_question_isolation",
+      "speaker": "Терминал",
+      "text": "Вам подходит смена, во время которой вы работаете один?",
+      "source": "scripts/interview/questions.gd:19",
+      "category": "terminal",
+      "wav": "terminal/terminal_question_isolation.wav",
+      "ogg": "terminal/terminal_question_isolation.ogg",
+      "tts_text": "Вам подходит смена, во время которой вы работаете один?",
+      "tts_prompt": "[calm, neutral, measured delivery] Вам подходит смена, во время которой вы работаете один?",
+      "seed": 4519,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 3.715193,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.123325,
+        "sha256": "dbc4b18a6998e427466d311782535db5d98e8574fa6b7a4e0a0ff5488812879f",
+        "bytes": 327724
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 3.715193,
+        "peak_amplitude": 0.79597,
+        "rms_amplitude": 0.098227,
+        "sha256": "7d6142fdc0e533d84e4ba99b032162aae94c4ebc4f380857b86b6ab7f437734c",
+        "bytes": 42711
+      },
+      "processing": {
+        "filters": "volume=-2.00000000dB,afade=t=in:d=0.005,afade=t=out:st=3.70519300:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.0,
+        "source_loudness": {
+          "input_i": "-18.86",
+          "input_tp": "-0.00",
+          "input_lra": "1.30",
+          "input_thresh": "-29.13",
+          "output_i": "-19.46",
+          "output_tp": "-2.00",
+          "output_lra": "0.00",
+          "output_thresh": "-29.72",
+          "normalization_type": "dynamic",
+          "target_offset": "0.46"
+        }
+      }
+    },
+    {
+      "id": "terminal_question_observation",
+      "speaker": "Терминал",
+      "text": "Вы согласны на непрерывную запись ваших действий во время смены?",
+      "source": "scripts/interview/questions.gd:25",
+      "category": "terminal",
+      "wav": "terminal/terminal_question_observation.wav",
+      "ogg": "terminal/terminal_question_observation.ogg",
+      "tts_text": "Вы согласны на непрерывную запись ваших действий во время смены?",
+      "tts_prompt": "[calm, neutral, measured delivery] Вы согласны на непрерывную запись ваших действий во время смены?",
+      "seed": 4520,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 4.040272,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.168868,
+        "sha256": "63fa4afa81a42e6fa30ae9388b7419c98261e7504238cc71e2f87e82b754f44f",
+        "bytes": 356396
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 4.040272,
+        "peak_amplitude": 0.765519,
+        "rms_amplitude": 0.12925,
+        "sha256": "23b771451c9e9489c1f320e0c349599736cf32cc9ca9c5265dd0d0284f02a133",
+        "bytes": 46612
+      },
+      "processing": {
+        "filters": "volume=-2.35000000dB,afade=t=in:d=0.005,afade=t=out:st=4.03027200:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.35,
+        "source_loudness": {
+          "input_i": "-16.65",
+          "input_tp": "0.06",
+          "input_lra": "2.70",
+          "input_thresh": "-26.65",
+          "output_i": "-19.77",
+          "output_tp": "-3.78",
+          "output_lra": "2.60",
+          "output_thresh": "-29.77",
+          "normalization_type": "dynamic",
+          "target_offset": "0.77"
+        }
+      }
+    },
+    {
+      "id": "terminal_question_confidentiality",
+      "speaker": "Терминал",
+      "text": "О серьёзном происшествии на работе просят не говорить вне компании. Вы согласитесь?",
+      "source": "scripts/interview/questions.gd:31",
+      "category": "terminal",
+      "wav": "terminal/terminal_question_confidentiality.wav",
+      "ogg": "terminal/terminal_question_confidentiality.ogg",
+      "tts_text": "О серьёзном происшествии на работе просят не говорить вне компании. Вы согласитесь?",
+      "tts_prompt": "[calm, neutral, measured delivery] О серьёзном происшествии на работе просят не говорить вне компании. Вы согласитесь?",
+      "seed": 4521,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 5.34059,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.130367,
+        "sha256": "87fd2db5bacbbb5ee0e4c87c427724be8b1aa7ffa15ee4a64b292fcda46e24bf",
+        "bytes": 471084
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 5.34059,
+        "peak_amplitude": 0.795855,
+        "rms_amplitude": 0.103679,
+        "sha256": "6002c382768a6b00f9ae267c59177b0a524cad01573b7ac5bf999da1d0d30428",
+        "bytes": 62164
+      },
+      "processing": {
+        "filters": "volume=-2.00000000dB,afade=t=in:d=0.005,afade=t=out:st=5.33059000:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.0,
+        "source_loudness": {
+          "input_i": "-18.50",
+          "input_tp": "0.00",
+          "input_lra": "3.60",
+          "input_thresh": "-28.83",
+          "output_i": "-20.16",
+          "output_tp": "-2.44",
+          "output_lra": "2.90",
+          "output_thresh": "-30.50",
+          "normalization_type": "dynamic",
+          "target_offset": "1.16"
+        }
+      }
+    },
+    {
+      "id": "terminal_question_communication",
+      "speaker": "Терминал",
+      "text": "Связь с дежурным пропала, но тест продолжается. Ваше первое действие?",
+      "source": "scripts/interview/questions.gd:37",
+      "category": "terminal",
+      "wav": "terminal/terminal_question_communication.wav",
+      "ogg": "terminal/terminal_question_communication.ogg",
+      "tts_text": "Связь с дежурным пропала, но тест продолжается. Ваше первое действие?",
+      "tts_prompt": "[calm, neutral, measured delivery] Связь с дежурным пропала, но тест продолжается. Ваше первое действие?",
+      "seed": 4622,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 4.551111,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.153036,
+        "sha256": "55d7dbebc91d872d57cd81ada59c0b2c5e0e45ed8c980559c1e712621ef44997",
+        "bytes": 401452
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 4.551111,
+        "peak_amplitude": 0.77596,
+        "rms_amplitude": 0.118083,
+        "sha256": "60d844422775bc06dd5012c859447188dff1b275775a66d4a977c188e5eb77ba",
+        "bytes": 52462
+      },
+      "processing": {
+        "filters": "volume=-2.27000000dB,afade=t=in:d=0.005,afade=t=out:st=4.54111100:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.27,
+        "source_loudness": {
+          "input_i": "-16.73",
+          "input_tp": "0.01",
+          "input_lra": "0.80",
+          "input_thresh": "-27.22",
+          "output_i": "-18.46",
+          "output_tp": "-2.00",
+          "output_lra": "0.10",
+          "output_thresh": "-28.87",
+          "normalization_type": "dynamic",
+          "target_offset": "-0.54"
+        }
+      }
+    },
+    {
+      "id": "terminal_question_colleague",
+      "speaker": "Терминал",
+      "text": "За дверью закрытой зоны коллега просит о помощи. Что сделаете первым?",
+      "source": "scripts/interview/questions.gd:43",
+      "category": "terminal",
+      "wav": "terminal/terminal_question_colleague.wav",
+      "ogg": "terminal/terminal_question_colleague.ogg",
+      "tts_text": "За дверью закрытой зоны коллега просит о помощи. Что сделаете первым?",
+      "tts_prompt": "[calm, neutral, measured delivery] За дверью закрытой зоны коллега просит о помощи. Что сделаете первым?",
+      "seed": 4523,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 4.690431,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.134397,
+        "sha256": "399d53178e3c39551f88cf81ac35d419b8a24e5042aedfb31320e7165bf11767",
+        "bytes": 413740
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 4.690431,
+        "peak_amplitude": 0.787412,
+        "rms_amplitude": 0.106822,
+        "sha256": "20cfb4446dd74877f062059729fd983a259e2af7e71a1aae1570d26952b58ce4",
+        "bytes": 54473
+      },
+      "processing": {
+        "filters": "volume=-2.01000000dB,afade=t=in:d=0.005,afade=t=out:st=4.68043100:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.01,
+        "source_loudness": {
+          "input_i": "-18.94",
+          "input_tp": "0.01",
+          "input_lra": "4.80",
+          "input_thresh": "-29.24",
+          "output_i": "-19.65",
+          "output_tp": "-2.00",
+          "output_lra": "2.60",
+          "output_thresh": "-30.05",
+          "normalization_type": "dynamic",
+          "target_offset": "0.65"
+        }
+      }
+    },
+    {
+      "id": "terminal_question_responsibility",
+      "speaker": "Терминал",
+      "text": "Вы считаете установку опасной. Руководитель требует продолжить испытание. Что сделаете?",
+      "source": "scripts/interview/questions.gd:49",
+      "category": "terminal",
+      "wav": "terminal/terminal_question_responsibility.wav",
+      "ogg": "terminal/terminal_question_responsibility.ogg",
+      "tts_text": "Вы считаете установку опасной. Руководитель требует продолжить испытание. Что сделаете?",
+      "tts_prompt": "[calm, neutral, measured delivery] Вы считаете установку опасной. Руководитель требует продолжить испытание. Что сделаете?",
+      "seed": 4524,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 5.897868,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.11824,
+        "sha256": "90f21e7c8ed969d224a8580f9280302d24ce70deeb2e894adf2512b557215fdc",
+        "bytes": 520236
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 5.897868,
+        "peak_amplitude": 0.785451,
+        "rms_amplitude": 0.093641,
+        "sha256": "f060377ad40e26cb8e2c7463ef64155905d6ed2d677c5bde7fa49bc01b5eecfe",
+        "bytes": 66810
+      },
+      "processing": {
+        "filters": "volume=-2.03000000dB,afade=t=in:d=0.005,afade=t=out:st=5.88786800:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.03,
+        "source_loudness": {
+          "input_i": "-19.37",
+          "input_tp": "0.03",
+          "input_lra": "2.60",
+          "input_thresh": "-29.41",
+          "output_i": "-20.07",
+          "output_tp": "-2.00",
+          "output_lra": "1.40",
+          "output_thresh": "-30.07",
+          "normalization_type": "dynamic",
+          "target_offset": "1.07"
+        }
+      }
+    },
+    {
+      "id": "terminal_question_sacrifice",
+      "speaker": "Терминал",
+      "text": "Если остановить аварию и спасти людей можно только ценой вашей жизни, вы готовы это сделать?",
+      "source": "scripts/interview/questions.gd:55",
+      "category": "terminal",
+      "wav": "terminal/terminal_question_sacrifice.wav",
+      "ogg": "terminal/terminal_question_sacrifice.ogg",
+      "tts_text": "Если остановить аварию и спасти людей можно только ценой вашей жизни, вы готовы это сделать?",
+      "tts_prompt": "[calm, neutral, measured delivery] Если остановить аварию и спасти людей можно только ценой вашей жизни, вы готовы это сделать?",
+      "seed": 4525,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 5.990748,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.120151,
+        "sha256": "5a64e8462620f452533362d993e3feba1d185a9b518b5b72520bcebe0ec65ee5",
+        "bytes": 528428
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 5.990748,
+        "peak_amplitude": 0.804707,
+        "rms_amplitude": 0.095613,
+        "sha256": "f6531505062c0bfdd00577a1ac4567299961076f431dd2a14ae30323d2f83d84",
+        "bytes": 67685
+      },
+      "processing": {
+        "filters": "volume=-2.00000000dB,afade=t=in:d=0.005,afade=t=out:st=5.98074800:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.0,
+        "source_loudness": {
+          "input_i": "-19.70",
+          "input_tp": "0.00",
+          "input_lra": "5.70",
+          "input_thresh": "-30.05",
+          "output_i": "-20.59",
+          "output_tp": "-2.00",
+          "output_lra": "2.60",
+          "output_thresh": "-30.81",
+          "normalization_type": "dynamic",
+          "target_offset": "1.59"
+        }
+      }
+    },
+    {
+      "id": "terminal_question_absence",
+      "speaker": "Терминал",
+      "text": "Есть ли кто-нибудь, кто начнёт вас искать, если сегодня вы не вернётесь домой?",
+      "source": "scripts/interview/questions.gd:61",
+      "category": "terminal",
+      "wav": "terminal/terminal_question_absence.wav",
+      "ogg": "terminal/terminal_question_absence.ogg",
+      "tts_text": "Есть ли кто-нибудь, кто начнёт вас искать, если сегодня вы не вернётесь домой?",
+      "tts_prompt": "[calm, neutral, measured delivery] Есть ли кто-нибудь, кто начнёт вас искать, если сегодня вы не вернётесь домой?",
+      "seed": 4526,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 4.736871,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.149889,
+        "sha256": "8eea14fa3eb0eadd4c15c42826dbaefc1668d4bcdc14ced8d47018468c8a1eb4",
+        "bytes": 417836
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 4.736871,
+        "peak_amplitude": 0.797185,
+        "rms_amplitude": 0.119137,
+        "sha256": "37a5ce30de2a211ff119cd9f2f5c802e16ebba15fca47103bad3f32252d2ab5e",
+        "bytes": 54416
+      },
+      "processing": {
+        "filters": "volume=-2.02000000dB,afade=t=in:d=0.005,afade=t=out:st=4.72687100:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.02,
+        "source_loudness": {
+          "input_i": "-17.69",
+          "input_tp": "0.02",
+          "input_lra": "2.30",
+          "input_thresh": "-27.69",
+          "output_i": "-19.47",
+          "output_tp": "-2.38",
+          "output_lra": "0.50",
+          "output_thresh": "-29.47",
+          "normalization_type": "dynamic",
+          "target_offset": "0.47"
+        }
+      }
+    },
+    {
+      "id": "terminal_frames",
+      "speaker": "Терминал",
+      "text": "Найдите снимок, который отличается от остальных.",
+      "source": "scripts/interview/assessment.gd:113",
+      "category": "terminal",
+      "wav": "terminal/terminal_frames.wav",
+      "ogg": "terminal/terminal_frames.ogg",
+      "tts_text": "Найдите снимок, который отличается от остальных.",
+      "tts_prompt": "[calm, neutral, measured delivery] Найдите снимок, который отличается от остальных.",
+      "seed": 4527,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 3.157914,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.19089,
+        "sha256": "fd5f0eb8790f58298489bcd203e8483bdd1b8d7c16ef47b72a31ce1fd9e1f918",
+        "bytes": 278572
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 3.157914,
+        "peak_amplitude": 0.646402,
+        "rms_amplitude": 0.123186,
+        "sha256": "2599dd66188fa61d8841f3167f8389e97997339734798475bf3947d731d823d1",
+        "bytes": 38119
+      },
+      "processing": {
+        "filters": "volume=-3.82000000dB,afade=t=in:d=0.005,afade=t=out:st=3.14791400:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -3.82,
+        "source_loudness": {
+          "input_i": "-15.18",
+          "input_tp": "0.02",
+          "input_lra": "1.00",
+          "input_thresh": "-25.18",
+          "output_i": "-19.27",
+          "output_tp": "-4.35",
+          "output_lra": "0.00",
+          "output_thresh": "-29.27",
+          "normalization_type": "dynamic",
+          "target_offset": "0.27"
+        }
+      }
+    },
+    {
+      "id": "terminal_alignment",
+      "speaker": "Терминал",
+      "text": "Совместите отпечатки.",
+      "source": "scripts/interview/assessment.gd:147",
+      "category": "terminal",
+      "wav": "terminal/terminal_alignment.wav",
+      "ogg": "terminal/terminal_alignment.ogg",
+      "tts_text": "Совместите отпечатки.",
+      "tts_prompt": "[calm, neutral, measured delivery] Совместите отпечатки.",
+      "seed": 4528,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 1.625397,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.143182,
+        "sha256": "9022addbe2f575a88331ce0fd9e284821ece6677804930c6c8c9b1a57e9203f0",
+        "bytes": 143404
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 1.625397,
+        "peak_amplitude": 0.759326,
+        "rms_amplitude": 0.109195,
+        "sha256": "b226c57a6c30fd20a36fdd6a64779b357a6d77e385f87c36e15eab829b768d05",
+        "bytes": 21146
+      },
+      "processing": {
+        "filters": "volume=-2.37000000dB,afade=t=in:d=0.005,afade=t=out:st=1.61539700:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.37,
+        "source_loudness": {
+          "input_i": "-16.63",
+          "input_tp": "0.04",
+          "input_lra": "0.00",
+          "input_thresh": "-26.98",
+          "output_i": "-19.01",
+          "output_tp": "-2.33",
+          "output_lra": "0.00",
+          "output_thresh": "-29.35",
+          "normalization_type": "linear",
+          "target_offset": "0.01"
+        }
+      }
+    },
+    {
+      "id": "terminal_frames_retry",
+      "speaker": "Терминал",
+      "text": "Это тот же снимок. Попробуйте ещё раз.",
+      "source": "scripts/interview/assessment.gd:224",
+      "category": "terminal",
+      "wav": "terminal/terminal_frames_retry.wav",
+      "ogg": "terminal/terminal_frames_retry.ogg",
+      "tts_text": "Это тот же снимок. Попробуйте ещё раз.",
+      "tts_prompt": "[calm, neutral, measured delivery] Это тот же снимок. Попробуйте ещё раз.",
+      "seed": 4529,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.786395,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.123075,
+        "sha256": "a9b085da0c2614120009997c44fc9a2ebc5e0123f28eae46cbbc28ee17c20b6c",
+        "bytes": 245804
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 2.786395,
+        "peak_amplitude": 0.791757,
+        "rms_amplitude": 0.097868,
+        "sha256": "518502f74e91fff9f2ca25d05cdfaf7921d2ec5cc41f1247c3837daf548dd164",
+        "bytes": 33858
+      },
+      "processing": {
+        "filters": "volume=-2.00000000dB,afade=t=in:d=0.005,afade=t=out:st=2.77639500:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.0,
+        "source_loudness": {
+          "input_i": "-18.53",
+          "input_tp": "0.00",
+          "input_lra": "0.00",
+          "input_thresh": "-28.90",
+          "output_i": "-20.53",
+          "output_tp": "-2.00",
+          "output_lra": "0.00",
+          "output_thresh": "-30.90",
+          "normalization_type": "linear",
+          "target_offset": "1.53"
+        }
+      }
+    },
+    {
+      "id": "terminal_answer_recorded",
+      "speaker": "Терминал",
+      "text": "Ответ записан.",
+      "source": "scripts/interview/interview.gd:245",
+      "category": "terminal",
+      "wav": "terminal/terminal_answer_recorded.wav",
+      "ogg": "terminal/terminal_answer_recorded.ogg",
+      "tts_text": "Ответ записан.",
+      "tts_prompt": "[calm, neutral, measured delivery] Ответ записан.",
+      "seed": 4530,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 1.160998,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.13161,
+        "sha256": "975ee1eedfd5fba310cb83cb85d5eaf53022ca4d39aa388f10e2c4da877aa432",
+        "bytes": 102444
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 1.160998,
+        "peak_amplitude": 0.779129,
+        "rms_amplitude": 0.104127,
+        "sha256": "8f9b3c8abe18778e95dd59c538d0b462efeff03dc616c8074ba777538795f262",
+        "bytes": 16547
+      },
+      "processing": {
+        "filters": "volume=-2.03000000dB,afade=t=in:d=0.005,afade=t=out:st=1.15099800:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.03,
+        "source_loudness": {
+          "input_i": "-17.75",
+          "input_tp": "0.03",
+          "input_lra": "0.00",
+          "input_thresh": "-27.75",
+          "output_i": "-19.77",
+          "output_tp": "-2.00",
+          "output_lra": "0.00",
+          "output_thresh": "-29.77",
+          "normalization_type": "linear",
+          "target_offset": "0.77"
+        }
+      }
+    },
+    {
+      "id": "terminal_result_recorded",
+      "speaker": "Терминал",
+      "text": "Результат записан.",
+      "source": "scripts/interview/interview.gd:340",
+      "category": "terminal",
+      "wav": "terminal/terminal_result_recorded.wav",
+      "ogg": "terminal/terminal_result_recorded.ogg",
+      "tts_text": "Результат записан.",
+      "tts_prompt": "[calm, neutral, measured delivery] Результат записан.",
+      "seed": 4531,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 1.207438,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.148074,
+        "sha256": "fe6472e100405e01d4be221bae9d6169c6594ccd75f8ba78616753d87612ad95",
+        "bytes": 106540
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 1.207438,
+        "peak_amplitude": 0.798053,
+        "rms_amplitude": 0.117831,
+        "sha256": "20e270ea209457362cf1134b62aba9de1d17dc3be8704a0f1433758490f85792",
+        "bytes": 16798
+      },
+      "processing": {
+        "filters": "volume=-2.02000000dB,afade=t=in:d=0.005,afade=t=out:st=1.19743800:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.02,
+        "source_loudness": {
+          "input_i": "-17.54",
+          "input_tp": "0.02",
+          "input_lra": "0.00",
+          "input_thresh": "-27.54",
+          "output_i": "-19.57",
+          "output_tp": "-2.00",
+          "output_lra": "0.00",
+          "output_thresh": "-29.57",
+          "normalization_type": "linear",
+          "target_offset": "0.57"
+        }
+      }
+    },
+    {
+      "id": "terminal_complete",
+      "speaker": "Терминал",
+      "text": "Собеседование завершено. Ожидайте сотрудника.",
+      "source": "scripts/interview/interview.gd:394",
+      "category": "terminal",
+      "wav": "terminal/terminal_complete.wav",
+      "ogg": "terminal/terminal_complete.ogg",
+      "tts_text": "Собеседование завершено. Ожидайте сотрудника.",
+      "tts_prompt": "[calm, neutral, measured delivery] Собеседование завершено. Ожидайте сотрудника.",
+      "seed": 4532,
+      "voice_reference": "references/terminal.wav",
+      "raw": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 3.343673,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.147677,
+        "sha256": "110cadc78ca12eaa3dd567f4a755970967db8dce680da1c9022fe2f27cca66ad",
+        "bytes": 294956
+      },
+      "processed": {
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 3.343673,
+        "peak_amplitude": 0.758023,
+        "rms_amplitude": 0.113354,
+        "sha256": "fbf912ea7915ecdd3f157df09c7b4ee8b383f2d5af336ce09daac919f9595055",
+        "bytes": 39811
+      },
+      "processing": {
+        "filters": "volume=-2.31000000dB,afade=t=in:d=0.005,afade=t=out:st=3.33367300:d=0.010",
+        "encoding": "Vorbis q5 mono 44100 Hz",
+        "gain_db": -2.31,
+        "source_loudness": {
+          "input_i": "-16.69",
+          "input_tp": "-0.00",
+          "input_lra": "1.20",
+          "input_thresh": "-27.28",
+          "output_i": "-18.70",
+          "output_tp": "-2.39",
+          "output_lra": "0.00",
+          "output_thresh": "-29.28",
+          "normalization_type": "dynamic",
+          "target_offset": "-0.30"
+        }
+      }
+    }
+  ],
+  "generation": {
+    "endpoint": "http://127.0.0.1:8003",
+    "api_name": "/partial",
+    "settings": {
+      "max_new_tokens": 1024,
+      "chunk_length": 300,
+      "top_p": 0.8,
+      "repetition_penalty": 1.1,
+      "temperature": 0.7,
+      "use_memory_cache": "on"
+    },
+    "decoder_precision": "bfloat16",
+    "voice_origin": "Synthetic voice references generated locally by Fish S2-Pro without third-party recordings. Reference conditioning used to keep each role consistent.",
+    "license": "Fish Audio Research License, March 7 2026",
+    "voices": {
+      "Водитель": {
+        "file": "references/driver.wav",
+        "reference_text": "На собеседование? Тогда пешком. Мы тут тоже ждём, когда нас позовут. Четырнадцатый этаж — не автобусная остановка. Дальше на лифте, без пересадок.",
+        "tts_prompt": "[male voice, relaxed, conversational] На собеседование? Тогда пешком. Мы тут тоже ждём, когда нас позовут. Четырнадцатый этаж — не автобусная остановка. Дальше на лифте, без пересадок.",
+        "seed": 4101,
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 10.681179,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.127068,
+        "sha256": "7c50cb5c5c52c2fa4d3823c3a66b298c950b281ed6b3bcf2a3c263e61a85ad7e",
+        "bytes": 942124
+      },
+      "Посетительница": {
+        "file": "references/cafe_female.wav",
+        "reference_text": "Нейросеть придумала мне рецепт ужина. Вкусно. Теперь прошу рецепт чистой посуды. Попросила нейросеть упростить рецепт. Нет, добавила ещё две кастрюли.",
+        "tts_prompt": "[female voice, conversational] Нейросеть придумала мне рецепт ужина. Вкусно. Теперь прошу рецепт чистой посуды. Попросила нейросеть упростить рецепт. Нет, добавила ещё две кастрюли.",
+        "seed": 4201,
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 10.49542,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.169608,
+        "sha256": "d1aab90456868f0234c2dd12de2ade4439e2d49f3a0e5b17fbc8aa9889201f6e",
+        "bytes": 925740
+      },
+      "Посетитель": {
+        "file": "references/cafe_male.wav",
+        "reference_text": "И как? Тут, боюсь, опять ручной труд. Она убрала лишние ингредиенты? Значит, посуду моет автор запроса. А кто моет посуду после эксперимента?",
+        "tts_prompt": "[male voice, conversational, dry amusement] И как? Тут, боюсь, опять ручной труд. Она убрала лишние ингредиенты? Значит, посуду моет автор запроса. А кто моет посуду после эксперимента?",
+        "seed": 4301,
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 10.541859,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.110799,
+        "sha256": "5e6dc68ef8d250edfe22ae40af8454607a6d48e8e8b9e3d369406bc6d5e2ac7f",
+        "bytes": 929836
+      },
+      "Администратор": {
+        "file": "references/receptionist.wav",
+        "reference_text": "Доброе утро. Поднимитесь на четырнадцатый этаж. Кабинет четырнадцать ноль шесть, направо по коридору.",
+        "tts_prompt": "[female voice, calm, professional] Доброе утро. Поднимитесь на четырнадцатый этаж. Кабинет четырнадцать ноль шесть, направо по коридору.",
+        "seed": 4401,
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 6.640907,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.135934,
+        "sha256": "04493f99f7101b101f37d3d499fb870eedf13ea551f821e344fd1fa35fb04838",
+        "bytes": 585772
+      },
+      "Терминал": {
+        "file": "references/terminal.wav",
+        "reference_text": "Что для вас важнее всего в этой работе? Вы нашли ошибку, которую не удаётся повторить. Что сделаете первым? Вам подходит смена, во время которой вы работаете один?",
+        "tts_prompt": "[calm, neutral, measured delivery] Что для вас важнее всего в этой работе? Вы нашли ошибку, которую не удаётся повторить. Что сделаете первым? Вам подходит смена, во время которой вы работаете один?",
+        "seed": 4501,
+        "sample_rate": 44100,
+        "channels": 1,
+        "duration_seconds": 11.052698,
+        "peak_amplitude": 0.999969,
+        "rms_amplitude": 0.099023,
+        "sha256": "9efacf5a9accd6e102c0c577c4a2778fdebe7a8d68c8635b22396c65ccbdf9ba",
+        "bytes": 974892
+      }
+    }
+  },
+  "verification": {
+    "full_decode": "All reference WAV, line WAV and line Ogg files fully decoded with ffmpeg -xerror; mono 44100 Hz; finite non-silent signal.",
+    "human_listening": false,
+    "asr_report": "verification.json",
+    "asr_method": "faster-whisper large-v3, CTranslate2 int8 CPU, explicit Russian, beam_size 5, no reference text or initial prompt, no VAD",
+    "verified_lines": 31,
+    "verified_references": 5,
+    "word_mismatches_after_numeric_normalization": 0,
+    "godot_import": "Godot 4.7.2 --headless --editor --import --quit exited 0",
+    "godot_resource_smoke": "62 AudioStream resources loaded; lengths matched manifest within 50 ms",
+    "regenerated_line": {
+      "id": "terminal_question_communication",
+      "reason": "First generation independently recognized as plural instead of singular; regenerated with seed 4622 and passed exact normalized word comparison."
+    },
+    "corrected_resource_smoke": "Final corrected terminal_question_communication WAV and Ogg reimported and loaded in Godot 4.7.2; lengths match final manifest."
+  },
+  "integration": {
+    "catalog": "scripts/core/dialogue_voices.gd",
+    "npc_scenes": [
+      "scripts/intro/intro.gd",
+      "scripts/intro/street_extras.gd"
+    ],
+    "terminal_scenes": [
+      "scripts/interview/interview.gd",
+      "scripts/interview/assessment.gd"
+    ],
+    "playback": "AudioStreamPlayer STREAM; Ogg only",
+    "mute": "volume only; timelines continue",
+    "suspend": "pause and focus loss freeze playback and dialogue clocks",
+    "timing": "automatic transitions retain original minimum and hold until clip duration + 0.15s; manual skip stops old speech",
+    "browser_verification": "Rendered actual scenes from fresh Web export via temporary scene bridge: driver/cafe/reception voices, receptionist E skip, terminal pause/resume and mute position advancement, both assessments with wrong-frame retry, ending and return to office. Temporary bridge removed after verification.",
+    "human_listening": false,
+    "final_release": "build/web/index.html rebuilt after removing temporary smoke files; regular start menu and Fish attribution rendered in browser, temporary bridge absent."
+  }
+}
