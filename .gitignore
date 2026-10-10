@@ -6,3 +6,6 @@ games/**/node_modules/
 games/**/dist/
 games/**/.vite/
 
+media/devlog-01/latentpunk-devlog-01.mp4
+media/devlog-01/gameplay.mp4
+media/devlog-01/details.mp4
