@@ -5,17 +5,19 @@
   let active = null;
   const style = document.createElement('style');
   style.textContent = `
-    #latent-host{position:fixed;inset:0;z-index:100000;background:#17121f;color:#eee8ff;font:15px system-ui,sans-serif;display:flex;flex-direction:column}
-    #latent-host *{box-sizing:border-box}#latent-host header{height:58px;flex:none;display:flex;align-items:center;gap:10px;padding:8px 16px;background:#241b33;border-bottom:1px solid #6b5087}
-    #latent-host .brand{font-weight:800;letter-spacing:.12em;color:#cbb5ff;font-size:12px}#latent-host .title{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-    #latent-host button{background:#47305f;color:#fff;border:1px solid #806496;border-radius:6px;padding:9px 13px;font:600 14px system-ui;cursor:pointer}
-    #latent-host button:hover{background:#68488a}#latent-host .finish{background:#744792}#latent-host iframe{border:0;width:100%;flex:1;min-height:0;background:#08070c}
-    #latent-host .pause-panel{position:absolute;inset:58px 0 0;display:none;align-items:center;justify-content:center;background:#100b18c9}
-    #latent-host .pause-panel.open{display:flex}#latent-host .plate{max-width:580px;padding:30px;background:#2d213c;border:1px solid #a37dc2;border-radius:12px;box-shadow:0 16px 70px #0008}
-    #latent-host .plate h2{font-size:28px;margin:0 0 14px}#latent-host .plate p{line-height:1.6;color:#d1c3df}#latent-host .plate button{margin:6px 6px 0 0}
-    #latent-host .status{font-size:13px;position:absolute;bottom:12px;left:12px;max-width:70%;background:#22152be8;padding:8px 12px;border-radius:6px;pointer-events:none}
-    #latent-host .done{margin:auto;max-width:680px;padding:30px;font-size:22px;line-height:1.6}#latent-host .done small{display:block;font-size:15px;color:#c9b5df}
-    @media(max-width:800px){#latent-host header{height:94px;flex-wrap:wrap;padding:8px}.title{min-width:45%}#latent-host button{font-size:12px;padding:7px}.pause-panel{top:94px!important}}
+    #latent-host{position:fixed;inset:0;z-index:100000;background:#17121f;color:#242139;font:15px system-ui,sans-serif;display:flex;flex-direction:column}
+    #latent-host *{box-sizing:border-box}#latent-host header{position:absolute;top:12px;left:50%;transform:translateX(-50%);max-width:calc(100% - 24px);display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f5f3fbf5;border-radius:32px;box-shadow:0 6px 26px #0003;z-index:4}
+    #latent-host .brand{font-weight:800;letter-spacing:.08em;color:#5b4cff;font-size:11px;white-space:nowrap}#latent-host .title{max-width:190px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    #latent-host button{background:#e9e5f5;color:#242139;border:0;border-radius:24px;padding:9px 13px;font:600 13px system-ui;cursor:pointer;white-space:nowrap}
+    #latent-host button:hover{background:#ac2954;color:white}#latent-host .finish{background:#5b4cff;color:white}#latent-host button:disabled{opacity:.5;cursor:default}#latent-host iframe{border:0;width:100%;height:100%;flex:1;min-height:0;background:#08070c}
+    #latent-host .pause-panel{position:absolute;inset:0;z-index:5;display:none;align-items:center;justify-content:center;background:#17121fb8}
+    #latent-host .pause-panel.open{display:flex}#latent-host .plate{max-width:600px;max-height:calc(100% - 40px);overflow:auto;padding:30px;background:#f5f3fb;border:8px solid #242139;border-radius:26px;box-shadow:0 16px 70px #0008}
+    #latent-host .plate h2{font-size:28px;margin:0 0 14px}#latent-host .plate p{line-height:1.6;color:#67617b}#latent-host .plate button{margin:6px 6px 0 0}
+    #latent-host .status{font-size:13px;position:absolute;bottom:12px;left:12px;max-width:70%;background:#f5f3fbe8;color:#242139;padding:8px 12px;border-radius:18px;pointer-events:none;z-index:4}
+    #latent-host .done{margin:auto;max-width:680px;padding:30px;font-size:22px;line-height:1.6;color:#eee8ff}#latent-host .done small{display:block;font-size:15px;color:#c9b5df}
+    #latent-host .tape{position:absolute;inset:0;pointer-events:none;z-index:3;opacity:.13;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");mix-blend-mode:screen;animation:latent-grain .18s steps(1) infinite}#latent-host .tape:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 3px,#0006 3px 4px)}
+    @keyframes latent-grain{0%{background-position:0 0}25%{background-position:47px 109px}50%{background-position:129px 25px}75%{background-position:11px 183px}}
+    @media(max-width:800px){#latent-host header{border-radius:24px;flex-wrap:wrap;justify-content:center;width:calc(100% - 24px);padding:6px;gap:4px}#latent-host .title{max-width:120px}#latent-host button{font-size:11px;padding:7px}.brand{display:none}}
   `;
   document.head.appendChild(style);
 
@@ -30,6 +32,7 @@
     const old = active;
     active = null;
     clearInterval(old.poll);
+    clearInterval(old.ticker);
     old.frame?.remove();
     old.root.remove();
     document.getElementById('canvas')?.focus({preventScroll: true});
@@ -52,6 +55,14 @@
       active.pauseStart = performance.now();
       if (document.fullscreenElement) document.exitFullscreen().catch(error => status('Не удалось выйти из полноэкранного режима: ' + error.message));
     } else {
+      if (active.instructionPending) {
+        active.instructionPending = false;
+        const message = JSON.stringify({event: 'instruction'});
+        if (active.callback) active.callback(message);
+        else window.sendIpcMessage?.(message);
+        active.plateTitle.textContent = 'Стенд приостановлен';
+        active.info.showInstructions = false;
+      }
       active.pausedMillis += performance.now() - active.pauseStart;
     }
     active.panel.classList.toggle('open', value);
@@ -67,12 +78,34 @@
     status('Снимок следующего отрисованного кадра…');
     command('snapshot', true);
   }
-  function sample(state) {
+  function elapsed(state) {
+    if (state.started === null) return 0;
     const pausedNow = state.paused ? performance.now() - state.pauseStart : 0;
-    return {module: state.info.id, status: 'complete', seconds: Math.max(0, Math.round((performance.now() - state.started - state.pausedMillis - pausedNow) / 1000)), snapshots: state.snapshots.slice(), muted: state.muted};
+    return Math.max(0, (performance.now() - state.started - state.pausedMillis - pausedNow) / 1000);
+  }
+  function startClock() {
+    if (!active || active.started !== null || !active.loaded || !active.rendered) return;
+    active.started = performance.now();
+    active.pausedMillis = 0;
+    if (active.paused) active.pauseStart = active.started;
+  }
+  function updateTimer() {
+    if (!active || active.finishing) return;
+    const remaining = Math.max(0, Math.ceil(15 - elapsed(active)));
+    for (const button of active.finishButtons) {
+      button.disabled = remaining > 0;
+      button.textContent = remaining > 0 ? `Наблюдение · ещё ${remaining} с` : 'В отчёт';
+    }
+  }
+  function sample(state) {
+    return {module: state.info.id, status: 'complete', seconds: Math.floor(elapsed(state)), snapshots: state.snapshots.slice(), muted: state.muted};
   }
   async function finish(result = 'complete') {
     if (!active || active.finishing) return;
+    if (result === 'complete' && elapsed(active) < 15) {
+      status('Сначала проведи минимум 15 секунд в активном стенде. Пауза и загрузка не учитываются.');
+      return;
+    }
     const state = active;
     const data = sample(state);
     data.status = result;
@@ -80,6 +113,7 @@
     command('pause', true);
     state.frame.remove();
     clearInterval(state.poll);
+    clearInterval(state.ticker);
     if (state.callback) {
       dispose();
       state.callback(JSON.stringify(data));
@@ -112,28 +146,36 @@
       active.callback?.(JSON.stringify({event: 'sound', enabled: !active.muted}));
       if (!active.callback && window.sendIpcMessage) window.sendIpcMessage(JSON.stringify({event: 'sound', enabled: !active.muted}));
     });
-    header.append(pauseButton, muteButton, makeButton('Снимок / F8', snapshot), makeButton('Завершить тестирование', () => finish(), 'finish'));
+    const finishButton = makeButton('Наблюдение · ещё 15 с', () => finish(), 'finish');
+    header.append(pauseButton, muteButton, makeButton('Снимок / F8', snapshot), finishButton);
     const frame = element('iframe');
     frame.title = info.title;
     frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-pointer-lock');
     frame.setAttribute('allow', 'fullscreen');
     const panel = element('div', undefined, 'pause-panel');
     const plate = element('div', undefined, 'plate');
-    plate.append(element('h2', 'Стенд приостановлен'), element('p', `${info.controls || 'Управление указано в самой игре.'} Для отчёта достаточно проверить действия; победа внутри игры не обязательна.`));
-    plate.append(makeButton('Продолжить', () => pause(false)), makeButton('Снимок', snapshot), makeButton('Завершить тестирование', () => finish(), 'finish'), makeButton('Выйти без отчёта', () => finish('abort')));
+    const plateTitle = element('h2', info.showInstructions ? 'Как работает испытательный стенд' : 'Стенд приостановлен');
+    plate.append(plateTitle, element('p', `${info.controls || 'Управление указано в самой игре.'} Верхняя пилюля: пауза, звук, снимок F8 и переход в отчёт. Esc открывает эту панель. Победа не обязательна: проверь действия минимум 15 секунд; загрузка и пауза не засчитываются. После «В отчёт» заполни наблюдение и рекомендацию на планшете.`));
+    const pauseFinish = makeButton('Наблюдение · ещё 15 с', () => finish(), 'finish');
+    plate.append(makeButton('Начать / продолжить', () => pause(false)), makeButton('Снимок', snapshot), pauseFinish, makeButton('Выйти без отчёта', () => finish('abort')));
     plate.append(makeButton('Перезапустить стенд', () => {
       const state = active;
       open(state.info, state.muted, state.callback, state.token);
     }));
     panel.append(plate);
     const statusNode = element('div', 'Загрузка контрольной среды · Esc — панель стенда', 'status');
-    root.append(header, frame, panel, statusNode);
+    root.append(frame, element('div', undefined, 'tape'), header, panel, statusNode);
     document.body.append(root);
-    active = {root, frame, panel, pauseButton, muteButton, status: statusNode, info, token, callback, paused: false, muted: Boolean(muted), finishing: false, started: performance.now(), pausedMillis: 0, pauseStart: 0, snapshots: [], poll: null};
+    active = {root, frame, panel, plateTitle, instructionPending: Boolean(info.showInstructions), pauseButton, muteButton, finishButtons: [finishButton, pauseFinish], status: statusNode, info, token, callback, paused: false, muted: Boolean(muted), finishing: false, started: null, loaded: false, rendered: false, pausedMillis: 0, pauseStart: 0, snapshots: [], poll: null, ticker: setInterval(updateTimer, 200)};
+    if (info.showInstructions) pause(true);
+    updateTimer();
     setMuted(muted);
     frame.addEventListener('load', () => {
+      if (!active || active.frame !== frame) return;
+      active.loaded = true;
+      startClock();
       command('init', {muted: active?.muted ?? muted, paused: active?.paused ?? false});
-      status('Esc — пауза и выход · F8 — снимок · завершение тестирования — в верхней панели');
+      status('Esc — пауза и выход · F8 — снимок · «В отчёт» — после 15 активных секунд');
     });
     frame.src = new URL(info.entry, base).href;
     if (token) {
@@ -165,6 +207,7 @@
     if (!active || event.source !== active.frame.contentWindow || event.origin !== location.origin || event.data?.kind !== 'latent-frame') return;
     switch (event.data.type) {
       case 'ready': command('init', {muted: active.muted, paused: active.paused}); break;
+      case 'rendered': active.rendered = true; startClock(); break;
       case 'pointer-lock-request':
         if (active.token && window.sendIpcMessage) window.sendIpcMessage(JSON.stringify({event: 'pointer-lock', ...event.data.value}));
         else command('pointer-lock', {request: event.data.value.request, locked: false});
@@ -207,6 +250,7 @@
       if (!stateResponse.ok) throw new Error('Локальное приложение недоступно');
       const state = await stateResponse.json();
       if (!state.active) throw new Error('Этот запуск уже закрыт в LATENTPUNK');
+      info.showInstructions = !state.instruction_seen;
       open(info, state.muted, null, query.get('token'));
     }
   };

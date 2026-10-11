@@ -52,7 +52,7 @@ def add_notices(archive, platform, version):
         "Campaign: voiced prologue, city, interview, three shifts, apartment and endings.\n"
         "Included independent games run through a host; finish each sample to submit a report.\n\n"
         f"{INSTRUCTIONS[platform]}\n\n"
-        "Controls: WASD, mouse, E; LMB picks up/drops, E places, R resets calibration. Escape pauses. Hold Enter to skip the prologue; F8 captures a game sample.\n"
+        "Controls: WASD, mouse, E; Shift runs after the interview (camera motion can be disabled in Settings). LMB picks up/drops, E places, R resets calibration. Escape pauses or closes the tablet. Hold Enter to skip the prologue; F8 captures a game sample. The host report button unlocks after 15 active seconds; loading and pause do not count.\n"
         "Source and resource credits: SOURCES.md and the in-game credits.\n"
         "Project: https://github.com/necrasov-ilya/nksv-neurojam-2026\n",
     )

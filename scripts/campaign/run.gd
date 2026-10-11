@@ -19,6 +19,14 @@ var ending := ""
 var last_module := ""
 var home_evening := true
 var messages: Array[Dictionary] = []
+var interview_answers: Dictionary = {}
+var interview_assessments: Dictionary = {}
+var dream_seen := false
+var cafe_visited := false
+var shift_released := false
+var report_draft: Dictionary = {}
+var tour_pending := false
+var host_instruction_seen := false
 
 func _ready() -> void:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(CATALOG_PATH))
@@ -47,7 +55,38 @@ func new_run() -> void:
 	last_module = ""
 	home_evening = true
 	messages.clear()
+	interview_answers.clear()
+	interview_assessments.clear()
+	dream_seen = false
+	cafe_visited = false
+	shift_released = false
+	report_draft.clear()
+	tour_pending = false
+	host_instruction_seen = false
 	changed.emit()
+
+func remember_interview(answers: PackedInt32Array, assessments: Dictionary) -> void:
+	interview_answers.clear()
+	var questions: Array = preload("res://scripts/interview/questions.gd").ITEMS
+	for index in mini(answers.size(), questions.size()):
+		interview_answers[questions[index].id] = answers[index]
+	interview_assessments = assessments.duplicate(true)
+
+func begin_interview_evening() -> void:
+	day = 0
+	location = "evening"
+	campaign_started = true
+	home_evening = true
+	tour_pending = true
+	changed.emit()
+
+func interview_line(kind: String) -> String:
+	var answer: int = interview_answers.get(kind, -1)
+	if kind == "isolation":
+		return ["nika_independent", "nika_online", "nika_together"][answer] if answer >= 0 and answer < 3 else ""
+	if kind == "communication":
+		return ["artem_stop", "artem_reserve", "artem_continue"][answer] if answer >= 0 and answer < 3 else ""
+	return ""
 
 func module_info(id: String) -> Dictionary:
 	for entry: Dictionary in catalog:
@@ -75,6 +114,8 @@ func completed_ids() -> Array[String]:
 
 func quota_ready() -> bool:
 	var ids := completed_ids()
+	if day == 0:
+		return false
 	if day == 1:
 		return "calibration" in ids and "terrarium" in ids
 	if day == 2:
@@ -95,6 +136,8 @@ func quota_ready() -> bool:
 
 func quota_text() -> String:
 	var ids := completed_ids()
+	if day == 0:
+		return "Завтра в 09:00 / практическая часть"
 	if day == 1:
 		return "Практическая проба + Terrarium · %d/2" % int(int("calibration" in ids) + int("terrarium" in ids))
 	if day == 2:
@@ -109,6 +152,7 @@ func save_report(module_id: String, checked: String, observation: String, recomm
 	if not available(module_id) or info.is_empty() or checked.is_empty() or observation.is_empty() or recommendation < 0 or recommendation >= REVIEW_CHOICES.size():
 		return {}
 	var report := {"number": reports.size() + 1, "day": day, "module": module_id, "title": info.title, "checked": checked, "observation": observation, "recommendation": recommendation, "sample": sample.duplicate(true), "reviewed": recommendation == 2, "status": "Запрошено независимое мнение" if recommendation == 2 else "Зарегистрировано"}
+	report_draft.clear()
 	reports.append(report)
 	last_module = module_id
 	if module_id == "calibration":
@@ -147,6 +191,8 @@ func sleep() -> void:
 		return
 	day += 1
 	home_evening = false
+	shift_released = false
+	cafe_visited = false
 	day_briefed = false
 	changed.emit()
 

@@ -208,3 +208,11 @@ Web-пресет сохраняет все 31 Ogg и лицензионные no
 - `scripts/ui/menu_blob.gd` и `assets/ui/gamma_grabber*.svg` — собственные процедурная механика жидкости и рисунки ползунка. Блоб отрисовывается однотонным сглаженным полигоном `#AC2954`, без шейдера освещения, бликов и градиента. Внешние физические библиотеки и модели не используются.
 - `scripts/ui/hud_style.gd`, `settings_panel.gd` и `pause_drawer.gd` — общий стиль, виджеты настроек и игровая выдвижная панель. Главное меню, город, собеседование и кампания используют одну карточку гаммы и одни hover-эффекты переключателей и небольших кнопок.
 
+
+## Постановка продолжения: музыка и испуг Ники
+
+- **Сон:** [Ossuary 6 - Air](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1500048) — **Kevin MacLeod (incompetech.com)**, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Официальное описание: медленный тревожный дрон; каталог `pieces.json` подтверждает ISRC `USUAN1500048`. Получен полный официальный публичный MP3, сохранён `assets/audio/campaign/originals/Ossuary_6_Air.mp3`, целиком перекодирован в `dream_ossuary.ogg` (Vorbis quality 4). Не использовалась платная несжатая загрузка. Музыка начинается со входом в сон, останавливается при пробуждении.
+- **Главное меню:** [Epilogue](https://creo-music.com/track/epilogue) — **Creo**, [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Использован уже сохранённый официальный MP3-128; его исходные байты не изменены. Полная Ogg-копия `assets/audio/campaign/menu_epilogue.ogg` включается в экспорт, хотя исходная библиотека Creo исключена. Условия некоммерческого использования сохраняются.
+- **Поворот к Нике:** [Horror Sting (Deep in the Void)2](https://freesound.org/people/SilverIllusionist/sounds/655386/) — **SilverIllusionist**, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Получен открытый **LQ MP3 preview**, не оригинальный WAV. Сохранён в `assets/audio/campaign/originals/nika_sting_655386_lq.mp3`. Первые 3,2 с, фильтры 45–6500 Гц, −9 dB и выходной fade; runtime — `nika_sting.ogg`.
+
+Происхождение, обработка и SHA-256 — `assets/audio/campaign/provenance.json`. Авторство присутствует в «Об игре» и финальных титрах. Исходники из `campaign/originals/` и provenance не упаковываются; игровые Ogg упаковываются во всех пресетах.

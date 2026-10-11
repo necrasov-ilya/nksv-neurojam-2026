@@ -21,6 +21,7 @@
   let pauseStart = 0;
   let pausedMillis = 0;
   let capturePending = false;
+  let rendered = false;
   const send = (type, value) => parent.postMessage({kind: 'latent-frame', type, value}, location.origin);
   const logicalNow = () => rawNow() - pausedMillis - (paused ? rawNow() - pauseStart : 0);
   Object.defineProperty(performance, 'now', {value: logicalNow, configurable: true});
@@ -118,7 +119,10 @@
       record.native = null;
       if (paused || !rafs.has(id)) return;
       rafs.delete(id);
-      try {record.callback(logicalNow());} finally {capture();}
+      try {
+        record.callback(logicalNow());
+        if (!rendered) {rendered = true; send('rendered');}
+      } finally {capture();}
     });
   }
   window.requestAnimationFrame = callback => {

@@ -8,5 +8,50 @@
   "sha256": {
     "assets/audio/campaign/originals/shift_change.wav": "e898b97a74cb3c17fcd9d5ee355a353383a1e46a04f26e5d7087a8f43f9e49c9",
     "assets/audio/campaign/shift_change.ogg": "b98132009c4ee2ceebbd16cc10f5b5b4e0ebf26f4bcd7ccdc8ffae835465bea1"
-  }
+  },
+  "external_audio": [
+    {
+      "title": "Ossuary 6 - Air",
+      "author": "Kevin MacLeod (incompetech.com)",
+      "page_url": "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1500048",
+      "download_url": "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Ossuary%206%20-%20Air.mp3",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "license_evidence": "Official track page renderTrack attribution: Licensed under Creative Commons: By Attribution 4.0 License. Official pieces.json identifies ISRC USUAN1500048 and filename Ossuary 6 - Air.mp3.",
+      "source": "originals/Ossuary_6_Air.mp3",
+      "runtime": "dream_ossuary.ogg",
+      "source_sha256": "bf57ba7ee56b357dbd8677b41475a2fbe01d282114bc3c64e6deea2b52717fac",
+      "runtime_sha256": "eea50289a1ed0c343a0b1073065e7d8405f00cfdc4d39bd0b60599ba77a8f73c",
+      "changes": "Full public official MP3 encoded to Ogg Vorbis, ffmpeg -c:a libvorbis -q:a 4. No trimming. Dream player starts at beginning, stops on awakening, pauses on focus loss, mute and pause.",
+      "obtained_on": "2026-10-12"
+    },
+    {
+      "title": "Epilogue",
+      "author": "Creo",
+      "page_url": "https://creo-music.com/track/epilogue",
+      "license": "CC BY-NC 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
+      "source": "../music/creo/epilogue.mp3",
+      "runtime": "menu_epilogue.ogg",
+      "source_sha256": "b2d4bc9262e2cf320b60b553aa641e58d9e8e88cee6408e3309c1a98cb763dbf",
+      "runtime_sha256": "7e0094c7e481aa46b57a6cdf0ff0a447f30ad38675c2825d5e447335a599119b",
+      "changes": "Full stored official public MP3 encoded to Ogg Vorbis, ffmpeg -c:a libvorbis -q:a 4. Original remains unchanged; runtime Ogg is outside the excluded music library.",
+      "prepared_on": "2026-10-12"
+    },
+    {
+      "title": "Horror Sting (Deep in the Void)2",
+      "author": "SilverIllusionist",
+      "page_url": "https://freesound.org/people/SilverIllusionist/sounds/655386/",
+      "download_url": "https://cdn.freesound.org/previews/655/655386_7395592-lq.mp3",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "source": "originals/nika_sting_655386_lq.mp3",
+      "source_kind": "Public LQ MP3 preview, not the original WAV or login-only download.",
+      "runtime": "nika_sting.ogg",
+      "source_sha256": "8af50ca09d4966fa89d789c742285fdf977a79e05b2fe6354098fe59b499c38e",
+      "runtime_sha256": "32177553169cd65067c363380ab72c7217d9b16fb0bce8d8ddd338cdc60547cc",
+      "changes": "First 3.2 seconds, high-pass 45 Hz, low-pass 6500 Hz, -9 dB, fade out from 1.6 s over 1.6 s; Vorbis quality 5.",
+      "obtained_on": "2026-10-12"
+    }
+  ]
 }

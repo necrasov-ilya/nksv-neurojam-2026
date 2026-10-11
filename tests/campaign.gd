@@ -19,7 +19,17 @@ func _report(id: String, recommendation: int = 0) -> void:
 func _check() -> void:
 	GameRun = CampaignRun.new()
 	root.add_child(GameRun)
+	# The interview evening must not consume a working shift or unlock its quota.
+	GameRun.remember_interview(PackedInt32Array([0, 1, 2, 0, 1, 1, 2, 0, 0, 2]), {"frames": "completed", "alignment": "skipped"})
+	GameRun.begin_interview_evening()
+	_expect(GameRun.day == 0 and not GameRun.available("calibration") and not GameRun.quota_ready(), "Interview evening counts as a working shift")
+	GameRun.go_home()
+	GameRun.sleep()
+	GameRun.sleep()
+	_expect(GameRun.day == 1 and GameRun.available("calibration") and not GameRun.home_evening, "First night skips the practical working day")
+	_expect(GameRun.interview_line("isolation") == "nika_together" and GameRun.interview_line("communication") == "artem_reserve", "Interview consequences disappear across the first night")
 	GameRun.new_run()
+	_expect(GameRun.interview_answers.is_empty() and GameRun.interview_assessments.is_empty(), "New candidate inherits the last interview")
 	_expect(GameRun.available("calibration") and GameRun.available("terrarium"), "First-day stands unavailable after JSON catalog load")
 	_expect(not GameRun.available("dustfall"), "Second-day stand unlocked before second day")
 	_expect(GameRun.save_report("dustfall", "Проверка", "Наблюдение", 0, {}).is_empty(), "Locked stand accepts report")

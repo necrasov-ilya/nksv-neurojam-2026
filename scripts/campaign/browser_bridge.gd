@@ -33,7 +33,9 @@ func launch(info: Dictionary) -> void:
 			failed.emit("Запускатель отсутствует. Открой свежую Web-сборку с её HTML-оболочкой, а не один PCK.")
 			return
 		_callback = bridge.create_callback(_on_web_message)
-		_host.openGame(JSON.stringify(info), not GameSettings.sound_enabled, _callback)
+		var launch_info := info.duplicate()
+		launch_info["showInstructions"] = not GameRun.host_instruction_seen
+		_host.openGame(JSON.stringify(launch_info), not GameSettings.sound_enabled, _callback)
 	else:
 		if not ClassDB.class_exists("CefTexture"):
 			active = false
@@ -68,6 +70,9 @@ func _on_web_message(args: Array) -> void:
 	var parsed: Variant = JSON.parse_string(str(args[0]))
 	if not parsed is Dictionary:
 		return
+	if parsed.get("event", "") == "instruction":
+		GameRun.host_instruction_seen = true
+		return
 	if parsed.get("event", "") == "sound":
 		GameSettings.set_sound_enabled(bool(parsed.get("enabled", true)))
 		return
@@ -78,6 +83,9 @@ func _on_native_message(message: String) -> void:
 		return
 	var parsed: Variant = JSON.parse_string(message)
 	if not parsed is Dictionary:
+		return
+	if parsed.get("event", "") == "instruction":
+		GameRun.host_instruction_seen = true
 		return
 	if parsed.get("event", "") == "sound":
 		GameSettings.set_sound_enabled(bool(parsed.get("enabled", true)))

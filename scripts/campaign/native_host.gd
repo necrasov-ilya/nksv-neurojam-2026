@@ -128,7 +128,7 @@ func _parse(client: Dictionary) -> void:
 		for pair in query.split("&"):
 			if pair.get_slice("=", 0) == "token":
 				key = pair.get_slice("=", 1).uri_decode()
-		_response(client, 200, JSON.stringify({"active": not _token.is_empty() and key == _token, "muted": _muted}), "application/json")
+		_response(client, 200, JSON.stringify({"active": not _token.is_empty() and key == _token, "muted": _muted, "instruction_seen": GameRun.host_instruction_seen}), "application/json")
 		return
 	var path := route.uri_decode().trim_prefix("/")
 	if path.is_empty():

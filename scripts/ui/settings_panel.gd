@@ -6,6 +6,7 @@ const FONT := preload("res://assets/fonts/OpenRunde-Semibold.woff2")
 
 var sound_button: Button
 var subtitles_button: Button
+var motion_button: Button
 var gamma_slider: HSlider
 var gamma_title: Label
 var reset_button: Button
@@ -83,7 +84,11 @@ func _ready() -> void:
 		patch.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_preview.add_child(patch)
 	_label("Чёрный остаётся чёрным. Средние тона меняются.", 12, UIStyle.MUTED, self, Vector2(0, 360))
-	_label("Настройки действуют до закрытия игры.", 12, UIStyle.MUTED, self, Vector2(0, 434))
+	motion_button = _toggle_row("CameraMotion", "Покачивание камеры", "monitor", 386, func():
+		GameSettings.camera_motion = not GameSettings.camera_motion
+		refresh()
+	)
+	_label("Настройки действуют до закрытия игры.", 12, UIStyle.MUTED, self, Vector2(0, 454))
 	resized.connect(_layout)
 	visibility_changed.connect(refresh)
 	_layout()
@@ -137,6 +142,7 @@ func refresh() -> void:
 		return
 	sound_button.get_node("Status").text = "Вкл." if GameSettings.sound_enabled else "Выкл."
 	subtitles_button.get_node("Status").text = "Вкл." if GameSettings.subtitles_enabled else "Выкл."
+	motion_button.get_node("Status").text = "Вкл." if GameSettings.camera_motion else "Выкл."
 	(sound_button.get_child(0) as TextureRect).texture = load(UIStyle.ICON_PATH + ("volume-2.svg" if GameSettings.sound_enabled else "volume-x.svg"))
 	gamma_slider.set_value_no_signal(GameSettings.gamma)
 	_gamma_value.text = "%.2f" % GameSettings.gamma
@@ -145,7 +151,7 @@ func refresh() -> void:
 func _layout() -> void:
 	if _gamma_card == null:
 		return
-	for button in [sound_button, subtitles_button]:
+	for button in [sound_button, subtitles_button, motion_button]:
 		button.size.x = size.x
 		button.get_node("Status").position.x = size.x - 80
 	_gamma_card.size.x = size.x

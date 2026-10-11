@@ -35,6 +35,11 @@ var _drawer_tween: Tween
 var _drawer_open := false
 var _drawer_width := 560.0
 var _previous_focus: Control
+var _music: AudioStreamPlayer
+
+func _process(_delta: float) -> void:
+	if _music:
+		_music.stream_paused = not GameSettings.sound_enabled or not get_window().has_focus()
 
 
 func _ready() -> void:
@@ -44,6 +49,14 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 	_on_landscape_changed(orientation_guard.is_landscape())
+	_music = AudioStreamPlayer.new()
+	var track: AudioStreamOggVorbis = preload("res://assets/audio/campaign/menu_epilogue.ogg").duplicate()
+	track.loop = true
+	_music.stream = track
+	_music.volume_db = -35
+	add_child(_music)
+	_music.play()
+	create_tween().tween_property(_music, "volume_db", -16.0, 1.4)
 
 
 func _build_ui() -> void:
@@ -138,6 +151,7 @@ func _build_drawer() -> void:
 	var info := _label("LATENTPUNK: TEST SUBJECT 0\n\nСобеседование · Три смены · Квартира · Финал\n\nWASD — идти · Мышь — обзор\nE — взаимодействие\nЛКМ — поднять / уронить предмет\nE — поставить предмет\nTab — выбор · Enter — ответ\nEsc — пауза · F8 — снимок на стендах\n\nМузыка Shift Change — собственная композиция\nГолоса: Built with Fish Audio · fish.audio\nИконки: Lucide Contributors · ISC / MIT\n\nGodot 4.7.2 · Compatibility\nОднопоточный Web\n\nПрогресс сохраняется только в текущем запуске.", 19, INK, about_scroll)
 	info.custom_minimum_size.x = 408
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.text += "\n\nМузыка меню: Epilogue — Creo\ncreo-music.com/track/epilogue · CC BY-NC 4.0\nМузыка сна: Ossuary 6 - Air — Kevin MacLeod\nincompetech.com · CC BY 4.0\nИспуг Ники: Horror Sting (Deep in the Void)2 — SilverIllusionist\nfreesound.org/people/SilverIllusionist/sounds/655386/ · CC BY 4.0"
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_about_info = info
 	_about_copy = info.text

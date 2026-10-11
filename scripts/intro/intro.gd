@@ -13,6 +13,8 @@ const Voices := preload("res://scripts/core/dialogue_voices.gd")
 const CampaignInterface := preload("res://scripts/campaign/ui.gd")
 const UIStyle := preload("res://scripts/ui/hud_style.gd")
 const PauseUI := preload("res://scripts/ui/pause_drawer.gd")
+const CampaignPeople := preload("res://scripts/campaign/people.gd")
+const NIKA_STING := preload("res://assets/audio/campaign/nika_sting.ogg")
 const FLOOR_COUNT := 22
 const RECEPTION_LINES := [
 	{"speaker":"Вы","text":"Здравствуйте. Я на собеседование."},
@@ -53,6 +55,9 @@ var _interview_completed := false
 var _interview_viewport_3d_was_disabled := false
 var _staff: Node3D
 var _campaign_ui: CanvasLayer
+var _staff_reveal_armed := false
+var _staff_met := false
+var _arrival_sound: AudioStreamPlayer
 
 # Set before adding this scene to the tree; direct launches retain normal behavior.
 var opening_prepared := false
@@ -540,8 +545,17 @@ func _process(delta: float) -> void:
 		_prompt.text = ""
 		_sync_hud_cards()
 		return
+	if _staff_reveal_armed and is_instance_valid(_staff):
+		var target := _staff.global_position + Vector3.UP * 1.5
+		var direction: Vector3 = target - player.camera.global_position
+		if direction.length() < 4.5 and direction.normalized().dot(-player.camera.global_basis.z) > 0.70:
+			_reveal_staff()
 	_current_action = _find_action()
 	var captions := {"reception":"Поговорить с администратором", "lift":"Вызвать лифт" if reception_done else "Сначала обратитесь к администратору", "floor14":"Выбрать этаж", "return":"Вернуться в холл", "door":"Открыть кабинет 1406" if not door_open else "Закрыть кабинет 1406", "computer":"Начать собеседование", "staff":"Поговорить с Никой · практическая часть"}
+	if _interview_completed:
+		captions.staff = "Поговорить с Никой"
+		if _staff_met:
+			captions["return"] = "Спуститься и выйти в город"
 	var caption: String = captions.get(_current_action, StreetExtras.CAPTIONS.get(_current_action, ""))
 	_prompt.text = caption
 	_prompt.visible = not _subtitle_panel.visible
@@ -642,7 +656,12 @@ func _perform_action(action: String) -> void:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		"return":
 			audio.play_event("lift_doors")
-			_travel("lobby", lobby.to_global(Vector3(0,0.03,-10)), PI)
+			if _interview_completed and not _staff_met:
+				_say("Вы", "Сначала поговорю с сотрудником.")
+			elif _staff_met:
+				_leave_interview_floor()
+			else:
+				_travel("lobby", lobby.to_global(Vector3(0,0.03,-10)), PI)
 		"door":
 			door_open = not door_open
 			audio.play_event("office_door_open" if door_open else "office_door_close")
@@ -691,6 +710,8 @@ func _close_interview() -> void:
 	var darken := create_tween()
 	darken.tween_property(curtain, "color:a", 1.0, 0.35)
 	await darken.finished
+	var interview: Node = _interview_layer.get_child(0)
+	GameRun.remember_interview(interview.progress.answers, interview.progress.assessments)
 	_interview_layer.queue_free()
 	_interview_layer = null
 	_interview_completed = true
@@ -701,41 +722,76 @@ func _close_interview() -> void:
 		_perform_action("door")
 	_staff = Node3D.new()
 	_staff.name = "InterviewGuide"
-	_staff.position = Vector3(3.4, 0, -12.4)
+	var behind: Vector3 = office.to_local(player.global_position + player.global_basis.z * 1.9)
+	behind.x = clampf(behind.x, 5.3, 13.0)
+	behind.z = clampf(behind.z, -23.0, -16.1)
+	behind.y = 0
+	_staff.position = behind
 	office.add_child(_staff)
-	var person := Pedestrians.new()
+	var person := CampaignPeople.new()
 	_staff.add_child(person)
-	person.populate_stationary(Vector3.ZERO, 0, 2)
-	person.walk_to(Vector3(0, 0, -2.9), 1.25)
-	_interaction_points["office"]["staff"] = office.to_global(Vector3(3.4, 1.35, -15.3))
+	var toward_player: Vector3 = player.global_position - _staff.global_position
+	person.populate_stationary(Vector3.ZERO, atan2(-toward_player.x, -toward_player.z), 2)
+	_interaction_points["office"]["staff"] = _staff.global_position + Vector3.UP * 1.35
+	_staff_reveal_armed = true
+	_arrival_sound = AudioStreamPlayer.new()
+	_arrival_sound.stream = NIKA_STING
+	_arrival_sound.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
+	add_child(_arrival_sound)
 	audio.set_muted(not GameSettings.sound_enabled)
 	_game_ui.show()
 	_city_tape_layer.show()
-	_objective.text = "За вами пришла Ника. Подойдите к двери кабинета и поговорите с ней.\nE — перейти к практической части"
+	_objective.text = "Собеседование закончено\nВыйди из кабинета"
 	var reveal := create_tween()
 	reveal.tween_property(curtain, "color:a", 0.0, 0.45)
 	await reveal.finished
 	curtain_layer.queue_free()
 	_transitioning = false
 	player.enabled = true
+	player.sprint_available = true
 	set_process(true)
 	set_process_unhandled_input(true)
 	# Pointer lock follows a fresh user gesture, never an awaited callback.
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 func _meet_staff() -> void:
-	if not _interview_completed or _transitioning:
+	if not _interview_completed or _transitioning or _staff_met:
 		return
 	_transitioning = true
 	player.enabled = false
 	_game_ui.hide()
 	_campaign_ui = CampaignInterface.new()
 	add_child(_campaign_ui)
-	_campaign_ui.dialogue(["nika_arrival_01", "hero_arrival_01", "nika_arrival_02"], func():
-		GameRun.campaign_started = true
-		get_viewport().disable_3d = false
-		get_tree().change_scene_to_file("res://scenes/campaign.tscn")
+	_reveal_staff()
+	_transitioning = false
+	_campaign_ui.dialogue(["nika_evening_01", "hero_evening_01", "nika_evening_02"], func():
+		_staff_met = true
+		_campaign_ui.queue_free()
+		_campaign_ui = null
+		_interaction_points["office"].erase("staff")
+		_transitioning = false
+		_game_ui.show()
+		_objective.text = "ЭКСКУРСИЯ / ИСПЫТАТЕЛЬНЫЙ КОРПУС\nСпустись на лифте · Ника ждёт внизу"
+		player.enabled = true
 	)
+
+func _reveal_staff() -> void:
+	if not _staff_reveal_armed:
+		return
+	_staff_reveal_armed = false
+	_objective.text = "Поговори с Никой"
+	if GameSettings.sound_enabled:
+		_arrival_sound.play()
+
+func _leave_interview_floor() -> void:
+	_transitioning = true
+	player.enabled = false
+	var tween := create_tween()
+	tween.tween_property(_fade, "color:a", 1.0, 0.6)
+	await tween.finished
+	GameRun.begin_interview_evening()
+	get_viewport().disable_3d = false
+	get_tree().change_scene_to_file("res://scenes/campaign.tscn")
 
 func _set_location(value: String, p: Vector3, yaw: float) -> void:
 	_voice_player.stop()
@@ -829,6 +885,8 @@ func _sync_speech_state() -> void:
 	var focused := not _paused and not _focus_lost
 	if _voice_player != null:
 		_voice_player.stream_paused = not focused
+	if is_instance_valid(_arrival_sound):
+		_arrival_sound.stream_paused = not focused
 	if _subtitle_panel != null:
 		_subtitle_panel.visible = focused and GameSettings.subtitles_enabled and _subtitle_remaining > 0.0
 	if is_instance_valid(_campaign_ui):

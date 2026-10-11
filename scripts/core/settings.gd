@@ -5,6 +5,7 @@ extends RefCounted
 static var sound_enabled := true
 static var subtitles_enabled := true
 static var gamma := 1.0
+static var camera_motion := true
 static var _gamma_overlay: ColorRect
 
 
