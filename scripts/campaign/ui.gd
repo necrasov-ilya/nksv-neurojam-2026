@@ -308,7 +308,7 @@ func page(title: String, kicker: String, page_mode := "page") -> VBoxContainer:
 	heading.add_child(label(kicker, 12, ACCENT))
 	if not title.is_empty():
 		heading.add_child(label(title, 25))
-	if page_mode in ["computer", "home", "report"]:
+	if page_mode in ["computer", "home", "report", "case_notes", "program"]:
 		var leave := UIStyle.small_button("Отложить" if page_mode == "report" else "Отойти", "x", close_page)
 		leave.name = "CloseTablet"
 		leave.custom_minimum_size = Vector2(132, 40)
@@ -407,7 +407,7 @@ func computer(launch: Callable, end_shift: Callable, tab := 0) -> void:
 		node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		node.disabled = index == tab
 	if tab == 0:
-		body.add_child(label("Не требуется победа в игре. Проверь выбранные действия и завершай наблюдение отдельной кнопкой стенда. Повторы и дополнительные среды тоже заканчиваются опросом.", 17, MUTED))
+		body.add_child(label("Задание дня — собственная локальная проверка. Сравни условия и сохрани предметный отчёт. Другие игры — дополнительные среды: их выборки не заменяют обязательное задание.", 17, MUTED))
 		var cards := GridContainer.new()
 		cards.name = "ModuleCards"
 		cards.columns = 2 if get_viewport().get_visible_rect().size.x >= 820 else 1
@@ -430,12 +430,11 @@ func computer(launch: Callable, end_shift: Callable, tab := 0) -> void:
 				image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 				image.custom_minimum_size.y = 110
 				column.add_child(image)
+			column.add_child(label(("ЗАДАНИЕ ДНЯ" if info.id == GameRun.case_id() else "ЛОКАЛЬНЫЙ ПОВТОР") if info.kind == "internal" else "ДОПОЛНИТЕЛЬНАЯ СРЕДА", 12, ACCENT))
 			column.add_child(label(info.title, 23))
 			column.add_child(label(info.purpose, 16, MUTED))
-			var unlocked: bool = GameRun.available(info.id) and (info.id == "calibration" or GameRun.calibration_done)
-			var state := "Отчёт есть · можно повторить" if info.id in ids else "Доступно" if unlocked else "Доступ с дня %d" % info.days[0]
-			if GameRun.day == 1 and info.id != "calibration" and not GameRun.calibration_done:
-				state = "После практической пробы"
+			var unlocked: bool = GameRun.available(info.id)
+			var state := "Отчёт есть · можно повторить" if info.id in ids else "Доступно" if unlocked else "Программа закрыта" if GameRun.shift_released else "Доступ с дня %d" % info.days[0]
 			column.add_child(label(state, 16, ACCENT))
 			var module_id: String = info.id
 			var run_button := button(column, "Повторить" if info.id in ids else "Открыть стенд", func(): launch.call(module_id), unlocked)
@@ -445,62 +444,90 @@ func computer(launch: Callable, end_shift: Callable, tab := 0) -> void:
 		report_list(body)
 	elif tab == 2:
 		if GameRun.messages.is_empty():
-			body.add_child(label("Ника рядом на этаже. Независимое мнение можно запросить в рекомендации отчёта.", 21))
+			body.add_child(label("Ника рядом. Для памяти среды Артём может выполнить отдельный опыт на стенде. Запрос не равен полученному результату.", 21))
 		for message in GameRun.messages:
 			body.add_child(label(message.sender + " / " + message.subject, 21, ACCENT))
 			body.add_child(label(message.body, 19))
 			body.add_child(HSeparator.new())
 	else:
-		body.add_child(label("Производственный контур ≠ контрольная игра", 24, ACCENT))
-		body.add_child(label("Контрольные среды неизменны. Их отчёты сопровождают решение о выпуске модели управления зданием; сами игры не управляют настоящими дверями или оружием.", 20))
-		if GameRun.day == 1:
-			body.add_child(label("1.6 / обычная эксплуатация. Сегодня — практическая проба и знакомство с контрольными средами.", 22))
-		elif GameRun.day == 2:
-			body.add_child(label("1.7 / управление шлюзами испытательного этажа. Следующий выпуск готовится к приёмке.", 22))
-		else:
-			body.add_child(label("1.6 / обычная эксплуатация\n1.7 / прогноз занятости подключён к шлюзам\n1.8 / автоматическая противопожарная продувка при прогнозе «свободен»", 22))
-			body.add_child(label("Подпись выпуска: Е. Бессонова. Замечания тестировщика не удаляются. При потере свежего наблюдения модель продолжает прогноз; допуск разрешает использование прогноза как подтверждения свободного сектора.", 19, MUTED))
-		if GameRun.day < 3:
-			body.add_child(label("Подробный производственный протокол — с допуском на третьей смене.", 17, MUTED))
-	var end_button := button(_page_footer, "К приёмке" if GameRun.day == 3 else "К выходу" if GameRun.shift_released else "Закончить смену", end_shift, true)
+		body.add_child(label("Контрольные версии и решения приёмки", 24, ACCENT))
+		body.add_child(label("1.0 — контроль нагрузки; 1.1 — сохранность предмета.\n2.0 / 2.0-C — память среды и контроль сброса.\n1.2 — исправление сохранности и приёмка.", 20))
+		body.add_child(label("Это локальные подготовленные испытания, не управление настоящими дверями здания. Вывод тестировщика и подпись руководителя остаются отдельными документами.", 17, MUTED))
+		if GameRun.release_history.is_empty():
+			body.add_child(label("Решений о приёмке ещё нет.", 19))
+		for decision in GameRun.release_history:
+			body.add_child(label("День %d · отчёт №%02d\n%s · %s" % [decision.day, decision.report_number, decision.decision, decision.signature], 19, ACCENT))
+	var end_button := button(_page_footer, "Завершить программу" if GameRun.day == 3 else "К выходу" if GameRun.shift_released else "Закончить смену", end_shift, true)
 	end_button.name = "EndShift"
 	end_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	end_button.disabled = not GameRun.quota_ready()
 
 func report_list(body: VBoxContainer) -> void:
 	if GameRun.reports.is_empty():
-		body.add_child(label("Отчётов пока нет. Начни с практической пробы.", 22))
+		body.add_child(label("Отчётов пока нет. Начни с задания дня.", 22))
 	for report in GameRun.reports:
 		body.add_child(label("№%02d / ДЕНЬ %d / %s" % [report.number, report.day, report.title], 21, ACCENT))
 		body.add_child(label("Проверено: %s\nНаблюдение: %s\nРекомендация: %s\n%s" % [report.checked, report.observation, GameRun.REVIEW_CHOICES[report.recommendation], report.status], 19))
-		var shots: Array = report.sample.get("snapshots", [])
-		if not shots.is_empty():
-			var row := GridContainer.new()
-			row.name = "ReportSnapshots"
-			row.columns = maxi(1, int((minf(1000, get_viewport().get_visible_rect().size.x - 40) - 44) / 240))
-			row.add_theme_constant_override("h_separation", 12)
-			row.add_theme_constant_override("v_separation", 12)
-			body.add_child(row)
-			for encoded: String in shots:
-				var bytes := Marshalls.base64_to_raw(encoded.get_slice(",", 1))
-				var image := Image.new()
-				if image.load_jpg_from_buffer(bytes) == OK:
-					var thumbnail := TextureRect.new()
-					thumbnail.texture = ImageTexture.create_from_image(image)
-					thumbnail.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-					thumbnail.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-					thumbnail.custom_minimum_size = Vector2(220, 132)
-					row.add_child(thumbnail)
+		if report.sample.get("internal", false):
+			body.add_child(label("Повтор: " + str(report.sample.get("repeat", "Не проверено")), 18, ACCENT))
+			event_list(body, report.sample.get("events", []))
+		if not report.get("peer", {}).is_empty():
+			var peer: Dictionary = report.peer
+			body.add_child(label("Отдельная проверка / %s / %s\n%s" % [peer.author, peer.version, peer.result], 18, ACCENT))
+		snapshot_list(body, report.sample.get("snapshots", []))
 		body.add_child(HSeparator.new())
+
+func snapshot_list(body: VBoxContainer, shots: Array) -> void:
+	if shots.is_empty():
+		return
+	var row := GridContainer.new()
+	row.name = "ReportSnapshots"
+	row.columns = maxi(1, int((minf(1000, get_viewport().get_visible_rect().size.x - 40) - 44) / 240))
+	row.add_theme_constant_override("h_separation", 12)
+	row.add_theme_constant_override("v_separation", 12)
+	body.add_child(row)
+	for encoded: String in shots:
+		var bytes := Marshalls.base64_to_raw(encoded.get_slice(",", 1))
+		var image := Image.new()
+		if image.load_jpg_from_buffer(bytes) == OK:
+			var thumbnail := TextureRect.new()
+			thumbnail.texture = ImageTexture.create_from_image(image)
+			thumbnail.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			thumbnail.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			thumbnail.custom_minimum_size = Vector2(220, 132)
+			row.add_child(thumbnail)
+
+func event_list(body: VBoxContainer, events: Array) -> void:
+	if events.is_empty():
+		body.add_child(label("Действий пока нет. Снимок не считается проведённой проверкой.", 17, MUTED))
+	for event: Dictionary in events:
+		body.add_child(label("%s · версия %s · опыт %d\n%s → %s" % [event.author, event.version, event.run, event.condition, event.result], 16, MUTED))
 
 func survey(module_id: String, sample: Dictionary, save: Callable) -> void:
 	var info := GameRun.module_info(module_id)
 	if GameRun.report_draft.is_empty():
-		GameRun.report_draft = {"module": module_id, "sample": sample.duplicate(true), "checked": -1, "observation": -1, "recommendation": -1, "note": ""}
+		GameRun.report_draft = {"module": module_id, "sample": sample.duplicate(true), "checked": -1, "observation": -1, "repeat": -1, "recommendation": -1, "note": ""}
 	var draft: Dictionary = GameRun.report_draft
 	var body := page("Отчёт / " + str(info.title), "НАБЛЮДЕНИЕ ЗАВЕРШЕНО · ДЕНЬ %d" % GameRun.day, "report")
-	body.add_child(label("Отчёт относится к тому, что ты сам проверил. Стенд не передаёт нам внутреннюю победу или статистику игры.", 17, MUTED))
-	body.add_child(label("1 / Что проверял?", 22, ACCENT))
+	var own: bool = info.kind == "internal"
+	var observed := false
+	if own:
+		body.add_child(label("Журнал содержит реальные действия, а не готовый диагноз. Твой результат и рекомендация сохраняются отдельно. Повтор относится к тому, что ты сам проверил.", 17, MUTED))
+		var evidence := VBoxContainer.new()
+		evidence.add_theme_constant_override("separation", 10)
+		button(body, "Журнал действий · %d событий" % sample.get("events", []).size(), func(): evidence.visible = not evidence.visible)
+		body.add_child(evidence)
+		event_list(evidence, sample.get("events", []))
+		evidence.hide()
+		for event: Dictionary in sample.get("events", []):
+			if event.get("kind", "") in ["observation", "comparison"]:
+				observed = true
+		if not observed:
+			body.add_child(label("Результатов проверки пока нет. Допустим отчёт: «Недостаточно данных» и «Не проверено».", 17, ACCENT))
+	else:
+		body.add_child(label("Отчёт относится к твоему наблюдению. Внутренняя победа и статистика игры не выдумываются.", 17, MUTED))
+	snapshot_list(body, sample.get("snapshots", []))
+	body.add_child(label("1 / Условие проверки" if own else "1 / Что проверял?", 22, ACCENT))
 	var checked := OptionButton.new()
 	checked.custom_minimum_size.y = 44
 	for choice: String in info.checks:
@@ -509,7 +536,7 @@ func survey(module_id: String, sample: Dictionary, save: Callable) -> void:
 	checked.select(-1)
 	checked.text = "Выбери проверенное действие"
 	body.add_child(checked)
-	body.add_child(label("2 / Что наблюдал?", 22, ACCENT))
+	body.add_child(label("2 / Наблюдаемый результат", 22, ACCENT))
 	var observation := OptionButton.new()
 	observation.custom_minimum_size.y = 44
 	for choice in ["В проверенных действиях проблем не заметил", "Обнаружил несоответствие", "Поведение не удалось устойчиво повторить", "Не успел проверить / недостаточно наблюдений"]:
@@ -518,12 +545,24 @@ func survey(module_id: String, sample: Dictionary, save: Callable) -> void:
 	observation.select(-1)
 	observation.text = "Выбери наблюдение"
 	body.add_child(observation)
+	var repeated: OptionButton
+	if own:
+		body.add_child(label("3 / Повтор", 22, ACCENT))
+		repeated = OptionButton.new()
+		repeated.name = "RepeatResult"
+		repeated.custom_minimum_size.y = 44
+		for choice: String in GameRun.REPEAT_CHOICES:
+			repeated.add_item(choice)
+		UIStyle.apply_button(repeated)
+		repeated.select(-1)
+		repeated.text = "Выбери результат собственного повтора"
+		body.add_child(repeated)
 	var note := LineEdit.new()
 	note.placeholder_text = "Необязательно: конкретный момент или действие"
 	note.max_length = 500
 	note.custom_minimum_size.y = 44
 	body.add_child(note)
-	body.add_child(label("3 / Твоя рекомендация", 22, ACCENT))
+	body.add_child(label("4 / Твоя рекомендация" if own else "3 / Твоя рекомендация", 22, ACCENT))
 	var recommendation := OptionButton.new()
 	recommendation.custom_minimum_size.y = 44
 	for choice: String in GameRun.REVIEW_CHOICES:
@@ -532,27 +571,36 @@ func survey(module_id: String, sample: Dictionary, save: Callable) -> void:
 	recommendation.select(-1)
 	recommendation.text = "Выбери рекомендацию"
 	body.add_child(recommendation)
-	body.add_child(label("«Независимая проверка» создаёт контакт с Никой; замечания открывают повтор в приёмке. Принятие не удаляет историю. Ни один ответ не закрывает помощь людям.", 17, MUTED))
+	body.add_child(label("Независимый результат появится только после отдельной проверки. Недостаток данных — допустимый вывод. Подпись приёмки не переписывает твоё наблюдение.", 17, MUTED))
 	var submit := button(_page_footer, "Сохранить отчёт", func():
-		var observed := observation.get_item_text(observation.selected)
+		var result_text := observation.get_item_text(observation.selected)
 		if not note.text.strip_edges().is_empty():
-			observed += " · " + note.text.strip_edges()
-		save.call(checked.get_item_text(checked.selected), observed, recommendation.selected, sample)
+			result_text += " · " + note.text.strip_edges()
+		if own:
+			sample["repeat"] = repeated.get_item_text(repeated.selected)
+		save.call(checked.get_item_text(checked.selected), result_text, recommendation.selected, sample)
 	, true)
 	submit.name = "SaveReport"
 	for pair in [[checked, "checked"], [observation, "observation"], [recommendation, "recommendation"]]:
 		var field: OptionButton = pair[0]
 		if int(draft[pair[1]]) >= 0:
 			field.select(int(draft[pair[1]]))
+	if own and int(draft.get("repeat", -1)) >= 0:
+		repeated.select(int(draft.repeat))
 	note.text = str(draft.note)
 	var update := func(_index: int):
 		draft.checked = checked.selected
 		draft.observation = observation.selected
 		draft.recommendation = recommendation.selected
 		submit.disabled = checked.selected < 0 or observation.selected < 0 or recommendation.selected < 0
+		if own:
+			draft.repeat = repeated.selected
+			submit.disabled = submit.disabled or repeated.selected < 0 or (not observed and (recommendation.selected != 3 or repeated.selected != 2))
 	checked.item_selected.connect(update)
 	observation.item_selected.connect(update)
 	recommendation.item_selected.connect(update)
+	if own:
+		repeated.item_selected.connect(update)
 	note.text_changed.connect(func(value: String): draft.note = value)
 	update.call(0)
 	submit.size_flags_vertical = Control.SIZE_SHRINK_CENTER

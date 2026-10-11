@@ -28,20 +28,6 @@ var _paused := false
 var _focused := true
 var _module := ""
 var _sample: Dictionary = {}
-var _probe_seconds := 0.0
-var _gate_event := false
-var _authorized := false
-var _isolated := false
-var _manual_hold := false
-var _holding_weight := false
-var _cube_on_pad := false
-var _gate_open := false
-var _evac_started := false
-var _evac_count := 0
-var _evac_prompted := false
-var _timer := 90.0
-var _weight: RigidBody3D
-var _pad: Area3D
 var _use_ray := PhysicsRayQueryParameters3D.new()
 var _hud_clock := 0.0
 var _roots: Dictionary = {}
@@ -74,10 +60,10 @@ func _ready() -> void:
 	add_child(service)
 	service_info = Rooms.build_service(service)
 	workshop = Workshop.new()
-	workshop.name = "Calibration"
+	workshop.name = "LocalTestStand"
 	workshop.position = Vector3(150, 0, 0)
 	add_child(workshop)
-	_roots = {"lab": lab, "home": home, "service": service, "calibration": workshop}
+	_roots = {"lab": lab, "home": home, "service": service, "stand": workshop}
 	for stage in ["evening", "bus", "dream"]:
 		var root := Node3D.new()
 		root.name = stage.to_pascal_case()
@@ -88,24 +74,6 @@ func _ready() -> void:
 			"evening": _interludes[stage] = Interludes.evening(root)
 			"bus": _interludes[stage] = Interludes.bus(root)
 			"dream": _interludes[stage] = Interludes.dream(root)
-	_weight = Workshop.make_cube(service, Vector3(-3.4, 0.35, -0.2), 8.0, Color("e9e5d4"))
-	_weight.name = "CeramicWeight"
-	_pad = Area3D.new()
-	_pad.position = Vector3(0, 0.34, 1.3)
-	var shape := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	box.size = Vector3(1.1, 0.75, 1.1)
-	shape.shape = box
-	_pad.add_child(shape)
-	service.add_child(_pad)
-	_pad.body_entered.connect(func(body: Node3D):
-		if body == _weight:
-			_cube_on_pad = true
-	)
-	_pad.body_exited.connect(func(body: Node3D):
-		if body == _weight:
-			_cube_on_pad = false
-	)
 	player = Player.new()
 	player.name = "CampaignPlayer"
 	player.sprint_available = true
@@ -141,6 +109,8 @@ func _ready() -> void:
 	tape_layer.add_child(tape)
 	ui = Interface.new()
 	add_child(ui)
+	workshop.notified.connect(ui.say)
+	workshop.peer_completed.connect(func(result: Dictionary): GameRun.record_peer_result("environment_memory", result))
 	ui.modal_changed.connect(_sync_input)
 	ui.speaker_changed.connect(_face_speaker)
 	bridge = Bridge.new()
@@ -148,10 +118,14 @@ func _ready() -> void:
 	bridge.finished.connect(_world_finished)
 	bridge.failed.connect(_world_failed)
 	_use_ray.exclude = [player.get_rid()]
-	lab_info.nika.visible = GameRun.day != 3
+	lab_info.nika.visible = true
 	lab_info.artem.visible = GameRun.day >= 2
-	_gate_event = GameRun.gate_event_started
-	Rooms.set_gate_open(lab_info.gate, not _gate_event or GameRun.gate_repaired)
+	Rooms.set_gate_open(lab_info.gate, true)
+	Rooms.set_gate_open(service_info.gate, true)
+	Rooms.set_gate_open(service_info.exit_gate, true)
+	service_info.nika.hide()
+	service_info.artem.hide()
+	service_info.occupancy.text = "СЕРВИСНЫЙ РЕЖИМ / МЕСТНОЕ УПРАВЛЕНИЕ"
 	if GameRun.location == "evening":
 		_set_stage("evening", Vector3(8, 0.03, 22), 0)
 		if GameRun.tour_pending:
@@ -162,15 +136,16 @@ func _ready() -> void:
 		_set_stage("dream", Vector3(0, 0.03, 3), 0)
 	elif GameRun.location == "home":
 		_set_stage("home", Vector3(-1.5, 0.03, 4.2), 0)
-	elif GameRun.incident_started:
-		_set_stage("service", Vector3(0, 0.03, 5), 0)
-		_start_emergency()
+	elif GameRun.location == "stand" and not GameRun.active_case.is_empty():
+		_module = GameRun.active_case
+		workshop.begin(int(GameRun.module_info(_module).case_day), GameRun.case_sessions.get(_module, {}))
+		_set_stage("stand", Vector3(0, 0.03, 4.5), 0)
 	else:
 		_set_stage("lab", Vector3(2.6, 0.03, 4.5), 0)
 		if not GameRun.day_briefed:
 			_brief_day.call_deferred()
 	if not GameRun.ending.is_empty():
-		_show_ending(GameRun.ending)
+		_show_ending()
 	_sync_input()
 
 func _build_environment() -> void:
@@ -221,13 +196,13 @@ func _set_stage(stage: String, p: Vector3, yaw: float) -> void:
 	_cafe_seated = false
 	_bus_arrived = false
 	player.seated = stage == "bus"
-	player.sprint_available = stage not in ["dream", "bus", "calibration"]
+	player.sprint_available = stage not in ["dream", "bus", "stand"]
 	for key in _roots:
 		_roots[key].visible = key == stage
-	if stage in ["evening", "bus", "dream", "home", "lab"]:
+	if stage in ["evening", "bus", "dream", "home", "lab", "stand"]:
 		GameRun.location = stage
 	if stage == "lab":
-		lab_info.nika.visible = GameRun.day != 3
+		lab_info.nika.visible = true
 		lab_info.artem.visible = GameRun.day >= 2
 		lab_info.elena.visible = GameRun.day >= 2
 		Rooms.dress_shift(lab_info, GameRun.day, GameRun.interview_answers)
@@ -295,11 +270,10 @@ func _sync_input() -> void:
 	if ui == null or player == null:
 		return
 	var free := not _busy and not _paused and _focused and ui.mode == "none" and not bridge.active
-	player.enabled = free and not _manual_hold
+	player.enabled = free
 	for root in _roots.values():
 		root.process_mode = Node.PROCESS_MODE_INHERIT if root == _root_for(_stage) and free else Node.PROCESS_MODE_DISABLED
-	workshop.cube.freeze = workshop.carried or not free or _stage != "calibration"
-	_weight.freeze = _holding_weight or not free or _stage != "service"
+	workshop.cube.freeze = workshop.carried or not free or _stage != "stand"
 	get_viewport().disable_3d = bridge.active
 	_audio.set_muted(not GameSettings.sound_enabled or not free or _stage == "bus")
 	_music.stream_paused = not GameSettings.sound_enabled or not free or _stage != "lab"
@@ -330,7 +304,11 @@ func _brief_day() -> void:
 		lines.append_array(["nika_day1_02", "hero_day1_01", "nika_day1_03"])
 		_talk(lines)
 	elif GameRun.day == 2:
-		_talk(["elena_day2_01", "nika_day2_01", "hero_day2_01", "elena_day2_02"])
+		var lines: Array = ["elena_day2_01", "nika_day2_01", "hero_day2_01", "elena_day2_02"]
+		var personal := GameRun.interview_line("communication")
+		if not personal.is_empty():
+			lines.append(personal)
+		_talk(lines)
 	else:
 		_talk(["elena_day3_01", "artem_day3_01", "nika_day3_01"])
 
@@ -339,15 +317,9 @@ func _process(delta: float) -> void:
 		return
 	if GameSettings.sound_enabled and _stage == "lab" and not _music.playing:
 		_music.play()
-	if _stage == "calibration":
-		_probe_seconds += delta
+	if _stage == "stand":
 		workshop.carry(player.camera)
-	elif _stage == "service":
-		if _holding_weight:
-			_weight.global_position = player.camera.to_global(Vector3(0, -0.48, -1.55))
-			_weight.global_rotation = Vector3(0, player.rotation.y, 0)
-		if GameRun.incident_started:
-			_update_emergency(delta)
+		workshop.observe(player.camera, player.get_rid())
 	elif _stage in ["evening", "bus", "dream"]:
 		_update_interlude(delta)
 		if _busy:
@@ -364,14 +336,10 @@ func _process(delta: float) -> void:
 func _actions() -> Dictionary:
 	if _interludes.has(_stage):
 		return _interludes[_stage].actions
-	if _stage == "calibration":
-		var result: Dictionary = workshop.actions.duplicate()
-		result.cube = workshop.cube.position
-		return result
+	if _stage == "stand":
+		return workshop.targets()
 	if _stage == "service":
-		var result: Dictionary = service_info.actions.duplicate()
-		result.weight = _weight.position
-		return result
+		return {"escape": service_info.actions.escape, "sector_window": service_info.actions.sector_window}
 	return home_info.actions if _stage == "home" else lab_info.actions
 
 func _update_interlude(delta: float) -> void:
@@ -402,17 +370,13 @@ func _find_action() -> String:
 		return "bus_exit" if _bus_arrived else ""
 	if _cafe_seated:
 		return "cafe_leave" if _scene_seconds >= 8 else ""
-	if _manual_hold:
-		return "release_valve"
-	if (_stage == "calibration" and workshop.carried) or (_stage == "service" and _holding_weight):
+	if _stage == "stand" and workshop.carried:
 		return "place_cube"
 	var root := _root_for(_stage)
 	var nearest := 3.1
 	var action := ""
 	var targets := _actions()
 	for key in targets:
-		if key == "nika" and GameRun.day == 3:
-			continue
 		var target: Vector3 = root.to_global(targets[key])
 		var offset := target - player.camera.global_position
 		if offset.length() >= nearest or offset.normalized().dot(-player.camera.global_basis.z) < 0.5:
@@ -427,10 +391,10 @@ func _find_action() -> String:
 	return action
 
 func _action_label(action: String) -> String:
-	var names := {"computer": "рабочий компьютер", "archive": "история отчётов", "nika": "поговорить с Никой", "coffee": "перерыв", "exit": "закончить смену", "service": "служебный сектор", "lab_gate": "местный привод", "home_pc": "личные записи и сообщения", "bed": "лечь спать", "home_exit": "выйти на работу", "home_coffee": "посмотреть на кухню", "cube": "поднять куб", "material": "изменить материал", "light": "изменить свет", "reset": "сбросить состояние", "finish_calibration": "завершить практическую пробу", "place_cube": "поставить предмет · ЛКМ — уронить", "isolate": "изолировать сетевое управление", "permit": "взять местный допуск", "valve": "удерживать привод", "weight": "поднять керамический груз", "escape": "выйти из сектора", "sector_window": "проверить занятость", "release_valve": "отпустить привод"}
+	var names := {"computer": "рабочий компьютер", "archive": "история отчётов", "nika": "поговорить с Никой", "coffee": "перерыв", "exit": "закончить смену", "service": "служебный сектор", "lab_gate": "местный привод", "home_pc": "личные записи и сообщения", "bed": "лечь спать", "home_exit": "выйти на работу", "home_coffee": "посмотреть на кухню", "cube": "поднять куб", "mode": "сменить контроль / испытываемую версию", "light": "изменить свет", "reset": "обычный сброс", "reconnect": "переподключить среду", "case_notes": "задание, журнал и собственные записи", "finish_case": "вернуться с выборкой в отчёт", "place_cube": "поставить предмет · ЛКМ — уронить", "mark": "поставить метку А-01", "impact": "изменить панель", "replay": "повтор последней команды", "inspect": "осмотреть обратную сторону", "escape": "вернуться на рабочий этаж", "sector_window": "проверить сервисный режим"}
 	names.merge({"cafe_sit": "присесть и посмотреть на закат", "cafe_leave": "встать и пройти к автобусу", "bus_board": "сесть в автобус №18", "bus_exit": "выйти на своей остановке"})
 	if action == "exit" and GameRun.shift_released:
-		return "выйти в город"
+		return "выйти с этажа" if GameRun.day == 3 else "выйти в город"
 	return names.get(action, action)
 
 func _update_hud() -> void:
@@ -440,22 +404,17 @@ func _update_hud() -> void:
 		ui.objective.text = "МАРШРУТ 18 / ПАРКОВАЯ" + ("\nТвоя остановка · можно выходить" if _bus_arrived else "\nДорога домой")
 	elif _stage == "dream":
 		ui.objective.text = ""
-	elif _stage == "calibration":
-		ui.objective.text = workshop.checklist().strip_edges()
-		if _probe_seconds < 15:
-			ui.objective.text += "\nНаблюдение: ещё %d с" % ceili(15 - _probe_seconds)
+	elif _stage == "stand":
+		ui.objective.text = workshop.checklist()
 	elif _stage == "home":
 		ui.objective.text = ("ВЕЧЕР ПОСЛЕ СОБЕСЕДОВАНИЯ" if GameRun.day == 0 else "КВАРТИРА / ВЕЧЕР" if GameRun.home_evening else "УТРО / ДЕНЬ %d" % GameRun.day)
 		ui.objective.text += "\nЛичный стол · затем сон" if GameRun.home_evening else "\nКлючи у двери · выйти на работу"
-	elif _stage == "service" and GameRun.incident_started:
-		ui.objective.text = "АВАРИЯ / ДО ПРОДУВКИ %02d:%02d" % [int(_timer) / 60, int(_timer) % 60]
-		ui.objective.text += "\nДопуск %s · Сеть %s · Привод %s\nЭвакуация %d/2" % ["✓" if _authorized else "○", "✓" if _isolated else "○", "✓" if _gate_open else "○", _evac_count]
+	elif _stage == "service":
+		ui.objective.text = "СЛУЖЕБНЫЙ СЕКТОР\nСервисный режим · можно вернуться на этаж"
 	else:
 		ui.objective.text = "LATENT / ДЕНЬ %d\n%s" % [GameRun.day, GameRun.quota_text()]
-		if _gate_event and not GameRun.gate_repaired:
-			ui.objective.text += "\nПроход закрыт · Найди местный привод"
-		elif GameRun.shift_released:
-			ui.objective.text = "СМЕНА ЗАКОНЧЕНА\nВыйди через дверь к лифту"
+		if GameRun.shift_released:
+			ui.objective.text = ("ПРОГРАММА ЗАВЕРШЕНА" if GameRun.day == 3 else "СМЕНА ЗАКОНЧЕНА") + "\nВыйди через дверь к лифту"
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not _focused or _busy or bridge.active:
@@ -466,7 +425,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and not event.is_echo():
 		if _paused:
 			(ui._page_root as Interface.PauseUI).request_close()
-		elif ui.mode in ["computer", "home", "report"]:
+		elif ui.mode in ["computer", "home", "report", "case_notes", "program"]:
 			ui.close_page()
 		else:
 			_pause()
@@ -476,23 +435,23 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif ui.mode == "none" and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 			player.capture_mouse()
-		elif workshop.carried or _holding_weight:
+		elif _stage == "stand" and workshop.carried:
 			_release_object(false)
 		else:
 			var action := _find_action()
-			if action in ["cube", "weight"]:
+			if action == "cube":
 				_use(action)
-	elif ui.mode == "none" and event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_R:
-		if _manual_hold:
-			_manual_hold = false
-			_sync_input()
-		elif _stage == "calibration":
-			workshop.reset_cube()
-		elif _holding_weight:
-			_release_object(false)
+	elif ui.mode == "none" and event is InputEventKey and event.pressed and not event.echo:
+		if event.physical_keycode == KEY_F8 and _stage == "stand":
+			_capture_case()
+		elif event.physical_keycode == KEY_R and _stage == "stand" and not workshop.peer_running:
+			workshop.reset_environment()
 
 func _use(action: String) -> void:
 	if action.is_empty():
+		return
+	if _stage == "stand" and workshop.peer_running and action != "case_notes":
+		ui.say("Артём выполняет свою проверку. Можно смотреть, сделать снимок или открыть записи; действия на стенде пока заняты.")
 		return
 	_audio.play_event("ui_click")
 	match action:
@@ -501,8 +460,11 @@ func _use(action: String) -> void:
 		"nika": _talk(["nika_day1_03"] if GameRun.day == 1 else ["nika_day2_01"])
 		"coffee": ui.say("Кофе ещё тёплый. За перегородкой обсуждают завтрашний выпуск.")
 		"exit":
-			if GameRun.shift_released and GameRun.day < 3:
-				_begin_commute()
+			if GameRun.shift_released:
+				if GameRun.day == 3:
+					_finish_outro()
+				else:
+					_begin_commute()
 			else:
 				_end_shift()
 		"service":
@@ -510,7 +472,7 @@ func _use(action: String) -> void:
 				ui.say("Служебный сектор. Производственный допуск выдадут после двух смен.")
 			else:
 				_travel("service", Vector3(0, 0.03, 5.4), 0)
-		"lab_gate": _repair_gate()
+		"lab_gate": ui.say("Местный привод эксплуатации. На рабочем этаже проход открыт.")
 		"home_pc": _home_computer()
 		"bed": _sleep()
 		"home_exit":
@@ -521,26 +483,19 @@ func _use(action: String) -> void:
 				_travel("lab", Vector3(2.6, 0.03, 4.5), 0, _brief_day)
 		"home_coffee": ui.say("Тихо. Ключи на полке, будильник на восемь.")
 		"cube": workshop.pickup()
-		"material": workshop.change_material()
+		"mode": workshop.change_mode()
 		"light": workshop.change_light()
-		"reset": workshop.reset_cube()
+		"reset": workshop.reset_environment()
+		"reconnect": workshop.reconnect()
 		"place_cube": _release_object(true)
-		"finish_calibration": _finish_calibration()
-		"permit":
-			_authorized = true
-			ui.say("Местный допуск получен. Теперь можно изолировать сетевой контроллер слева.")
-		"isolate": _isolate()
-		"valve": _hold_valve()
-		"release_valve":
-			_manual_hold = false
-			_sync_input()
-		"weight":
-			_holding_weight = true
-			_weight.freeze = true
-			_weight.collision_layer = 0
-			_weight.collision_mask = 0
-		"escape": _escape()
-		"sector_window": ui.say("Ника внутри. На экране — ноль. Прогноз не видит человека за стеклом.")
+		"finish_case": _finish_case()
+		"case_notes": _case_notes()
+		"mark": workshop.stamp()
+		"impact": workshop.impact()
+		"replay": workshop.replay_command()
+		"inspect": workshop.inspect_back(player.global_position)
+		"escape": _travel("lab", Vector3(7.5, 0.03, 9.6), PI)
+		"sector_window": ui.say("Местное управление в сервисном режиме. Это оборудование здания, а не игровой стенд. Рабочую приёмку выполняют в лаборатории.")
 		"cafe_sit":
 			_cafe_seated = true
 			player.seated = true
@@ -560,23 +515,14 @@ func _use(action: String) -> void:
 		"bus_exit": _go_home()
 
 func _release_object(place: bool) -> void:
-	var body: RigidBody3D = workshop.cube if _stage == "calibration" else _weight
+	var body: RigidBody3D = workshop.cube
 	if place:
 		_use_ray.from = player.camera.global_position
 		_use_ray.to = _use_ray.from - player.camera.global_basis.z * 3.1
 		var hit := get_world_3d().direct_space_state.intersect_ray(_use_ray)
 		if not hit.is_empty() and (hit.normal as Vector3).dot(Vector3.UP) > 0.6:
 			body.global_position = hit.position + Vector3.UP * 0.29
-	if _stage == "calibration":
-		workshop.release()
-	else:
-		_holding_weight = false
-		_weight.collision_layer = 1
-		_weight.collision_mask = 1
-		_weight.freeze = false
-		_weight.sleeping = false
-		_weight.linear_velocity = Vector3.ZERO
-		_weight.angular_velocity = Vector3.ZERO
+	workshop.release()
 
 func _computer(tab := 0) -> void:
 	if not GameRun.report_draft.is_empty():
@@ -587,15 +533,19 @@ func _computer(tab := 0) -> void:
 		ui.computer(_launch_module, _end_shift, tab)
 
 func _launch_module(id: String) -> void:
-	if not GameRun.available(id) or (id != "calibration" and not GameRun.calibration_done):
+	if not GameRun.available(id):
 		return
 	_module = id
 	_sample = {}
-	if id == "calibration":
-		ui.close_page()
-		_probe_seconds = 0
-		workshop.begin()
-		_travel("calibration", Vector3(0, 0.03, 4.5), 0)
+	var info := GameRun.module_info(id)
+	if info.kind == "internal":
+		GameRun.active_case = id
+		workshop.begin(int(info.case_day), GameRun.case_sessions.get(id, {}))
+		_travel("stand", Vector3(0, 0.03, 4.5), 0, func():
+			if not workshop.instruction_seen:
+				workshop.instruction_seen = true
+				_case_notes()
+		)
 		return
 	var body := ui.page("Открывается стенд", "LATENT / " + str(GameRun.module_info(id).title), "browser")
 	body.add_child(ui.label("Стенд открыт внутри игрового окна. Кнопка «В отчёт» в верхней пилюле доступна после 15 активных секунд. Выход без отчёта не засчитывает наблюдение.", 22))
@@ -606,16 +556,47 @@ func _launch_module(id: String) -> void:
 	bridge.launch(GameRun.module_info(id))
 	_sync_input()
 
-func _finish_calibration() -> void:
-	if not workshop.complete():
-		ui.say("Остались действия в списке пробы. Проверь материалы, свет и грузовой привод, затем выполни сброс.")
-		return
-	if _probe_seconds < 15.0:
-		ui.say("Минимальное наблюдение: ещё %d с." % ceili(15 - _probe_seconds))
-		return
-	_sample = {"seconds": int(_probe_seconds), "snapshots": [], "internal": true}
+func _store_case() -> void:
+	if _stage == "stand" and not _module.is_empty():
+		GameRun.case_sessions[_module] = workshop.session()
+
+func _finish_case() -> void:
 	workshop.release()
-	_travel("lab", Vector3(2.6, 0.03, 2.7), 0, func(): _talk(["hero_calibration_01"], _show_survey))
+	_store_case()
+	_sample = workshop.sample()
+	GameRun.active_case = ""
+	_travel("lab", Vector3(2.6, 0.03, 2.7), 0, _show_survey)
+
+func _case_notes() -> void:
+	var body := ui.page(Workshop.TITLES[workshop.case_day - 1], "ЛОКАЛЬНЫЙ СТЕНД / " + workshop.version(), "case_notes")
+	body.add_child(ui.label(workshop.task(), 20))
+	body.add_child(ui.label("E — действие; ЛКМ — поднять или уронить; R — обычный сброс; F8 — снимок. Режим, свет и переподключение — на пультах. Можно завершить с недостатком данных: таймер не является проверкой.", 17, Interface.MUTED))
+	if workshop.case_day == 2:
+		var peer_button := ui.button(body, "Пригласить Артёма на отдельную проверку", func():
+			ui.close_page()
+			workshop.start_peer()
+		, true)
+		peer_button.disabled = workshop.peer_running
+	if workshop.case_day == 3:
+		body.add_child(ui.label("Собственные записи первого дня", 22, Interface.ACCENT))
+		for report in GameRun.reports:
+			if report.module == "object_state":
+				body.add_child(ui.label("Условие: %s\nРезультат: %s\nПовтор: %s" % [report.checked, report.observation, report.sample.get("repeat", "Не проверено")], 18))
+				ui.event_list(body, report.sample.get("events", []))
+				ui.snapshot_list(body, report.sample.get("snapshots", []))
+	body.add_child(ui.label("Журнал действий / не готовый диагноз", 22, Interface.ACCENT))
+	ui.event_list(body, workshop.journal)
+	ui.snapshot_list(body, workshop.snapshots)
+	ui.button(body, "Вернуться к стенду", ui.close_page, true)
+
+func _capture_case() -> void:
+	var image := get_viewport().get_texture().get_image()
+	if image == null or image.is_empty():
+		ui.say("Этот видеорежим не выдал кадр. Наблюдение можно записать без снимка.")
+		return
+	if image.get_width() > 640:
+		image.resize(640, int(640.0 * image.get_height() / image.get_width()), Image.INTERPOLATE_BILINEAR)
+	workshop.add_snapshot("data:image/jpeg;base64," + Marshalls.raw_to_base64(image.save_jpg_to_buffer(0.75)))
 
 func _world_finished(sample: Dictionary) -> void:
 	if sample.get("status", "complete") != "complete":
@@ -634,7 +615,9 @@ func _save_report(checked: String, observed: String, recommendation: int, sample
 	var report: Dictionary = GameRun.save_report(_module, checked, observed, recommendation, sample)
 	if report.is_empty():
 		return
-	if recommendation == 2:
+	if GameRun.day == 3 and _module == GameRun.case_id():
+		_close_program()
+	elif recommendation == 2:
 		_talk(["nika_peer_01"], _computer)
 	elif recommendation in [1, 3] and GameRun.day >= 2:
 		_talk(["elena_review_01"], _computer)
@@ -652,42 +635,29 @@ func _end_shift() -> void:
 	elif GameRun.day == 1:
 		_talk(["nika_hired_01", "hero_hired_01"], _release_shift)
 	elif GameRun.day == 2:
-		if not GameRun.gate_repaired:
-			if not _gate_event:
-				_gate_event = true
-				GameRun.gate_event_started = true
-				GameRun.sign_release()
-				Rooms.set_gate_open(lab_info.gate, false)
-				var lines: Array = ["artem_gate_01"]
-				var personal := GameRun.interview_line("communication")
-				if not personal.is_empty():
-					lines.append(personal)
-				_talk(lines)
-			else:
-				ui.close_page()
-				ui.say("Нужен жёлтый местный привод у стеклянного поста.")
-		else:
-			_release_shift()
+		_talk(["artem_shift_end"], _release_shift)
 	else:
-		_travel("service", Vector3(0, 0.03, 4.9), 0, func(): _talk(["artem_alarm_01", "nika_alarm_01", "hero_alarm_01", "elena_alarm_01", "artem_rescue_01"], _incident_choice))
+		_close_program()
 
-func _repair_gate() -> void:
-	if not _gate_event or GameRun.gate_repaired:
-		ui.say("Местный привод. Эксплуатация проверяет его перед каждой сменой.")
+func _close_program() -> void:
+	if not GameRun.quota_ready():
 		return
-	Rooms.set_gate_open(lab_info.gate, true)
-	_audio.play_event("office_door_open")
-	_talk(["hero_gate_01", "artem_gate_02"], func():
-		var person: Node3D = lab_info.artem.get_child(0)
-		person.reached_destination.connect(func():
-			GameRun.gate_repaired = true
-			_talk(["artem_gate_03"])
-		, CONNECT_ONE_SHOT)
-		person.walk_to(Vector3(0, 0, 4), 1.6)
+	GameRun.finish_shift()
+	var body := ui.page("Практическая программа завершена", "LATENT SYSTEMS / ТРЕТИЙ ДЕНЬ", "program")
+	body.add_child(ui.label("Спасибо за участие. Результаты наблюдений переданы на обработку.\nО дальнейших условиях работы мы сообщим отдельно.", 23))
+	body.add_child(ui.label("Рабочий доступ закрыт. Закрой планшет и выйди к лифту.", 18, Interface.MUTED))
+	ui.button(body, "Закрыть планшет и уйти", ui.close_page, true)
+
+func _finish_outro() -> void:
+	_busy = true
+	_talk(["hero_demo_end"], func():
+		var fade_out := create_tween()
+		fade_out.tween_property(ui.fade, "color:a", 1.0, 0.9)
+		fade_out.finished.connect(_show_ending, CONNECT_ONE_SHOT)
 	)
 
 func _release_shift() -> void:
-	GameRun.shift_released = true
+	GameRun.finish_shift()
 	ui.close_page()
 	_update_hud()
 
@@ -702,7 +672,7 @@ func _go_home() -> void:
 
 func _home_computer() -> void:
 	var body := ui.page("Личный стол", "КВАРТИРА / НЕ КОРПОРАТИВНЫЙ СТЕНД", "home")
-	var note := "Завтра, 09:00. Ника встретит на испытательном этаже. Пока только практическая часть, не первый самостоятельный день." if GameRun.day == 0 else "Практическая часть принята. Завтра — самостоятельные проверки." if GameRun.day == 1 else "Шлюз открылся только в местном режиме. Сохраню рабочие записи отдельно."
+	var note := "Завтра, 09:00. Ника встретит на испытательном этаже. Пока только практическая часть, не первый самостоятельный день." if GameRun.day == 0 else "Практическая часть принята. Завтра — проверка памяти среды." if GameRun.day == 1 else "Завтра исправленная версия. Проверю её по собственным записям."
 	body.add_child(ui.label(note, 22))
 	body.add_child(ui.label("Будильник: 08:00 · пропуск и ключи у двери", 19))
 	ui.report_list(body)
@@ -712,7 +682,7 @@ func _home_computer() -> void:
 			_talk(["hero_share_01"], _home_computer)
 		, true)
 		send.disabled = GameRun.shared_notes
-		body.add_child(ui.label("Это откроет прямую помощь и подготовленный местный допуск. Сохранить только у себя тоже можно; аварийное управление остаётся доступным.", 17, Interface.MUTED))
+		body.add_child(ui.label("Коллега получит отдельную копию. Твои записи и решение о приёмке остаются разными документами.", 17, Interface.MUTED))
 	ui.button(body, "Отойти от стола", ui.close_page)
 
 func _sleep() -> void:
@@ -771,10 +741,10 @@ func _travel(stage: String, p: Vector3, yaw: float, done: Callable = Callable())
 	var caption := ""
 	if _stage == "bus" and stage == "home":
 		caption = "Остановка «Парковая»\nНесколько минут пешком до квартиры"
-	elif stage == "calibration":
-		caption = "Локальная контрольная среда\nПодключение к калибровочному стенду"
-	elif _stage == "calibration":
-		caption = "Калибровочный стенд отключён\nВозвращение к рабочему столу"
+	elif stage == "stand":
+		caption = "Локальная контрольная среда\n" + str(GameRun.module_info(_module).title) + " · версия " + workshop.version()
+	elif _stage == "stand":
+		caption = "Испытательный стенд отключён\nВыборка сохранена · возвращение к рабочему столу"
 	elif stage == "lab" and _stage == "home":
 		caption = "Утренний автобус №18\nИспытательный корпус · рабочий этаж"
 	elif stage == "evening":
@@ -799,144 +769,24 @@ func _travel(stage: String, p: Vector3, yaw: float, done: Callable = Callable())
 	if done.is_valid():
 		done.call()
 
-func _incident_choice() -> void:
-	var body := ui.page("Сектор не пуст", "РЕАЛЬНАЯ АВАРИЯ / ТАЙМЕР ЕЩЁ НЕ ЗАПУЩЕН", "decision")
-	body.add_child(ui.label("Ника внутри. Продувка разрешена прогнозом пустого сектора. Можно уйти с этажа или вмешаться через местное управление. Ранние ответы не запрещают помощь.", 23))
-	ui.button(body, "Изолировать управление и открыть шлюз", func(): _talk(["hero_rescue_01", "nika_contact_01" if GameRun.has_contact() else "artem_local_01"], _start_emergency), true)
-	ui.button(body, "Уйти с этажа", func(): _talk(["hero_leave_01"], func(): _show_ending("leave")))
-
-func _start_emergency() -> void:
-	GameRun.start_incident()
-	_timer = 90
-	_authorized = _authorized or GameRun.has_contact()
-	_isolated = false
-	_manual_hold = false
-	_holding_weight = false
-	_gate_open = false
-	_evac_started = false
-	_evac_count = 0
-	_evac_prompted = false
-	Rooms.set_gate_open(service_info.gate, false)
-	Rooms.set_gate_open(service_info.exit_gate, false)
-	for light in service_info.lights:
-		light.light_color = Color("ffc49e")
-		light.light_energy = 1.1
-	service_info.occupancy.text = "ЗАНЯТОСТЬ: 0 / ПРОДУВКА РАЗРЕШЕНА"
-	ui.close_page()
-	_sync_input()
-
-func _isolate() -> void:
-	if not GameRun.incident_started:
-		ui.notice("Производственный контроллер", "Режим приёмки. Сетевое управление активно; местный допуск потребуется при ручном вмешательстве.", ui.close_page)
-	elif not _authorized:
-		ui.notice("Нужен местный допуск", "Инженер оставил допуск на правом столе. Любые прежние ответы позволяют его взять.", ui.close_page)
-	elif not _isolated:
-		_isolated = true
-		service_info.occupancy.text = "СЕТЬ ОТКЛЮЧЕНА / МЕСТНЫЙ РЕЖИМ"
-		service_info.occupancy.modulate = Color("38ba91")
-		for light in service_info.lights:
-			light.light_color = Color("e5e9ff")
-		_talk(["hero_isolate_01"])
-
-func _hold_valve() -> void:
-	if not GameRun.incident_started or not _isolated:
-		ui.notice("Привод заблокирован", "Сначала изолируй сетевое управление на левом контроллере. Для него нужен местный допуск.", ui.close_page)
+func _show_ending() -> void:
+	if not GameRun.complete():
 		return
-	_manual_hold = true
-	_sync_input()
-	if not _evac_started:
-		_talk(["artem_valve_01"])
-
-func _update_emergency(delta: float) -> void:
-	_timer = maxf(0, _timer - delta)
-	var weighted := _cube_on_pad and not _holding_weight and _weight.linear_velocity.length_squared() < 0.16
-	var opened := _isolated and (_manual_hold or weighted)
-	if opened != _gate_open:
-		_gate_open = opened
-		Rooms.set_gate_open(service_info.gate, opened)
-		Rooms.set_gate_open(service_info.exit_gate, opened)
-		_audio.play_event("office_door_open" if opened else "office_door_close")
-		for key in ["nika", "artem"]:
-			service_info[key].get_child(0).set_process(opened)
-	if opened and not _evac_started:
-		_evac_started = true
-		for key in ["nika", "artem"]:
-			_evacuate_actor(service_info[key])
-	if _evac_count == 2 and not _evac_prompted:
-		_evac_prompted = true
-		_talk(["nika_exit_01"], _after_evacuation)
-	if _timer <= 0:
-		_game_over()
-
-func _evacuate_actor(actor: Node3D) -> void:
-	var person: Node3D = actor.get_child(0)
-	var local := service.to_local(actor.global_position)
-	if local.z < -2:
-		person.walk_to(Vector3(-local.x, 0, -3.2 - local.z), 1.6)
-		await person.reached_destination
-	person.walk_to(Vector3(0.25 - local.x, 0, 8.8 - local.z), 1.6)
-	await person.reached_destination
-	actor.hide()
-	_evac_count += 1
-
-func _after_evacuation() -> void:
-	if not _manual_hold:
-		_talk(["hero_weight_01"])
-		return
-	var body := ui.page("Они вышли", "ПРИВОД ДЕРЖИТ ОБА ПРОХОДА", "decision")
-	body.add_child(ui.label("Если отпустить привод, твой выход тоже закроется. Можно остаться у рукояти до продувки — или отпустить её и закрепить площадку керамическим грузом, пока ещё есть время.", 23))
-	ui.button(body, "Остаться у привода", func(): _talk(["hero_hold_01"], _sacrifice), true)
-	ui.button(body, "Отпустить и закрепить грузом", func():
-		_manual_hold = false
-		ui.close_page()
-		_sync_input()
-	)
-
-func _escape() -> void:
-	if not GameRun.incident_started:
-		_travel("lab", Vector3(7.5, 0.03, 9.6), PI)
-	elif _evac_count < 2:
-		ui.notice("Люди ещё внутри", "Для спасения нужно удерживать проход до выхода обоих сотрудников. Альтернативу уйти можно выбрать до вмешательства; здесь повторяется аварийный участок.", ui.close_page)
-	elif not _gate_open:
-		ui.notice("Выход закрыт", "Оба прохода требуют нагрузки на площадку. Керамический груз должен лежать на жёлтой площадке, не висеть в руках.", ui.close_page)
-	else:
-		_talk(["hero_safe_01", "nika_safe_01"], func(): _show_ending("safe"))
-
-func _sacrifice() -> void:
-	_busy = true
-	_sync_input()
-	await get_tree().create_timer(2.5).timeout
-	_talk(["artem_last_01"], func(): _show_ending("sacrifice"))
 	_busy = false
-
-func _game_over() -> void:
-	_manual_hold = false
-	var body := ui.page("GAME OVER", "АВАРИЙНЫЙ УЧАСТОК / ВЫБОРКИ И ОТЧЁТЫ СОХРАНЕНЫ", "gameover")
-	body.add_child(ui.label("Продувка началась до безопасного выхода. Повтор начнётся у входа в сектор: город, собеседование и смены проходить заново не нужно.", 23))
-	ui.button(body, "Повторить аварийный участок", _restart_incident, true)
-	ui.button(body, "Главное меню", _menu)
-
-func _restart_incident() -> void:
-	get_tree().reload_current_scene()
-
-func _show_ending(id: String) -> void:
-	GameRun.complete(id)
-	_manual_hold = false
-	var titles := {"safe": "ЛЮДИ ВЫШЛИ", "sacrifice": "ПРИВОД УДЕРЖАН", "leave": "СМЕНА ЗАКОНЧЕНА"}
-	var texts := {"safe": "Ника и Артём вышли. Керамический груз удержал привод, и ты успел выйти следом. Сетевой контроллер изолирован. Ошибка прогноза больше не является командой для этого сектора.", "sacrifice": "Ника и Артём вышли. Ты остался у привода, чтобы проходы не закрылись во время эвакуации. После начала продувки на связь никто не ответил. Сетевой контроллер изолирован.", "leave": "Ты вышел с этажа до вмешательства. Аварийное управление осталось на прогнозе пустого сектора. Твои отчёты сохранились; производственный выпуск не отозван."}
-	var body := ui.page(titles[id], "LATENTPUNK: TEST SUBJECT 0 / ФИНАЛ", "ending")
-	body.add_child(ui.label(texts[id], 24))
-	body.add_child(ui.label("Наблюдений сохранено: %d · Дней: %d\nОтдельная копия: %s · Прямой контакт: %s" % [GameRun.reports.size(), GameRun.day, "да" if GameRun.shared_notes else "нет", "да" if GameRun.has_contact() else "нет"], 19, Interface.MUTED))
-	ui.button(body, "Титры", func(): _credits(id), true)
+	ui.fade.z_index = -1
+	ui.fade.color = Color.BLACK
+	var body := ui.page("КОНЕЦ ДЕМОВЕРСИИ", "LATENTPUNK: TEST SUBJECT 0", "ending")
+	body.add_child(ui.label("Три рабочих дня завершены. Наблюдения сохранены.", 23))
+	ui.button(body, "Титры", _credits, true)
 	ui.button(body, "Начать заново", _new_game)
 	ui.button(body, "Главное меню", _menu)
 
-func _credits(ending_id: String) -> void:
+func _credits() -> void:
 	var body := ui.page("Титры", "LATENTPUNK: TEST SUBJECT 0 / МЫ ТЕСТИРУЕМ РЕАЛЬНОСТЬ")
 	body.add_child(ui.label("Главный участник — концепция, режиссура, решения о механиках, озвучивание главного героя.\nAI-ассистенты — программирование, постановка и подготовка ресурсов под руководством участника.\nМузыка: Shift Change — собственная композиция проекта, без чужих семплов.\nДвижок: Godot 4.7.2 Standard.\nШрифт интерфейса: OpenRunde.\nЗвуки и существующие голоса: происхождение, авторство и условия в assets/SOURCES.md и включённых notices.", 21))
-	body.add_child(ui.label("Контрольные среды: DUSTFALL и DEAD PARADE — проекты участника; выбранные среды bench-portal — с разрешения владельцев. Исходные manifests, авторство и лицензии сохранены рядом со сборками.\nМодели и версии каждого стенда указаны в его game.json. Готовые игры не названы собственными исходниками и не переписаны ради переходов.", 19, Interface.MUTED))
+	body.add_child(ui.label("Собственные проверки: сохранность предмета, память среды, приёмка исправления.\nДополнительные среды: DUSTFALL и DEAD PARADE — проекты участника; выбранные игры bench-portal — с разрешения владельцев. Исходные manifests, авторство и лицензии сохранены рядом со сборками.\nМодели и версии каждой внешней среды указаны в её game.json. Готовые игры не названы собственными исходниками и не переписаны ради переходов.", 19, Interface.MUTED))
 	body.add_child(ui.label("Музыка меню: Epilogue — Creo · https://creo-music.com/track/epilogue · CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/).\nМузыка сна: Ossuary 6 - Air — Kevin MacLeod (incompetech.com) · https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1500048 · CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).\nИспуг Ники: Horror Sting (Deep in the Void)2 — SilverIllusionist · https://freesound.org/people/SilverIllusionist/sounds/655386/ · CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).\nМузыкальные MP3 целиком перекодированы в Ogg. Звуковой preview испуга обрезан до 3,2 с, отфильтрован, ослаблен и плавно затушен.", 17, Interface.MUTED))
-	ui.button(body, "К финалу", func(): _show_ending(ending_id), true)
+	ui.button(body, "К финалу", _show_ending, true)
 	ui.button(body, "Главное меню", _menu)
 
 func _pause() -> void:
@@ -951,14 +801,14 @@ func _pause() -> void:
 		GameSettings.set_sound_enabled(value)
 		bridge.set_muted(not value)
 	, GameSettings.set_subtitles_enabled)
-	if _stage == "calibration":
+	if _stage == "stand":
 		ui.button(body, "Вернуться к компьютеру без отчёта", func():
 			_paused = false
 			workshop.release()
+			_store_case()
+			GameRun.active_case = ""
 			_travel("lab", Vector3(2.6, 0.03, 2.7), 0, _computer)
 		)
-	if GameRun.incident_started:
-		ui.button(body, "Повторить аварийный участок", _restart_incident)
 	ui.button(body, "Главное меню", _menu)
 	_sync_input()
 
@@ -968,6 +818,9 @@ func _resume() -> void:
 	_sync_input()
 
 func _menu() -> void:
+	if _stage == "stand":
+		workshop.release()
+		_store_case()
 	bridge.abort()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	get_viewport().disable_3d = false
