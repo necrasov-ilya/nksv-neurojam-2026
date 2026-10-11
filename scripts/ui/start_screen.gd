@@ -1,224 +1,286 @@
 extends Node
 
 const MAIN_SCENE_PATH := "res://scenes/prologue.tscn"
-const GAME_TITLE := "LATENTPUNK:\nTEST SUBJECT 0"
-
-const BRIGHT_COLOR := Color(1.0, 0.72, 0.14)
-const BRIGHT_HOVER := Color(1.0, 0.8, 0.28)
-const BRIGHT_PRESSED := Color(0.88, 0.6, 0.1)
-const PLATE_COLOR := Color(0.13, 0.16, 0.21)
-const PLATE_HOVER := Color(0.19, 0.23, 0.3)
-const PLATE_PRESSED := Color(0.09, 0.11, 0.14)
-const TEXT_COLOR := Color(0.88, 0.9, 0.94)
-const DISABLED_TEXT := Color(0.4, 0.42, 0.46)
-const DISABLED_PLATE := Color(0.08, 0.09, 0.12)
-
-@export var background_texture: Texture2D
+const ACCENT := Color("5b4cff")
+const HOVER := Color("ac2954")
+const INK := Color("242139")
+const MUTED := Color("78738d")
+const PAPER := Color("f5f3fb")
+const FONT := preload("res://assets/fonts/OpenRunde-Semibold.woff2")
+const UIStyle := preload("res://scripts/ui/hud_style.gd")
+const SettingsUI := preload("res://scripts/ui/settings_panel.gd")
+const ICON_PATH := "res://assets/ui/icons/lucide/"
 
 @onready var orientation_guard: OrientationGuard = $OrientationGuard
 
-var _ui_layer: CanvasLayer
-var _start_button: Button
-var _settings_panel: Control
-var _about_panel: Control
-var _sound_check: CheckButton
-var _subtitles_check: CheckButton
+var _stage: Control
+var _photo: TextureRect
+var _plane: Polygon2D
+var _title: Label
+var _subtitle: Label
+var _about_button: Button
+var _start_button: MenuSliceButton
+var _menu_buttons: Array[MenuSliceButton] = []
+var _blob: MenuBlob
+var _drawer_root: Control
+var _drawer: Panel
+var _scrim: Button
+var _settings_body: SettingsUI
+var _about_body: Control
+var _about_info: Label
+var _about_copy: String
+var _close_button: Button
+var _drawer_title: Label
+var _drawer_tween: Tween
+var _drawer_open := false
+var _drawer_width := 560.0
+var _previous_focus: Control
 
 
 func _ready() -> void:
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_build_ui()
-	_build_vhs()
 	orientation_guard.landscape_changed.connect(_on_landscape_changed)
+	get_viewport().size_changed.connect(_layout)
+	_layout()
 	_on_landscape_changed(orientation_guard.is_landscape())
-
-func _build_vhs() -> void:
-	var layer := CanvasLayer.new()
-	layer.name = "VhsOverlay"
-	layer.layer = _ui_layer.layer + 1
-	add_child(layer)
-	var overlay := ColorRect.new()
-	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var material := ShaderMaterial.new()
-	material.shader = preload("res://assets/shaders/intro_tape.gdshader")
-	material.set_shader_parameter("noise_texture", preload("res://assets/textures/intro/tape_noise.png"))
-	overlay.material = material
-	layer.add_child(overlay)
 
 
 func _build_ui() -> void:
-	_ui_layer = CanvasLayer.new()
-	_ui_layer.name = "Ui"
-	_ui_layer.layer = 10
-	add_child(_ui_layer)
-
-	var background := TextureRect.new()
-	background.texture = background_texture
-	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	background.anchor_right = 1.0
-	background.anchor_bottom = 1.0
-	_ui_layer.add_child(background)
-
+	var layer := CanvasLayer.new()
+	layer.name = "MenuUI"
+	layer.layer = 10
+	add_child(layer)
+	_stage = Control.new()
+	_stage.name = "Menu"
+	_stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(_stage)
+	_photo = TextureRect.new()
+	_photo.texture = preload("res://assets/textures/menu_city.jpg")
+	_photo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_photo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_photo.modulate = Color(0.53, 0.48, 0.69)
+	_stage.add_child(_photo)
 	var tint := ColorRect.new()
-	tint.color = Color(0, 0, 0, 0.45)
-	tint.anchor_right = 1.0
-	tint.anchor_bottom = 1.0
-	_ui_layer.add_child(tint)
+	tint.color = Color(0.08, 0.06, 0.19, 0.23)
+	tint.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_stage.add_child(tint)
+	_plane = Polygon2D.new()
+	_plane.color = PAPER
+	_stage.add_child(_plane)
+	_title = _label("LATENTPUNK", 64, INK, _stage)
+	_title.add_theme_font_override("font", FONT)
+	_subtitle = _label("TEST SUBJECT 0", 25, ACCENT, _stage)
+	var continuing := GameRun.campaign_started and GameRun.ending.is_empty()
+	_start_button = _menu_button("Продолжить" if continuing else "Играть", "play", true, _on_start_pressed)
+	_menu_button("Настройки", "sliders-horizontal", false, func(): _show_drawer(false))
+	_menu_button("Выход", "log-out", false, _on_exit_pressed)
+	_about_button = UIStyle.small_button("Об игре", "info", func(): _show_drawer(true))
+	_stage.add_child(_about_button)
+	_blob = MenuBlob.new()
+	_blob.name = "LiquidSubject"
+	_stage.add_child(_blob)
+	_build_drawer()
 
-	var center := CenterContainer.new()
-	center.anchor_right = 1.0
-	center.anchor_bottom = 1.0
-	_ui_layer.add_child(center)
 
-	var column := VBoxContainer.new()
-	column.custom_minimum_size = Vector2(380, 0)
-	column.add_theme_constant_override("separation", 14)
-	center.add_child(column)
+func _menu_button(caption: String, icon_name: String, primary: bool, callback: Callable) -> MenuSliceButton:
+	var button := MenuSliceButton.new()
+	button.caption = caption
+	button.symbol = load(ICON_PATH + icon_name + ".svg")
+	button.primary = primary
+	button.pressed.connect(callback)
+	_stage.add_child(button)
+	_menu_buttons.append(button)
+	return button
 
-	var title := Label.new()
-	title.text = GAME_TITLE
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 44)
-	title.add_theme_color_override("font_color", Color(1, 1, 1, 0.96))
-	title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
-	title.add_theme_constant_override("shadow_offset_x", 2)
-	title.add_theme_constant_override("shadow_offset_y", 2)
-	column.add_child(title)
 
-	_start_button = _styled_button("Играть", 26, BRIGHT_COLOR, BRIGHT_HOVER, BRIGHT_PRESSED)
-	_start_button.pressed.connect(_on_start_pressed)
-	column.add_child(_start_button)
-	column.add_child(_styled_button("Настройки", 20, PLATE_COLOR, PLATE_HOVER, PLATE_PRESSED, _show_settings))
-	column.add_child(_styled_button("Об игре", 20, PLATE_COLOR, PLATE_HOVER, PLATE_PRESSED, _show_about))
-	column.add_child(_styled_button("Выход", 20, PLATE_COLOR, PLATE_HOVER, PLATE_PRESSED, _on_exit_pressed))
+func _build_drawer() -> void:
+	_drawer_root = Control.new()
+	_drawer_root.name = "SettingsDrawer"
+	_drawer_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_drawer_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_drawer_root.hide()
+	_stage.add_child(_drawer_root)
+	_scrim = Button.new()
+	_scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_scrim.focus_mode = Control.FOCUS_NONE
+	_scrim.mouse_default_cursor_shape = Control.CURSOR_ARROW
+	_scrim.modulate.a = 0.0
+	for state in ["normal", "hover", "pressed", "focus"]:
+		_scrim.add_theme_stylebox_override(state, UIStyle.flat(Color(0.06, 0.04, 0.15, 0.45)))
+	_scrim.pressed.connect(_hide_drawer)
+	_drawer_root.add_child(_scrim)
+	_drawer = Panel.new()
+	_drawer.name = "Sheet"
+	_drawer.add_theme_stylebox_override("panel", _drawer_style(PAPER, 48))
+	_drawer_root.add_child(_drawer)
+	_drawer_title = _label("Настройки", 36, INK, _drawer)
+	_drawer_title.position = Vector2(48, 46)
+	_close_button = UIStyle.small_button("", "x", _hide_drawer)
+	_close_button.tooltip_text = "Закрыть · Esc"
+	_close_button.position = Vector2(464, 50)
+	_close_button.size = Vector2(40, 40)
+	_drawer.add_child(_close_button)
+	_settings_body = SettingsUI.new()
+	_settings_body.position = Vector2(48, 134)
+	_settings_body.size = Vector2(430, 480)
+	_drawer.add_child(_settings_body)
+	_about_body = Control.new()
+	_about_body.position = Vector2(48, 134)
+	_about_body.size = Vector2(430, 490)
+	_drawer.add_child(_about_body)
+	var about_scroll := ScrollContainer.new()
+	about_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	about_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_about_body.add_child(about_scroll)
+	var info := _label("LATENTPUNK: TEST SUBJECT 0\n\nСобеседование · Три смены · Квартира · Финал\n\nWASD — идти · Мышь — обзор\nE — взаимодействие\nЛКМ — поднять / уронить предмет\nE — поставить предмет\nTab — выбор · Enter — ответ\nEsc — пауза · F8 — снимок на стендах\n\nМузыка Shift Change — собственная композиция\nГолоса: Built with Fish Audio · fish.audio\nИконки: Lucide Contributors · ISC / MIT\n\nGodot 4.7.2 · Compatibility\nОднопоточный Web\n\nПрогресс сохраняется только в текущем запуске.", 19, INK, about_scroll)
+	info.custom_minimum_size.x = 408
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_about_info = info
+	_about_copy = info.text
+	if GameRun.campaign_started and GameRun.ending.is_empty():
+		about_scroll.offset_bottom = -70
+		var restart := UIStyle.small_button("Начать заново", "rotate-ccw", _start_new_run)
+		restart.position = Vector2(0, 440)
+		restart.size = Vector2(180, 42)
+		_about_body.add_child(restart)
 
-	var settings_parts := _make_dialog("Настройки")
-	_settings_panel = settings_parts[0]
-	var settings_body: VBoxContainer = settings_parts[1]
-	_sound_check = CheckButton.new()
-	_sound_check.text = "Звук"
-	_sound_check.button_pressed = GameSettings.sound_enabled
-	_sound_check.add_theme_font_size_override("font_size", 18)
-	_sound_check.toggled.connect(_on_sound_toggled)
-	settings_body.add_child(_sound_check)
-	_subtitles_check = CheckButton.new()
-	_subtitles_check.text = "Субтитры"
-	_subtitles_check.button_pressed = GameSettings.subtitles_enabled
-	_subtitles_check.add_theme_font_size_override("font_size", 18)
-	_subtitles_check.toggled.connect(GameSettings.set_subtitles_enabled)
-	settings_body.add_child(_subtitles_check)
-	settings_body.add_child(_styled_button("Готово", 18, PLATE_COLOR, PLATE_HOVER, PLATE_PRESSED, _hide_settings))
 
-	var about_parts := _make_dialog("Об игре")
-	_about_panel = about_parts[0]
-	var about_body: VBoxContainer = about_parts[1]
-	var info := Label.new()
-	info.text = "LATENTPUNK: TEST SUBJECT 0\nПо пути в LATENT SYSTEMS · Собеседование\nGodot 4.7.2 · Compatibility · однопоточный Web.\nWASD — идти · Мышь — обзор · E — взаимодействие\nСобеседование: Tab — выбор · Enter — ответ\nОтпечатки: стрелки ← → · Esc — пауза\nМузыка и звук: пауза собеседования → Авторство\nГолоса NPC и терминала: Built with Fish Audio · fish.audio"
-	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	info.add_theme_font_size_override("font_size", 16)
-	about_body.add_child(info)
-	about_body.add_child(_styled_button("Готово", 18, PLATE_COLOR, PLATE_HOVER, PLATE_PRESSED, _hide_about))
+func _layout() -> void:
+	var viewport_size := get_viewport().get_visible_rect().size
+	var ratio := minf(viewport_size.x / 1280.0, viewport_size.y / 720.0)
+	_stage.scale = Vector2.ONE * ratio
+	_stage.size = viewport_size / ratio
+	var width := _stage.size.x
+	var height := _stage.size.y
+	_photo.size = _stage.size
+	_plane.polygon = PackedVector2Array([Vector2.ZERO, Vector2(860, 0), Vector2(570, height), Vector2(0, height)])
+	_title.position = Vector2(44, 58)
+	_subtitle.position = Vector2(48, 143)
+	for index in _menu_buttons.size():
+		_menu_buttons[index].position = Vector2(0, height * 0.44 + index * 104)
+		_menu_buttons[index].size = Vector2(660 - index * 48, 88)
+	_about_button.position = Vector2(42, height - 60)
+	_about_button.size = Vector2(156, 40)
+	_blob.size = Vector2(490, 490)
+	_blob.position = Vector2(width - 528, height * 0.5 - 240)
+	_drawer.size = Vector2(_drawer_width, height)
+	if not _drawer_open:
+		_drawer.position.x = -_drawer_width - 40
+	else:
+		_drawer.position.x = 0
+
+
+func _show_drawer(about: bool) -> void:
+	_blob.release_grab()
+	_previous_focus = _stage.get_viewport().gui_get_focus_owner()
+	_settings_body.visible = not about
+	_about_body.visible = about
+	_drawer_title.text = "Об игре" if about else "Настройки"
+	_about_info.text = _about_copy
+	_settings_body.refresh()
+	_drawer_root.show()
+	_drawer_open = true
+	if _drawer_tween and _drawer_tween.is_valid():
+		_drawer_tween.kill()
+	_drawer_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_drawer_tween.tween_property(_drawer, "position:x", 0.0, 0.38)
+	_drawer_tween.tween_property(_scrim, "modulate:a", 1.0, 0.25)
+	for button in _menu_buttons:
+		button.focus_mode = Control.FOCUS_NONE
+	_about_button.focus_mode = Control.FOCUS_NONE
+	_blob.focus_mode = Control.FOCUS_NONE
+	if about:
+		_close_button.grab_focus()
+	else:
+		_settings_body.sound_button.grab_focus()
+
+
+func _hide_drawer() -> void:
+	if not _drawer_open:
+		return
+	_drawer_open = false
+	if _drawer_tween and _drawer_tween.is_valid():
+		_drawer_tween.kill()
+	_drawer_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	_drawer_tween.tween_property(_drawer, "position:x", -_drawer_width - 40, 0.3)
+	_drawer_tween.tween_property(_scrim, "modulate:a", 0.0, 0.3)
+	_drawer_tween.chain().tween_callback(_drawer_root.hide)
+	for button in _menu_buttons:
+		button.focus_mode = Control.FOCUS_ALL
+	_about_button.focus_mode = Control.FOCUS_ALL
+	_blob.focus_mode = Control.FOCUS_ALL
+	if is_instance_valid(_previous_focus):
+		_previous_focus.grab_focus()
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and _drawer_open:
+		_hide_drawer()
+		get_viewport().set_input_as_handled()
 
 
 func _on_start_pressed() -> void:
 	if not orientation_guard.is_landscape():
 		return
+	if GameRun.campaign_started and GameRun.ending.is_empty():
+		get_tree().change_scene_to_file("res://scenes/campaign.tscn")
+	else:
+		_start_new_run()
+
+
+func _start_new_run() -> void:
+	if not orientation_guard.is_landscape():
+		return
+	GameRun.new_run()
 	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
 
 
-func _show_settings() -> void:
-	_settings_panel.visible = true
-
-
-func _hide_settings() -> void:
-	_settings_panel.visible = false
-
-
-func _show_about() -> void:
-	_about_panel.visible = true
-
-
-func _hide_about() -> void:
-	_about_panel.visible = false
-
-
-func _on_sound_toggled(value: bool) -> void:
-	GameSettings.set_sound_enabled(value)
-
-
 func _on_exit_pressed() -> void:
-	get_tree().quit()
+	if OS.has_feature("web"):
+		_show_drawer(true)
+		_drawer_title.text = "Выход"
+		_about_info.text = "Чтобы завершить сеанс, закройте вкладку.\n\nПрогресс текущего запуска не сохраняется после закрытия.\n\nEsc — вернуться в меню."
+	else:
+		get_tree().quit()
 
 
 func _on_landscape_changed(is_landscape: bool) -> void:
 	_start_button.disabled = not is_landscape
+	if not is_landscape:
+		_blob.release_grab()
 
 
-func _styled_button(
-	text_value: String,
-	font_size: int,
-	normal_color: Color,
-	hover_color: Color,
-	pressed_color: Color,
-	callback: Callable = Callable()
-) -> Button:
-	var button := Button.new()
-	button.text = text_value
-	button.custom_minimum_size = Vector2(360, 54)
-	button.add_theme_font_size_override("font_size", font_size)
-	button.add_theme_color_override("font_color", TEXT_COLOR)
-	button.add_theme_color_override("font_hover_color", TEXT_COLOR)
-	button.add_theme_color_override("font_pressed_color", TEXT_COLOR)
-	button.add_theme_color_override("font_focus_color", TEXT_COLOR)
-	button.add_theme_color_override("font_disabled_color", DISABLED_TEXT)
-	button.add_theme_stylebox_override("normal", _flat(normal_color))
-	button.add_theme_stylebox_override("hover", _flat(hover_color))
-	button.add_theme_stylebox_override("pressed", _flat(pressed_color))
-	button.add_theme_stylebox_override("disabled", _flat(DISABLED_PLATE))
-	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	if callback.is_valid():
-		button.pressed.connect(callback)
-	return button
+func _label(caption: String, font_size: int, color: Color, parent: Node) -> Label:
+	var label := Label.new()
+	label.text = caption
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(label)
+	return label
 
 
-func _make_dialog(title_text: String) -> Array:
-	var root := Control.new()
-	root.anchor_right = 1.0
-	root.anchor_bottom = 1.0
-	root.visible = false
-	_ui_layer.add_child(root)
-	var backdrop := ColorRect.new()
-	backdrop.color = Color(0.02, 0.03, 0.05, 0.78)
-	backdrop.anchor_right = 1.0
-	backdrop.anchor_bottom = 1.0
-	root.add_child(backdrop)
-	var center := CenterContainer.new()
-	center.anchor_right = 1.0
-	center.anchor_bottom = 1.0
-	backdrop.add_child(center)
-	var panel := PanelContainer.new()
-	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.09, 0.11, 0.15)
-	panel_style.border_color = Color(0.4, 0.45, 0.55)
-	panel_style.set_border_width_all(1)
-	panel_style.set_corner_radius_all(14)
-	panel.add_theme_stylebox_override("panel", panel_style)
-	center.add_child(panel)
-	var body := VBoxContainer.new()
-	body.add_theme_constant_override("separation", 12)
-	panel.add_child(body)
-	var title := Label.new()
-	title.text = title_text
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 30)
-	title.add_theme_color_override("font_color", Color(1, 1, 1, 0.96))
-	body.add_child(title)
-	return [root, body]
+func _icon(icon_name: String, parent: Node, position_value: Vector2, size_value: Vector2, color: Color) -> TextureRect:
+	var image := TextureRect.new()
+	image.texture = load(ICON_PATH + icon_name + ".svg")
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	image.position = position_value
+	image.size = size_value
+	image.modulate = color
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(image)
+	return image
 
 
-func _flat(color: Color) -> StyleBoxFlat:
-	var box := StyleBoxFlat.new()
-	box.bg_color = color
-	box.set_corner_radius_all(12)
-	return box
+
+
+func _drawer_style(color: Color, radius: int) -> StyleBoxFlat:
+	var style := UIStyle.flat(color)
+	style.corner_radius_top_right = radius
+	style.corner_radius_bottom_right = radius
+	return style

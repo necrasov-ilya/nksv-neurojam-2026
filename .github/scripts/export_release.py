@@ -11,6 +11,9 @@ import subprocess
 import tempfile
 import zipfile
 
+from prepare_modules import prepare_modules
+from prepare_cef import prepare_cef
+
 
 ROOT = Path(__file__).resolve().parents[2]
 TARGETS = (
@@ -20,11 +23,11 @@ TARGETS = (
     ("Web", "web", "index.html"),
 )
 INSTRUCTIONS = {
-    "Linux": "Extract the archive and run ./LATENTPUNK.x86_64. Keep the .pck beside it.",
-    "Windows": "Extract the archive and run LATENTPUNK.exe. Keep the .pck beside it.",
+    "Linux": "Extract the complete archive and run ./LATENTPUNK.x86_64. Keep .pck, Chromium runtime files and campaign-modules beside it. Simulations run inside the game window; finish via the host toolbar.",
+    "Windows": "Extract the complete archive and run LATENTPUNK.exe. Keep .pck, Chromium runtime files and campaign-modules beside it. Simulations run inside the game window; finish via the host toolbar.",
     "macOS": (
         "Extract the archive and open LATENTPUNK.app. This alpha is unsigned and not notarized. "
-        "macOS may require approval in System Settings > Privacy & Security."
+        "macOS may require approval in System Settings > Privacy & Security. Keep the complete app bundle, including its Chromium frameworks and campaign-modules."
     ),
     "Web": (
         "Extract the archive, run python3 -m http.server 8060 in this directory, "
@@ -46,16 +49,19 @@ def add_notices(archive, platform, version):
     archive.writestr(
         "README.txt",
         f"LATENTPUNK: TEST SUBJECT 0 — {version}\n\n"
-        "Playable content: voiced prologue, city introduction and interview.\n"
-        "The three-day campaign and independent web games are not integrated yet.\n\n"
+        "Campaign: voiced prologue, city, interview, three shifts, apartment and endings.\n"
+        "Included independent games run through a host; finish each sample to submit a report.\n\n"
         f"{INSTRUCTIONS[platform]}\n\n"
-        "Controls: WASD, mouse, E; Escape pauses; hold Enter to skip the prologue.\n"
+        "Controls: WASD, mouse, E; LMB picks up/drops, E places, R resets calibration. Escape pauses. Hold Enter to skip the prologue; F8 captures a game sample.\n"
         "Source and resource credits: SOURCES.md and the in-game credits.\n"
         "Project: https://github.com/necrasov-ilya/nksv-neurojam-2026\n",
     )
     archive.write(ROOT / "assets/SOURCES.md", "SOURCES.md")
     for name in ("Notice.txt", "FISH_AUDIO_LICENSE.txt"):
         archive.write(ROOT / "assets/audio/dialogue" / name, f"licenses/{name}")
+    if platform != "Web":
+        for name in ("GODOT_CEF_LICENSE.txt", "CEF_LICENSE.txt", "CHROMIUM_LICENSE.txt"):
+            archive.write(ROOT / "addons/godot_cef" / name, "licenses/" + name)
 
 
 def main():
@@ -70,6 +76,8 @@ def main():
 
     output = ROOT / "build/release" / version
     output.mkdir(parents=True, exist_ok=True)
+    prepare_cef()
+    modules = prepare_modules()
     subprocess.run(
         [args.godot, "--headless", "--path", str(ROOT), "--editor", "--import", "--quit"],
         check=True,
@@ -85,6 +93,9 @@ def main():
                 [args.godot, "--headless", "--path", str(ROOT), "--export-release", preset, str(export_path)],
                 check=True,
             )
+            if preset != "macOS":
+                destination = platform_dir if preset == "Web" else platform_dir / "campaign-modules"
+                shutil.copytree(modules, destination, dirs_exist_ok=True)
             archive_path = output / f"LATENTPUNK-{version}-{suffix}.zip"
             if preset == "macOS":
                 # Keep Godot's app bundle entries, executable modes and symlinks intact.
@@ -97,6 +108,14 @@ def main():
                     for path in sorted(platform_dir.rglob("*")):
                         if path.is_file():
                             archive.write(path, path.relative_to(platform_dir))
+                else:
+                    bundles = {name.split("/", 1)[0] for name in archive.namelist() if ".app/" in name}
+                    if len(bundles) != 1:
+                        raise RuntimeError("Expected one macOS app bundle")
+                    bundle = bundles.pop()
+                    for path in sorted(modules.rglob("*")):
+                        if path.is_file():
+                            archive.write(path, f"{bundle}/Contents/Resources/campaign-modules/{path.relative_to(modules).as_posix()}")
                 add_notices(archive, preset, version)
             with archive_path.open("rb") as stream:
                 digest = hashlib.file_digest(stream, "sha256").hexdigest()

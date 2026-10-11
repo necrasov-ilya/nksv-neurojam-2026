@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KERR — relativistic black hole</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:,">
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="fatal" hidden></div>
+<div id="hud">
+  <div id="status" class="panel"></div>
+  <div id="physics" class="panel"></div>
+  <div id="hint" class="panel"></div>
+  <div id="debug" class="panel" hidden></div>
+  <div id="toast" hidden></div>
+</div>
+<noscript><div class="noscript">This page renders a black hole on your GPU. Enable JavaScript.</div></noscript>
+<script type="module" src="src/main.js"></script>
+<!-- operator addition (not part of the model's build): demo reel, ?demo / ?demo=calm / ?demo=hard -->
+<script type="module">
+  if (new URLSearchParams(location.search).has('demo')) {
+    addEventListener('load', () => setTimeout(() => import('./src/demo.js'), 600));
+  }
+</script>
+</body>
+</html>

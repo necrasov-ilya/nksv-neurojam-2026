@@ -10,6 +10,9 @@ const Geometry = preload("res://scripts/intro/geometry.gd")
 const TapeShader = preload("res://assets/shaders/intro_tape.gdshader")
 const StreetExtras = preload("res://scripts/intro/street_extras.gd")
 const Voices := preload("res://scripts/core/dialogue_voices.gd")
+const CampaignInterface := preload("res://scripts/campaign/ui.gd")
+const UIStyle := preload("res://scripts/ui/hud_style.gd")
+const PauseUI := preload("res://scripts/ui/pause_drawer.gd")
 const FLOOR_COUNT := 22
 const RECEPTION_LINES := [
 	{"speaker":"Вы","text":"Здравствуйте. Я на собеседование."},
@@ -29,18 +32,17 @@ var _current_action := ""
 var _environment: Environment
 var _objective: Label
 var _prompt: Label
-var _help: Label
-var _pause_panel: PanelContainer
+var _pause_panel: PauseUI
 var _floor_panel: PanelContainer
 var _fade: ColorRect
-var _hint_time := 16.0
 var _lift_panels: Array[Node3D] = []
 var _lift_open := false
 var reception_done := false
 var _dialogue_index := -1
-var _dialogue_panel: PanelContainer
 var _subtitle_panel: PanelContainer
 var _subtitle_label: Label
+var _objective_card: PanelContainer
+var _prompt_card: PanelContainer
 var _subtitle_remaining := 0.0
 var _voice_player: AudioStreamPlayer
 var _interaction_points: Dictionary = {}
@@ -49,6 +51,8 @@ var _street_use_ray := PhysicsRayQueryParameters3D.new()
 var _interview_layer: CanvasLayer
 var _interview_completed := false
 var _interview_viewport_3d_was_disabled := false
+var _staff: Node3D
+var _campaign_ui: CanvasLayer
 
 # Set before adding this scene to the tree; direct launches retain normal behavior.
 var opening_prepared := false
@@ -81,7 +85,6 @@ func finish_opening() -> void:
 	# Reparenting can interrupt audio playback; restore the existing location
 	# without resetting its already-faded bed levels.
 	audio.set_muted(not GameSettings.sound_enabled)
-	_hint_time = 16.0
 	player.process_mode = Node.PROCESS_MODE_INHERIT
 	player.enabled = true
 	player.camera.make_current()
@@ -288,157 +291,173 @@ func _build_ui() -> void:
 	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas.add_child(ui)
 	_game_ui = ui
-	_objective = _label(ui, Vector2(28,24), 21)
-	_objective.anchor_right = 1.0
-	_objective.offset_right = -28
-	_objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_objective.add_theme_color_override("font_color", Color("eee9d7"))
-	_help = _label(ui, Vector2(28,94), 16)
-	_help.anchor_right = 1.0
-	_help.offset_right = -28
-	_help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_help.text = "WASD — идти  ·  мышь — обзор  ·  E — взаимодействие  ·  Esc — пауза"
-	var crosshair := Label.new()
-	crosshair.text = "·"
-	crosshair.add_theme_font_size_override("font_size", 30)
+	ui.theme = UIStyle.theme()
+	var objectives := VBoxContainer.new()
+	objectives.offset_left = 16
+	objectives.offset_top = 16
+	objectives.offset_right = 436
+	objectives.add_theme_constant_override("separation", 10)
+	objectives.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(objectives)
+	_objective_card = _hud_card(objectives)
+	var objective_row := HBoxContainer.new()
+	objective_row.add_theme_constant_override("separation", 8)
+	objective_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_objective_card.add_child(objective_row)
+	var marker := UIStyle.icon("map-pin", 18)
+	marker.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	objective_row.add_child(marker)
+	_objective = UIStyle.label("", 13)
+	_objective.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	objective_row.add_child(_objective)
+	_objective_card.hide()
+	var crosshair := Panel.new()
 	crosshair.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	crosshair.position = Vector2(-4,-20)
+	crosshair.offset_left = -2
+	crosshair.offset_right = 2
+	crosshair.offset_top = -2
+	crosshair.offset_bottom = 2
+	crosshair.add_theme_stylebox_override("panel", UIStyle.flat(UIStyle.ACCENT, 2))
+	crosshair.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(crosshair)
-	_prompt = Label.new()
-	_prompt.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	_prompt.offset_left = 28
-	_prompt.offset_right = -28
-	_prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_prompt.offset_top = -94
-	_prompt.offset_bottom = -40
-	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_prompt.add_theme_font_size_override("font_size", 21)
-	ui.add_child(_prompt)
-	_pause_panel = _panel(ui, "Пауза", ["Продолжить", "Начать заново", "В меню"], [_resume, _restart, _menu])
-	_add_settings(_pause_panel.get_node("Body"))
-	_pause_panel.offset_top = -210
-	_pause_panel.offset_bottom = 210
-	_floor_panel = _build_floor_panel(ui)
-	_dialogue_panel = _panel(ui,"Ресепшен · LATENT SYSTEMS",["Продолжить · E"],[_advance_dialogue])
-	_dialogue_panel.offset_top = -60
-	_dialogue_panel.offset_bottom = 60
-	_subtitle_panel = PanelContainer.new()
-	_subtitle_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	_subtitle_panel.anchor_left = 0.12
-	_subtitle_panel.anchor_right = 0.88
-	_subtitle_panel.offset_top = -110
-	_subtitle_panel.offset_bottom = -34
-	var subtitle_style := StyleBoxFlat.new()
-	subtitle_style.bg_color = Color(0.1,0.19,0.2,0.92)
-	subtitle_style.content_margin_left = 20
-	subtitle_style.content_margin_right = 20
-	subtitle_style.content_margin_top = 10
-	subtitle_style.content_margin_bottom = 10
-	_subtitle_panel.add_theme_stylebox_override("panel",subtitle_style)
-	ui.add_child(_subtitle_panel)
-	_subtitle_label = Label.new()
-	_subtitle_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var captions := VBoxContainer.new()
+	captions.anchor_left = 0.5
+	captions.anchor_right = 0.5
+	captions.offset_left = -280
+	captions.offset_right = 280
+	captions.anchor_top = 1.0
+	captions.anchor_bottom = 1.0
+	captions.offset_top = -20
+	captions.offset_bottom = -20
+	captions.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	captions.add_theme_constant_override("separation", 12)
+	captions.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(captions)
+	var fit_captions := func():
+		captions.offset_top = -20 - captions.get_combined_minimum_size().y
+		captions.offset_bottom = -20
+	captions.minimum_size_changed.connect(func(): fit_captions.call_deferred())
+	_subtitle_panel = _hud_card(captions)
+	_subtitle_label = UIStyle.label("", 14)
 	_subtitle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_subtitle_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_subtitle_label.add_theme_font_size_override("font_size",20)
 	_subtitle_panel.add_child(_subtitle_label)
 	_subtitle_panel.hide()
+	_prompt_card = _hud_card(captions, UIStyle.ACCENT)
+	_prompt_card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var prompt_row := HBoxContainer.new()
+	prompt_row.add_theme_constant_override("separation", 8)
+	prompt_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_prompt_card.add_child(prompt_row)
+	var use_badge := _hud_card(prompt_row)
+	use_badge.add_theme_stylebox_override("panel", UIStyle.plate(UIStyle.PAPER, 6, 8))
+	var use_key := UIStyle.label("E", 13, UIStyle.ACCENT)
+	use_key.autowrap_mode = TextServer.AUTOWRAP_OFF
+	use_badge.add_child(use_key)
+	prompt_row.add_child(UIStyle.icon("hand", 18, Color.WHITE))
+	_prompt = UIStyle.label("", 14, Color.WHITE)
+	_prompt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_prompt.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_prompt.autowrap_mode = TextServer.AUTOWRAP_OFF
+	prompt_row.add_child(_prompt)
+	_prompt_card.hide()
+	_pause_panel = PauseUI.new()
+	ui.add_child(_pause_panel)
+	_pause_panel.close_requested.connect(_resume)
+	var pause_actions := [
+		["Продолжить", _pause_panel.request_close],
+		["Настройки", _pause_panel.show_settings],
+		["Начать заново", _restart],
+		["В меню", _menu],
+	]
+	for i in pause_actions.size():
+		var button := Button.new()
+		button.text = pause_actions[i][0]
+		UIStyle.apply_button(button, i == 0)
+		button.pressed.connect(pause_actions[i][1])
+		_pause_panel.body.add_child(button)
+	_pause_panel.add_settings(_on_sound_toggled, _on_subtitles_toggled)
+	_floor_panel = _build_floor_panel(ui)
 	_fade = ColorRect.new()
 	_fade.color = Color(0.12,0.19,0.19,0)
 	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(_fade)
 
-func _label(parent: Control, p: Vector2, size_value: int) -> Label:
-	var label := Label.new()
-	label.position = p
-	label.add_theme_font_size_override("font_size", size_value)
-	label.add_theme_color_override("font_shadow_color", Color(0.12,0.2,0.2,0.9))
-	label.add_theme_constant_override("shadow_offset_x", 1)
-	label.add_theme_constant_override("shadow_offset_y", 1)
-	parent.add_child(label)
-	return label
+func _hud_card(parent: Control, color: Color = UIStyle.PAPER) -> PanelContainer:
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", UIStyle.plate(color, 9, 10))
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(card)
+	return card
+
+func _sync_hud_cards() -> void:
+	_objective_card.visible = _objective.visible and not _objective.text.is_empty()
+	_prompt_card.visible = _prompt.visible and not _prompt.text.is_empty()
 
 func _panel(parent: Control, title: String, texts: Array, callbacks: Array) -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	panel.offset_left = -220
-	panel.offset_right = 220
-	panel.offset_top = -140
-	panel.offset_bottom = 140
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("304e4f")
-	style.content_margin_left = 28
-	style.content_margin_right = 28
-	style.content_margin_top = 22
-	style.content_margin_bottom = 22
-	panel.add_theme_stylebox_override("panel", style)
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	panel.offset_top = 0
+	panel.offset_bottom = 0
+	panel.add_theme_stylebox_override("panel", UIStyle.plate(UIStyle.PAPER, 16, 16))
+	var fit_width := func():
+		var half_width := minf(220.0, (parent.size.x - 32.0) * 0.5)
+		panel.offset_left = -half_width
+		panel.offset_right = half_width
+	parent.resized.connect(fit_width)
+	fit_width.call()
 	parent.add_child(panel)
 	var column := VBoxContainer.new()
 	column.name = "Body"
-	column.add_theme_constant_override("separation", 12)
+	column.add_theme_constant_override("separation", 8)
 	panel.add_child(column)
-	var heading := Label.new()
-	heading.text = title
+	var heading := UIStyle.label(title, 22)
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size",24)
 	column.add_child(heading)
 	for i in texts.size():
 		var button := Button.new()
 		button.text = texts[i]
-		button.custom_minimum_size.y = 46
+		UIStyle.apply_button(button, i == 0)
+		button.custom_minimum_size.y = 40
+		button.add_theme_font_size_override("font_size", 16)
+		for state in ["normal", "hover", "pressed", "focus"]:
+			var color := UIStyle.ACCENT if i == 0 else UIStyle.SURFACE
+			button.add_theme_stylebox_override(state, UIStyle.plate(color if state == "normal" else UIStyle.HOVER, 8, 12))
 		button.pressed.connect(callbacks[i])
 		column.add_child(button)
 	panel.hide()
 	return panel
 
-func _add_settings(column: VBoxContainer) -> void:
-	var divider := HSeparator.new()
-	column.add_child(divider)
-	var sound := CheckButton.new()
-	sound.name = "Sound"
-	sound.text = "Звук"
-	sound.button_pressed = GameSettings.sound_enabled
-	sound.toggled.connect(_on_sound_toggled)
-	column.add_child(sound)
-	var subtitles := CheckButton.new()
-	subtitles.name = "Subtitles"
-	subtitles.text = "Субтитры"
-	subtitles.button_pressed = GameSettings.subtitles_enabled
-	subtitles.toggled.connect(_on_subtitles_toggled)
-	column.add_child(subtitles)
-
 func _build_floor_panel(ui: Control) -> PanelContainer:
 	var panel := _panel(ui,"LATENT SYSTEMS · лифт",[],[])
 	panel.name = "FloorSelector"
-	panel.offset_left = -240
-	panel.offset_right = 240
-	panel.offset_top = -255
-	panel.offset_bottom = 230
 	var body: VBoxContainer = panel.get_node("Body")
-	var destination := Label.new()
-	destination.text = "Собеседования · этаж 14"
+	var destination := UIStyle.label("Собеседования · этаж 14", 16, UIStyle.ACCENT)
 	destination.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	destination.add_theme_color_override("font_color",Color("efd485"))
 	body.add_child(destination)
 	var grid := GridContainer.new()
 	grid.name = "Floors"
 	grid.columns = 4
-	grid.add_theme_constant_override("h_separation",8)
-	grid.add_theme_constant_override("v_separation",8)
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_theme_constant_override("h_separation", 6)
+	grid.add_theme_constant_override("v_separation", 6)
 	body.add_child(grid)
 	for floor_number in range(FLOOR_COUNT,0,-1):
 		var button := Button.new()
 		button.name = "Floor%d" % floor_number
 		button.text = str(floor_number) + (" · HR" if floor_number == 14 else "")
-		button.custom_minimum_size = Vector2(96,44)
-		if floor_number == 14:
-			button.add_theme_color_override("font_color",Color("efd485"))
+		UIStyle.apply_button(button, floor_number == 14)
+		button.custom_minimum_size = Vector2(88, 40)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.add_theme_font_size_override("font_size", 16)
 		button.pressed.connect(_choose_floor.bind(floor_number))
 		grid.add_child(button)
 	var close := Button.new()
 	close.text = "Закрыть"
-	close.custom_minimum_size.y = 42
+	UIStyle.apply_button(close)
+	close.custom_minimum_size.y = 40
 	close.pressed.connect(_close_floor)
 	body.add_child(close)
 	return panel
@@ -450,7 +469,7 @@ func _on_sound_toggled(value: bool) -> void:
 
 func _on_subtitles_toggled(value: bool) -> void:
 	GameSettings.set_subtitles_enabled(value)
-	_subtitle_panel.visible = value and _subtitle_remaining > 0
+	_sync_speech_state()
 
 func _say(speaker: String, text: String, seconds: float = 4.0) -> void:
 	_voice_player.stop()
@@ -461,7 +480,7 @@ func _say(speaker: String, text: String, seconds: float = 4.0) -> void:
 		seconds = maxf(seconds, _voice_player.stream.get_length() + 0.15)
 	_subtitle_label.text = speaker + ": " + text
 	_subtitle_remaining = seconds
-	_subtitle_panel.visible = GameSettings.subtitles_enabled
+	_sync_speech_state()
 
 func _clear_street_speech() -> void:
 	# Reception owns its own dialogue; a street cancellation must never erase it.
@@ -474,13 +493,13 @@ func _start_dialogue() -> void:
 	street_extras.cancel()
 	_dialogue_index = 1 if reception_done else 0
 	player.enabled = false
-	_dialogue_panel.show()
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_show_dialogue_line()
 
 func _show_dialogue_line() -> void:
 	var line: Dictionary = RECEPTION_LINES[_dialogue_index]
-	_say(line["speaker"],line["text"],3600)
+	var text: String = line["text"]
+	var reading_seconds := maxf(2.5, float(text.length()) / 15.0 + 0.5)
+	_say(line["speaker"], text, reading_seconds)
 
 func _advance_dialogue() -> void:
 	if _dialogue_index < 0:
@@ -492,19 +511,9 @@ func _advance_dialogue() -> void:
 		return
 	_dialogue_index = -1
 	reception_done = true
-	_dialogue_panel.hide()
 	_subtitle_remaining = 0
 	_subtitle_panel.hide()
 	_objective.text = "Собеседование · 14-й этаж, кабинет 1406\nПодойдите к лифту"
-	player.enabled = true
-	player.capture_mouse()
-
-func _cancel_dialogue() -> void:
-	_dialogue_index = -1
-	_voice_player.stop()
-	_dialogue_panel.hide()
-	_subtitle_remaining = 0
-	_subtitle_panel.hide()
 	player.enabled = true
 	player.capture_mouse()
 
@@ -518,19 +527,23 @@ func _choose_floor(floor_number: int) -> void:
 	_select_floor()
 
 func _process(delta: float) -> void:
-	if _subtitle_remaining > 0 and not _paused and not _focus_lost:
-		_subtitle_remaining = maxf(0,_subtitle_remaining-delta)
-		_subtitle_panel.visible = GameSettings.subtitles_enabled and _subtitle_remaining > 0
+	if _subtitle_remaining > 0 and not _paused and not _focus_lost and not _transitioning:
+		_subtitle_remaining = maxf(0.0, _subtitle_remaining - delta)
+		if _subtitle_remaining <= 0.0:
+			if _voice_player.playing:
+				_subtitle_remaining = 0.15
+			elif _dialogue_index >= 0:
+				_advance_dialogue()
+	_sync_speech_state()
 	street_extras.tick(delta, player.global_position, location == "street", _paused or _focus_lost or _transitioning)
-	_hint_time -= delta
-	_help.visible = _hint_time > 0 or _paused
-	if _transitioning or _paused or _focus_lost or _floor_panel.visible or _dialogue_panel.visible:
+	if _transitioning or _paused or _focus_lost or _floor_panel.visible or _dialogue_index >= 0 or is_instance_valid(_campaign_ui):
 		_prompt.text = ""
+		_sync_hud_cards()
 		return
 	_current_action = _find_action()
-	var captions := {"reception":"Поговорить с администратором", "lift":"Вызвать лифт" if reception_done else "Сначала обратитесь к администратору", "floor14":"Выбрать этаж", "return":"Вернуться в холл", "door":"Открыть кабинет 1406" if not door_open else "Закрыть кабинет 1406", "computer":"Начать собеседование заново" if _interview_completed else "Начать собеседование"}
+	var captions := {"reception":"Поговорить с администратором", "lift":"Вызвать лифт" if reception_done else "Сначала обратитесь к администратору", "floor14":"Выбрать этаж", "return":"Вернуться в холл", "door":"Открыть кабинет 1406" if not door_open else "Закрыть кабинет 1406", "computer":"Начать собеседование", "staff":"Поговорить с Никой · практическая часть"}
 	var caption: String = captions.get(_current_action, StreetExtras.CAPTIONS.get(_current_action, ""))
-	_prompt.text = "E  ·  " + caption if not caption.is_empty() else ""
+	_prompt.text = caption
 	_prompt.visible = not _subtitle_panel.visible
 	_check_doorways()
 	if location == "street":
@@ -538,6 +551,7 @@ func _process(delta: float) -> void:
 			_objective.text = "LATENT SYSTEMS  ·  Центральный проспект, 18\nПройдите до перекрёстка и поверните направо"
 		else:
 			_objective.text = "LATENT SYSTEMS  ·  Вход через площадь →"
+	_sync_hud_cards()
 
 ## Walking through the tower portal or the lobby doors changes location; no key press.
 func _check_doorways() -> void:
@@ -557,6 +571,8 @@ func _find_action() -> String:
 	var best := 3.1
 	var action := ""
 	for key in anchors:
+		if key == "computer" and _interview_completed:
+			continue
 		if key == "lift" and _lift_open:
 			continue
 		if key == "floor14" and (not reception_done or not _lift_open or not _inside_lift()):
@@ -583,24 +599,24 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and not _transitioning:
 		if _floor_panel.visible:
 			_close_floor()
-		elif _dialogue_panel.visible:
-			_cancel_dialogue()
 		elif _paused:
-			_resume()
+			_pause_panel.request_close()
 		else:
 			_paused = true
 			_voice_player.stream_paused = true
 			city.process_mode = Node.PROCESS_MODE_DISABLED
 			_pause_panel.show()
+			if is_instance_valid(_campaign_ui):
+				_game_ui.show()
+			_sync_speech_state()
 			player.enabled = false
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("intro_use") and not event.is_echo() and not _paused and not _transitioning and not _floor_panel.visible:
-		if _dialogue_panel.visible:
-			_advance_dialogue()
-		else:
-			_perform_action(_find_action())
-	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and not _paused and not _floor_panel.visible and not _dialogue_panel.visible and not _transitioning:
+	elif is_instance_valid(_campaign_ui):
+		return
+	elif event.is_action_pressed("intro_use") and not event.is_echo() and not _paused and not _transitioning and not _floor_panel.visible and _dialogue_index < 0:
+		_perform_action(_find_action())
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and not _paused and not _floor_panel.visible and _dialogue_index < 0 and not _transitioning:
 		player.capture_mouse()
 
 func _perform_action(action: String) -> void:
@@ -634,9 +650,11 @@ func _perform_action(action: String) -> void:
 			tween.tween_property(office.office_door, "rotation:y", PI/2 if door_open else 0.0, 0.45)
 		"computer":
 			_open_interview()
+		"staff":
+			_meet_staff()
 
 func _open_interview() -> void:
-	if _transitioning or _interview_layer != null:
+	if _transitioning or _interview_layer != null or _interview_completed:
 		return
 	_transitioning = true
 	street_extras.cancel()
@@ -662,21 +680,62 @@ func _open_interview() -> void:
 	_interview_layer.add_child(interview)
 
 func _close_interview() -> void:
+	_transitioning = true
+	var curtain_layer := CanvasLayer.new()
+	curtain_layer.layer = 30
+	add_child(curtain_layer)
+	var curtain := ColorRect.new()
+	curtain_layer.add_child(curtain)
+	curtain.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	curtain.color = Color(0, 0, 0, 0)
+	var darken := create_tween()
+	darken.tween_property(curtain, "color:a", 1.0, 0.35)
+	await darken.finished
 	_interview_layer.queue_free()
-	get_viewport().disable_3d = _interview_viewport_3d_was_disabled
 	_interview_layer = null
 	_interview_completed = true
-	_transitioning = false
+	await get_tree().create_timer(2.5).timeout
+	get_viewport().disable_3d = _interview_viewport_3d_was_disabled
 	office.process_mode = Node.PROCESS_MODE_INHERIT
-	player.enabled = true
+	if not door_open:
+		_perform_action("door")
+	_staff = Node3D.new()
+	_staff.name = "InterviewGuide"
+	_staff.position = Vector3(3.4, 0, -12.4)
+	office.add_child(_staff)
+	var person := Pedestrians.new()
+	_staff.add_child(person)
+	person.populate_stationary(Vector3.ZERO, 0, 2)
+	person.walk_to(Vector3(0, 0, -2.9), 1.25)
+	_interaction_points["office"]["staff"] = office.to_global(Vector3(3.4, 1.35, -15.3))
 	audio.set_muted(not GameSettings.sound_enabled)
 	_game_ui.show()
 	_city_tape_layer.show()
+	_objective.text = "За вами пришла Ника. Подойдите к двери кабинета и поговорите с ней.\nE — перейти к практической части"
+	var reveal := create_tween()
+	reveal.tween_property(curtain, "color:a", 0.0, 0.45)
+	await reveal.finished
+	curtain_layer.queue_free()
+	_transitioning = false
+	player.enabled = true
 	set_process(true)
 	set_process_unhandled_input(true)
-	_objective.text = "Собеседование завершено. Ожидайте сотрудника.\nНажмите на экран, чтобы вернуться к обзору"
-	# Web pointer lock must follow a fresh click, not a delayed interview callback.
+	# Pointer lock follows a fresh user gesture, never an awaited callback.
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+func _meet_staff() -> void:
+	if not _interview_completed or _transitioning:
+		return
+	_transitioning = true
+	player.enabled = false
+	_game_ui.hide()
+	_campaign_ui = CampaignInterface.new()
+	add_child(_campaign_ui)
+	_campaign_ui.dialogue(["nika_arrival_01", "hero_arrival_01", "nika_arrival_02"], func():
+		GameRun.campaign_started = true
+		get_viewport().disable_3d = false
+		get_tree().change_scene_to_file("res://scenes/campaign.tscn")
+	)
 
 func _set_location(value: String, p: Vector3, yaw: float) -> void:
 	_voice_player.stop()
@@ -736,7 +795,10 @@ func _resume() -> void:
 	_voice_player.stream_paused = _focus_lost
 	city.process_mode = Node.PROCESS_MODE_INHERIT if location == "street" else Node.PROCESS_MODE_DISABLED
 	_pause_panel.hide()
-	player.enabled = not _focus_lost
+	_sync_speech_state()
+	if is_instance_valid(_campaign_ui):
+		_game_ui.hide()
+	player.enabled = not _focus_lost and not _transitioning and _dialogue_index < 0 and not _floor_panel.visible and not is_instance_valid(_campaign_ui)
 	if not _focus_lost:
 		player.capture_mouse()
 
@@ -759,7 +821,16 @@ func _notification(what: int) -> void:
 		_focus_lost = false
 	else:
 		return
-	if _voice_player != null:
-		_voice_player.stream_paused = _paused or _focus_lost
+	_sync_speech_state()
 	if player != null and _floor_panel != null:
-		player.enabled = not _focus_lost and not _paused and not _transitioning and _dialogue_index < 0 and not _floor_panel.visible
+		player.enabled = not _focus_lost and not _paused and not _transitioning and _dialogue_index < 0 and not _floor_panel.visible and not is_instance_valid(_campaign_ui)
+
+func _sync_speech_state() -> void:
+	var focused := not _paused and not _focus_lost
+	if _voice_player != null:
+		_voice_player.stream_paused = not focused
+	if _subtitle_panel != null:
+		_subtitle_panel.visible = focused and GameSettings.subtitles_enabled and _subtitle_remaining > 0.0
+	if is_instance_valid(_campaign_ui):
+		_campaign_ui.set_focused(focused)
+		_campaign_ui.hud.visible = focused

@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Mandelbulb — distance-field raymarcher</title>
+<style>
+  :root {
+    --ink: #cfe3ff;
+    --dim: #7d93b8;
+    --acc: #8fd8ff;
+    --bg: #04060b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+
+  #hud {
+    position: fixed; inset: 0; pointer-events: none; z-index: 2;
+    font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--ink); user-select: none; -webkit-user-select: none;
+  }
+  .panel { position: absolute; display: flex; gap: 8px; align-items: center; }
+  .tl { top: 14px; left: 16px; flex-direction: column; align-items: flex-start; gap: 3px; }
+  .tr { top: 14px; right: 16px; }
+  .bl { bottom: 14px; left: 16px; }
+  .br { bottom: 14px; right: 16px; }
+  .title {
+    font-size: 15px; letter-spacing: 0.38em; font-weight: 700; color: #eaf3ff;
+    text-shadow: 0 0 18px rgba(120, 190, 255, 0.35);
+  }
+  .sub { color: var(--dim); letter-spacing: 0.08em; font-size: 10.5px; }
+  .chip {
+    background: rgba(8, 12, 20, 0.55);
+    border: 1px solid rgba(140, 180, 255, 0.16);
+    border-radius: 6px; padding: 3px 9px;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    white-space: nowrap; font-size: 11px;
+  }
+  kbd {
+    font: inherit; font-size: 10px; color: #dfeeff;
+    background: rgba(20, 30, 48, 0.85);
+    border: 1px solid rgba(150, 190, 255, 0.35);
+    border-bottom-width: 2px; border-radius: 4px;
+    padding: 0 5px; margin: 0 1px;
+  }
+
+  #help {
+    position: fixed; inset: 0; z-index: 3; pointer-events: auto;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(3, 5, 10, 0.62);
+    font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--ink);
+  }
+  #help[hidden] { display: none; }
+  .card {
+    background: rgba(10, 15, 24, 0.94);
+    border: 1px solid rgba(140, 180, 255, 0.22);
+    border-radius: 12px; padding: 20px 26px;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+    max-width: 480px; width: calc(100vw - 48px);
+  }
+  .card h2 {
+    margin: 0 0 14px; font-size: 13px; letter-spacing: 0.3em;
+    color: #eaf3ff; font-weight: 700;
+  }
+  .row { display: flex; justify-content: space-between; gap: 18px; padding: 3px 0; }
+  .row .k { color: var(--dim); }
+  .row .v { text-align: right; }
+  .card .foot { margin-top: 14px; color: var(--dim); font-size: 10.5px; text-align: center; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 64px; transform: translateX(-50%);
+    z-index: 4; pointer-events: none;
+    background: rgba(8, 14, 24, 0.85); color: var(--acc);
+    border: 1px solid rgba(140, 210, 255, 0.35); border-radius: 8px;
+    padding: 6px 14px;
+    font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.06em;
+  }
+  #toast[hidden] { display: none; }
+
+  #err {
+    position: fixed; inset: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+    color: #ffb3b3; padding: 40px; text-align: center;
+    font: 14px/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--bg);
+  }
+  #err[hidden] { display: none; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+  }
+}
+</script>
+</head>
+<body>
+<noscript><div style="color:#cfe3ff;font-family:monospace;padding:40px;">This demo requires JavaScript and WebGL2.</div></noscript>
+
+<div id="hud">
+  <div class="panel tl">
+    <div class="title">MANDELBULB</div>
+    <div class="sub">distance-field raymarch · temporal accumulation</div>
+  </div>
+  <div class="panel tr">
+    <span class="chip" id="fps">-- FPS</span>
+    <span class="chip" id="resChip">--%</span>
+    <span class="chip" id="spp">-- SPP</span>
+  </div>
+  <div class="panel br">
+    <span class="chip" id="palName">SOLAR</span>
+    <span class="chip" id="powerVal">p 8.0</span>
+    <span class="chip" id="qualChip">MED</span>
+  </div>
+  <div class="panel bl">
+    <span class="chip">drag orbit · wheel zoom · dblclick dive · <kbd>H</kbd> help</span>
+  </div>
+</div>
+
+<div id="help" hidden>
+  <div class="card">
+    <h2>CONTROLS</h2>
+    <div class="row"><span class="k">orbit / zoom</span><span class="v">drag · wheel · pinch · double-click dive</span></div>
+    <div class="row"><span class="k">auto-orbit</span><span class="v"><kbd>Space</kbd></span></div>
+    <div class="row"><span class="k">power morph</span><span class="v"><kbd>M</kbd></span></div>
+    <div class="row"><span class="k">power down / up</span><span class="v"><kbd>[</kbd> <kbd>]</kbd> or <kbd>&#8592;</kbd> <kbd>&#8594;</kbd></span></div>
+    <div class="row"><span class="k">zoom in / out</span><span class="v"><kbd>&#8593;</kbd> <kbd>&#8595;</kbd> · dive closer than ever with wheel</span></div>
+    <div class="row"><span class="k">palette</span><span class="v"><kbd>P</kbd></span></div>
+    <div class="row"><span class="k">silhouette glow</span><span class="v"><kbd>G</kbd></span></div>
+    <div class="row"><span class="k">quality</span><span class="v"><kbd>Q</kbd> low / med / high / ultra</span></div>
+    <div class="row"><span class="k">presets</span><span class="v"><kbd>1</kbd> &ndash; <kbd>5</kbd></span></div>
+    <div class="row"><span class="k">reset view</span><span class="v"><kbd>R</kbd></span></div>
+    <div class="row"><span class="k">save frame</span><span class="v"><kbd>S</kbd> PNG</span></div>
+    <div class="row"><span class="k">help</span><span class="v"><kbd>H</kbd> / <kbd>?</kbd> · close <kbd>Esc</kbd></span></div>
+    <div class="foot">still camera accumulates up to hundreds of samples per pixel — click anywhere to close</div>
+  </div>
+</div>
+
+<div id="toast" hidden></div>
+<div id="err" hidden></div>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* ---------------- helpers / DOM ---------------- */
+const $ = (id) => document.getElementById(id);
+const helpEl = $('help'), toastEl = $('toast'), errEl = $('err');
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const wrapPi = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+
+let toastTimer = 0;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toastEl.hidden = true; }, 1500);
+}
+function fatal(msg) { errEl.textContent = msg; errEl.hidden = false; }
+
+/* ---------------- config ---------------- */
+const PALETTES = [
+  { name: 'SOLAR',       a: [0.50, 0.36, 0.24], b: [0.50, 0.42, 0.30], c: [1.00, 1.00, 1.00], d: [0.00, 0.12, 0.28] },
+  { name: 'GLACIER',     a: [0.46, 0.52, 0.58], b: [0.38, 0.42, 0.46], c: [1.00, 1.00, 1.00], d: [0.55, 0.62, 0.74] },
+  { name: 'ULTRAVIOLET', a: [0.50, 0.40, 0.55], b: [0.50, 0.42, 0.50], c: [1.00, 1.00, 0.80], d: [0.28, 0.16, 0.52] },
+  { name: 'VERDIGRIS',   a: [0.42, 0.50, 0.44], b: [0.42, 0.44, 0.40], c: [1.00, 1.00, 1.00], d: [0.18, 0.52, 0.42] },
+  { name: 'MONOLITH',    a: [0.52, 0.52, 0.55], b: [0.38, 0.38, 0.40], c: [1.00, 1.00, 1.00], d: [0.05, 0.06, 0.09] },
+];
+const QUALITIES = [
+  { name: 'LOW',   steps: 72,  iters: 9,  shadow: 0 },
+  { name: 'MED',   steps: 96,  iters: 11, shadow: 0 },
+  { name: 'HIGH',  steps: 128, iters: 13, shadow: 1 },
+  { name: 'ULTRA', steps: 176, iters: 15, shadow: 1 },
+];
+const PRESETS = [
+  { name: 'CLASSIC', power: 8.0,  dist: 3.3, theta: 0.60, phi: 1.22, pal: 0, morph: false },
+  { name: 'BLOOM',   power: 5.0,  dist: 2.7, theta: 2.20, phi: 1.05, pal: 1, morph: false },
+  { name: 'CORAL',   power: 3.0,  dist: 2.3, theta: 4.00, phi: 1.42, pal: 3, morph: false },
+  { name: 'ION',     power: 6.5,  dist: 4.4, theta: 5.30, phi: 0.72, pal: 2, morph: true  },
+  { name: 'SPIRE',   power: 11.5, dist: 3.0, theta: 1.60, phi: 1.88, pal: 4, morph: false },
+];
+
+const FOV = 58 * Math.PI / 180;
+const FOCAL = 1 / Math.tan(FOV / 2);
+
+const state = {
+  theta: 0.60, phi: 1.22, dist: 3.4,
+  tTheta: 0.60, tPhi: 1.22, tDist: 3.3,
+  velTheta: 0, velPhi: 0,
+  autoRotate: true,
+  morph: false,
+  powerBase: 8.0, powerNow: 8.0,
+  palette: 0,
+  quality: 1,
+  scale: 1,
+  glow: 1.0,
+  frameIdx: 0,
+  fresh: true,
+  moving: true,
+  converged: false,
+};
+
+/* ---------------- shaders ---------------- */
+const VERT_SRC = `
+precision highp float;
+in vec3 position;
+void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }
+`;
+
+const MARCH_FRAG = `
+precision highp float;
+precision highp int;
+
+uniform vec2  uRes;
+uniform float uTime;
+uniform vec3  uCamPos;
+uniform mat3  uCamBasis;
+uniform float uFocal;
+uniform float uPower;
+uniform int   uIters;
+uniform int   uMaxSteps;
+uniform float uShadow;
+uniform float uGlow;
+uniform float uHdr;
+uniform vec3  uPalA;
+uniform vec3  uPalB;
+uniform vec3  uPalC;
+uniform vec3  uPalD;
+uniform highp sampler2D uPrev;
+uniform float uBlend;
+uniform float uSeed;
+
+out vec4 outColor;
+
+const float BAILOUT = 2.4;
+
+float hash12(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+
+float hash13(vec3 p) {
+  p = fract(p * 443.8975);
+  p += dot(p, p.yzx + 19.19);
+  return fract((p.x + p.y) * p.z);
+}
+
+float vnoise(vec3 x) {
+  vec3 i = floor(x);
+  vec3 f = fract(x);
+  f = f * f * (3.0 - 2.0 * f);
+  float n000 = hash13(i);
+  float n100 = hash13(i + vec3(1.0, 0.0, 0.0));
+  float n010 = hash13(i + vec3(0.0, 1.0, 0.0));
+  float n110 = hash13(i + vec3(1.0, 1.0, 0.0));
+  float n001 = hash13(i + vec3(0.0, 0.0, 1.0));
+  float n101 = hash13(i + vec3(1.0, 0.0, 1.0));
+  float n011 = hash13(i + vec3(0.0, 1.0, 1.0));
+  float n111 = hash13(i + vec3(1.0, 1.0, 1.0));
+  return mix(mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
+             mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y), f.z);
+}
+
+vec3 pal(float t) {
+  return uPalA + uPalB * cos(6.28318530718 * (uPalC * t + uPalD));
+}
+
+/* Mandelbulb distance estimator: returns (distance, orbit trap) */
+vec2 map(vec3 p) {
+  vec3 z = p;
+  float dr = 1.0;
+  float r = length(z);
+  float trap = 1e9;
+  for (int i = 0; i < 15; i++) {
+    if (i >= uIters) break;
+    r = length(z);
+    if (r > BAILOUT) break;
+    trap = min(trap, r);
+    float rSafe = max(r, 1e-6);
+    float theta = acos(clamp(z.z / rSafe, -1.0, 1.0)) * uPower;
+    float phi = atan(z.y, z.x) * uPower;
+    float rp = pow(r, uPower);
+    dr = rp / rSafe * uPower * dr + 1.0;
+    float st = sin(theta);
+    z = rp * vec3(st * cos(phi), st * sin(phi), cos(theta)) + p;
+  }
+  return vec2(0.5 * log(max(r, 1e-6)) * r / dr, trap);
+}
+
+vec3 calcNormal(vec3 p, float e) {
+  const vec2 k = vec2(1.0, -1.0);
+  return normalize(
+    k.xyy * map(p + k.xyy * e).x +
+    k.yyx * map(p + k.yyx * e).x +
+    k.yxy * map(p + k.yxy * e).x +
+    k.xxx * map(p + k.xxx * e).x);
+}
+
+float softShadow(vec3 ro, vec3 rd) {
+  float res = 1.0;
+  float t = 0.02;
+  for (int i = 0; i < 32; i++) {
+    float h = map(ro + rd * t).x;
+    res = min(res, 10.0 * h / t);
+    t += clamp(h, 0.012, 0.20);
+    if (res < 0.02 || t > 5.0) break;
+  }
+  return clamp(res, 0.0, 1.0);
+}
+
+vec3 background(vec3 rd) {
+  float h = clamp(rd.y * 0.5 + 0.5, 0.0, 1.0);
+  vec3 col = mix(vec3(0.010, 0.012, 0.019), vec3(0.040, 0.054, 0.082), smoothstep(0.15, 0.9, h));
+  float n = vnoise(rd * 2.4 + 7.0) * 0.6 + vnoise(rd * 5.8 - 3.0) * 0.4;
+  col += pal(0.62) * (n * n) * 0.10;
+  col += vec3(0.028, 0.032, 0.046) * pow(1.0 - abs(rd.y), 6.0);
+  vec3 sd = rd * 110.0;
+  vec3 id = floor(sd);
+  float hs = hash13(id);
+  vec3 f3 = fract(sd) - 0.5;
+  float d = length(f3);
+  float star = 1.0 - smoothstep(0.08, 0.42, d);
+  float gate = hs > 0.9955 ? (hs - 0.9955) / 0.0045 : 0.0;
+  float tw = 0.7 + 0.3 * sin(uTime * (0.6 + hs * 4.0) + hs * 90.0);
+  col += vec3(0.85, 0.90, 1.0) * star * star * gate * tw * 2.4;
+  return col;
+}
+
+void main() {
+  vec2 frag = gl_FragCoord.xy;
+  vec2 jit = vec2(hash12(frag + uSeed * 0.7071),
+                  hash12(frag + uSeed * 0.3141 + 19.19)) - 0.5;
+  vec2 ndc = (2.0 * (frag + jit) - uRes) / uRes.y;
+  vec3 ro = uCamPos;
+  vec3 rd = normalize(uCamBasis * vec3(ndc, uFocal));
+
+  float pixelScale = 2.0 / (uRes.y * uFocal);
+  float t = 0.0;
+  float trap = 1e9;
+  float minDist = 1e9;
+  float steps = 0.0;
+  bool hit = false;
+
+  for (int i = 0; i < 200; i++) {
+    if (i >= uMaxSteps) break;
+    steps = float(i);
+    vec2 dm = map(ro + rd * t);
+    minDist = min(minDist, dm.x);
+    trap = dm.y;
+    if (dm.x < pixelScale * t * 0.85 + 1e-5) { hit = true; break; }
+    t += dm.x * 0.9;
+    if (t > 24.0) break;
+  }
+
+  vec3 col;
+  vec3 bg = background(rd);
+  if (hit) {
+    vec3 pos = ro + rd * t;
+    float e = max(pixelScale * t * 0.6, 2e-4);
+    vec3 n = calcNormal(pos, e);
+    float tt = clamp(trap * 0.62, 0.0, 1.0);
+    vec3 base = pal(tt + 0.07 * n.y);
+    float ao = 1.0 - steps / float(uMaxSteps);
+    ao = 0.2 + 0.8 * ao * ao;
+    vec3 ld = normalize(vec3(0.62, 0.74, 0.34));
+    float dif = clamp(dot(n, ld), 0.0, 1.0);
+    float sh = uShadow > 0.5 ? softShadow(pos + n * (e * 6.0), ld) : 1.0;
+    float fill = clamp(dot(n, normalize(vec3(-0.55, -0.20, 0.60))), 0.0, 1.0);
+    float fre = pow(1.0 - clamp(dot(n, -rd), 0.0, 1.0), 4.0);
+    vec3 lin = vec3(0.0);
+    lin += vec3(1.45, 1.12, 0.86) * 2.6 * dif * sh;
+    lin += vec3(0.24, 0.34, 0.52) * 0.9 * fill;
+    lin += vec3(0.55, 0.72, 1.00) * 0.6 * fre * ao;
+    lin += vec3(0.30, 0.28, 0.34) * 0.5 * (0.5 + 0.5 * n.y) * ao;
+    col = base * lin;
+    vec3 hv = normalize(ld - rd);
+    col += vec3(1.00, 0.96, 0.88) * pow(clamp(dot(n, hv), 0.0, 1.0), 40.0) * sh * 0.7;
+    float fog = 1.0 - exp(-0.05 * max(t - 1.8, 0.0));
+    col = mix(col, bg, fog);
+  } else {
+    col = bg + pal(0.85) * uGlow * 1.7 * exp(-14.0 * max(minDist, 0.0));
+  }
+
+  col = clamp(col, 0.0, 16.0);
+  if (uHdr < 0.5) col = col / (1.0 + col);
+  vec3 prev = texture(uPrev, frag / uRes).rgb;
+  outColor = vec4(mix(col, prev, uBlend), 1.0);
+}
+`;
+
+const COPY_FRAG = `
+precision highp float;
+uniform vec2 uRes;
+uniform highp sampler2D tSrc;
+uniform float uHdr;
+uniform float uSeed;
+uniform float uBlend;
+out vec4 outColor;
+
+vec3 aces(vec3 x) {
+  return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
+}
+
+float hash12(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / uRes;
+  vec3 c = texture(tSrc, uv).rgb;
+  c = uHdr > 0.5 ? aces(c * 1.05) : c;
+  c = pow(clamp(c, 0.0, 1.0), vec3(1.0 / 2.2));
+  vec2 q = uv - 0.5;
+  c *= clamp(1.0 - 0.34 * dot(q, q) * 1.6, 0.0, 1.0);
+  c += (hash12(gl_FragCoord.xy + uSeed * 17.0) - 0.5) * 0.0013 * (1.0 - uBlend);
+  outColor = vec4(c, 1.0);
+}
+`;
+
+/* ---------------- renderer ---------------- */
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: false, depth: false, stencil: false, powerPreference: 'high-performance' });
+} catch (err) {
+  fatal('WebGL2 context could not be created. This demo needs a WebGL2-capable browser. (' + err.message + ')');
+  throw err;
+}
+renderer.autoClear = false;
+document.body.appendChild(renderer.domElement);
+const el = renderer.domElement;
+el.style.touchAction = 'none';
+
+const gl = renderer.getContext();
+const hdrOK = !!(gl && gl.getExtension && gl.getExtension('EXT_color_buffer_float'));
+const RT_TYPE = hdrOK ? THREE.HalfFloatType : THREE.UnsignedByteType;
+
+/* ---------------- scene ---------------- */
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+const marchUniforms = {
+  uRes:      { value: new THREE.Vector2(2, 2) },
+  uTime:     { value: 0 },
+  uCamPos:   { value: new THREE.Vector3() },
+  uCamBasis: { value: new THREE.Matrix3() },
+  uFocal:    { value: FOCAL },
+  uPower:    { value: state.powerNow },
+  uIters:    { value: QUALITIES[state.quality].iters },
+  uMaxSteps: { value: QUALITIES[state.quality].steps },
+  uShadow:   { value: QUALITIES[state.quality].shadow },
+  uGlow:     { value: state.glow },
+  uHdr:      { value: hdrOK ? 1 : 0 },
+  uPalA:     { value: new THREE.Vector3() },
+  uPalB:     { value: new THREE.Vector3() },
+  uPalC:     { value: new THREE.Vector3() },
+  uPalD:     { value: new THREE.Vector3() },
+  uPrev:     { value: null },
+  uBlend:    { value: 0 },
+  uSeed:     { value: 0 },
+};
+const copyUniforms = {
+  uRes: { value: new THREE.Vector2(2, 2) },
+  uSeed: { value: 0 },
+  uBlend: { value: 0 },
+  tSrc: { value: null },
+  uHdr: { value: hdrOK ? 1 : 0 },
+};
+
+const marchMat = new THREE.RawShaderMaterial({
+  glslVersion: THREE.GLSL3,
+  vertexShader: VERT_SRC,
+  fragmentShader: MARCH_FRAG,
+  uniforms: marchUniforms,
+  depthTest: false,
+  depthWrite: false,
+});
+const copyMat = new THREE.RawShaderMaterial({
+  glslVersion: THREE.GLSL3,
+  vertexShader: VERT_SRC,
+  fragmentShader: COPY_FRAG,
+  uniforms: copyUniforms,
+  depthTest: false,
+  depthWrite: false,
+});
+
+const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), marchMat);
+quad.frustumCulled = false;
+scene.add(quad);
+
+const rtOpts = {
+  type: RT_TYPE,
+  format: THREE.RGBAFormat,
+  minFilter: THREE.NearestFilter,
+  magFilter: THREE.NearestFilter,
+  depthBuffer: false,
+  stencilBuffer: false,
+  generateMipmaps: false,
+};
+let rtRead = new THREE.WebGLRenderTarget(2, 2, rtOpts);
+let rtWrite = new THREE.WebGLRenderTarget(2, 2, rtOpts);
+
+/* ---------------- sizing / adaptive resolution ---------------- */
+let vw = window.innerWidth || 1280;
+let vh = window.innerHeight || 720;
+const basePR = Math.min(window.devicePixelRatio || 1, 2);
+const dbSize = new THREE.Vector2(2, 2);
+
+/* start conservative on very large buffers (~7.2 MP ceiling) */
+{
+  const px = vw * vh * basePR * basePR;
+  if (px > 7.2e6) state.scale = Math.max(0.5, Math.sqrt(7.2e6 / px));
+}
+
+function markDirty() {
+  state.frameIdx = 0;
+  state.fresh = true;
+}
+/* auto-bump march quality when diving close (keeps surface crisp) */
+function autoQualityForDist() {
+  if (state.tDist < 1.35 && state.quality < 2) setQuality(state.quality + 1, true);
+  else if (state.tDist > 2.6 && state.quality > 1) setQuality(state.quality - 1, true);
+}
+
+function applyRenderScale() {
+  const pr = basePR * state.scale;
+  renderer.setPixelRatio(pr);
+  renderer.setSize(vw, vh, false);
+  renderer.getDrawingBufferSize(dbSize);
+  rtRead.setSize(dbSize.x, dbSize.y);
+  rtWrite.setSize(dbSize.x, dbSize.y);
+  marchUniforms.uRes.value.copy(dbSize);
+  copyUniforms.uRes.value.copy(dbSize);
+  markDirty();
+}
+
+window.addEventListener('resize', () => {
+  vw = window.innerWidth || 1280;
+  vh = window.innerHeight || 720;
+  applyRenderScale();
+});
+
+/* ---------------- palettes / presets / params ---------------- */
+function applyPaletteUniforms() {
+  const p = PALETTES[state.palette];
+  marchUniforms.uPalA.value.fromArray(p.a);
+  marchUniforms.uPalB.value.fromArray(p.b);
+  marchUniforms.uPalC.value.fromArray(p.c);
+  marchUniforms.uPalD.value.fromArray(p.d);
+  $('palName').textContent = p.name;
+}
+function setPalette(i, announce = true) {
+  state.palette = i;
+  applyPaletteUniforms();
+  markDirty();
+  if (announce) toast('palette ' + PALETTES[i].name);
+}
+function setQuality(i, silent = false) {
+  state.quality = i;
+  $('qualChip').textContent = QUALITIES[i].name;
+  markDirty();
+  if (!silent) toast('quality ' + QUALITIES[i].name);
+}
+function setPower(v) {
+  state.powerBase = clamp(v, 2, 12);
+}
+function applyPreset(i) {
+  const p = PRESETS[i];
+  state.powerBase = p.power;
+  state.morph = p.morph;
+  state.tTheta = state.theta + wrapPi(p.theta - state.theta);
+  state.tPhi = p.phi;
+  state.tDist = p.dist;
+  state.velTheta = 0;
+  state.velPhi = 0;
+  setPalette(p.pal, false);
+  toast('preset ' + (i + 1) + ' · ' + p.name);
+}
+function shoot() {
+  quad.material = copyMat;
+  copyUniforms.tSrc.value = rtRead.texture;
+  renderer.setRenderTarget(null);
+  renderer.render(scene, camera);
+  try {
+    const url = el.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'mandelbulb.png';
+    a.click();
+    toast('saved mandelbulb.png');
+  } catch (err) {
+    toast('save failed');
+  }
+}
+
+/* ---------------- interaction: pointer orbit + pinch ---------------- */
+const pointers = new Map();
+let lastPinch = 0;
+
+el.addEventListener('pointerdown', (e) => {
+  el.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, t: e.timeStamp });
+  state.velTheta = 0;
+  state.velPhi = 0;
+});
+el.addEventListener('pointermove', (e) => {
+  const p = pointers.get(e.pointerId);
+  if (!p) return;
+  const dx = e.clientX - p.x;
+  const dy = e.clientY - p.y;
+  const dtE = Math.max((e.timeStamp - p.t) / 1000, 1e-3);
+  p.x = e.clientX; p.y = e.clientY; p.t = e.timeStamp;
+  if (pointers.size === 1) {
+    state.tTheta += dx * 0.0055;
+    state.tPhi -= dy * 0.0055;
+    state.velTheta = 0.75 * state.velTheta + 0.25 * (dx * 0.0055 / dtE);
+    state.velPhi = 0.75 * state.velPhi + 0.25 * (-dy * 0.0055 / dtE);
+  } else if (pointers.size === 2) {
+    const pts = [...pointers.values()];
+    const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    if (lastPinch > 0 && d > 0) {
+      state.tDist = clamp(state.tDist * lastPinch / d, 1.25, 7.5);
+    }
+    lastPinch = d;
+  }
+});
+function endPointer(e) {
+  pointers.delete(e.pointerId);
+  if (pointers.size < 2) lastPinch = 0;
+  if (pointers.size === 0) {
+    state.velTheta = clamp(state.velTheta, -2.5, 2.5);
+    state.velPhi = clamp(state.velPhi, -2.5, 2.5);
+  }
+}
+el.addEventListener('pointerup', endPointer);
+el.addEventListener('pointercancel', endPointer);
+el.addEventListener('contextmenu', (e) => e.preventDefault());
+
+el.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  state.tDist = clamp(state.tDist * Math.exp(e.deltaY * 0.0012), 1.02, 9.0);
+  autoQualityForDist();
+}, { passive: false });
+
+el.addEventListener('dblclick', () => {
+  state.tDist = state.tDist > 2.0 ? 1.12 : 3.6;
+  toast(state.tDist < 2.0 ? 'close approach' : 'pull back');
+});
+
+/* ---------------- interaction: keys ---------------- */
+window.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const key = e.key;
+  if (key === 'Escape') { helpEl.hidden = true; return; }
+  if (key === 'h' || key === 'H' || key === '?') { helpEl.hidden = !helpEl.hidden; return; }
+  if (!helpEl.hidden) return;
+  switch (key) {
+    case ' ':
+      state.autoRotate = !state.autoRotate;
+      toast(state.autoRotate ? 'auto-orbit on' : 'auto-orbit off');
+      e.preventDefault();
+      break;
+    case 'm': case 'M':
+      state.morph = !state.morph;
+      toast(state.morph ? 'power morph on' : 'power morph off');
+      break;
+    case 'p': case 'P':
+      setPalette((state.palette + 1) % PALETTES.length);
+      break;
+    case 'g': case 'G':
+      state.glow = state.glow > 0 ? 0 : 1.0;
+      marchUniforms.uGlow.value = state.glow;
+      markDirty();
+      toast(state.glow > 0 ? 'glow on' : 'glow off');
+      break;
+    case 'q': case 'Q':
+      setQuality((state.quality + 1) % QUALITIES.length);
+      break;
+    case '[': case 'ArrowLeft':
+      setPower(state.powerBase - 0.25);
+      toast('power ' + state.powerBase.toFixed(2));
+      break;
+    case ']': case 'ArrowRight':
+      setPower(state.powerBase + 0.25);
+      toast('power ' + state.powerBase.toFixed(2));
+      break;
+    case 'ArrowUp':
+      state.tDist = clamp(state.tDist * 0.85, 1.02, 9.0);
+      break;
+    case 'ArrowDown':
+      state.tDist = clamp(state.tDist * 1.18, 1.02, 9.0);
+      break;
+    case 'r': case 'R':
+      applyPreset(0);
+      state.autoRotate = true;
+      break;
+    case 's': case 'S':
+      shoot();
+      break;
+    default:
+      if (key >= '1' && key <= '5') applyPreset(key.charCodeAt(0) - 49);
+  }
+});
+helpEl.addEventListener('click', () => { helpEl.hidden = true; });
+
+/* ---------------- camera / frame loop ---------------- */
+const UP = new THREE.Vector3(0, 1, 0);
+const camPos = new THREE.Vector3();
+const fwd = new THREE.Vector3();
+const right = new THREE.Vector3();
+const up2 = new THREE.Vector3();
+const basis = new THREE.Matrix3();
+
+function updateCamera() {
+  const sp = Math.sin(state.phi), cp = Math.cos(state.phi);
+  camPos.set(state.dist * sp * Math.cos(state.theta),
+             state.dist * cp,
+             state.dist * sp * Math.sin(state.theta));
+  fwd.copy(camPos).multiplyScalar(-1).normalize();
+  right.crossVectors(fwd, UP).normalize();
+  up2.crossVectors(right, fwd).normalize();
+  basis.set(right.x, up2.x, fwd.x,
+            right.y, up2.y, fwd.y,
+            right.z, up2.z, fwd.z);
+  marchUniforms.uCamPos.value.copy(camPos);
+  marchUniforms.uCamBasis.value.copy(basis);
+}
+
+let lastNow = performance.now();
+let elapsed = 0;
+let seedCounter = 0;
+let adaptCooldown = 45;
+const frameTimes = [];
+let hudFrames = 0;
+let hudTime = 0;
+
+function tick(now) {
+  const dtRaw = (now - lastNow) / 1000;
+  lastNow = now;
+  const dt = clamp(dtRaw, 0, 0.1);
+  elapsed += dt;
+
+  /* inertia + auto-orbit drive the targets */
+  if (state.autoRotate && pointers.size === 0) state.tTheta += dt * 0.10;
+  state.tTheta += state.velTheta * dt;
+  state.tPhi += state.velPhi * dt;
+  if (Math.abs(state.velTheta) < 1e-4) state.velTheta = 0;
+  if (Math.abs(state.velPhi) < 1e-4) state.velPhi = 0;
+  const decay = Math.exp(-2.5 * dt);
+  state.velTheta *= decay;
+  state.velPhi *= decay;
+  state.tPhi = clamp(state.tPhi, 0.15, Math.PI - 0.15);
+  state.tDist = clamp(state.tDist, 1.25, 7.5);
+
+  /* critically-damped-ish smoothing toward targets */
+  const k = 1 - Math.exp(-dt * 7.0);
+  state.theta += (state.tTheta - state.theta) * k;
+  state.phi += (state.tPhi - state.phi) * k;
+  state.dist += (state.tDist - state.dist) * (1 - Math.exp(-dt * 5.0));
+
+  const morphTarget = state.morph
+    ? clamp(state.powerBase + Math.sin(elapsed * 0.42) * 2.6, 2, 12)
+    : state.powerBase;
+  state.powerNow += (morphTarget - state.powerNow) * (1 - Math.exp(-dt * 4.0));
+
+  const still = Math.abs(state.tTheta - state.theta) < 1e-5 &&
+                Math.abs(state.tPhi - state.phi) < 1e-5 &&
+                Math.abs(state.tDist - state.dist) < 1e-5 &&
+                Math.abs(morphTarget - state.powerNow) < 1e-4 &&
+                pointers.size === 0;
+  state.moving = !still;
+  state.converged = still && state.frameIdx > 160;
+
+  updateCamera();
+  const q = QUALITIES[state.quality];
+  marchUniforms.uTime.value = elapsed;
+  marchUniforms.uPower.value = state.powerNow;
+  marchUniforms.uIters.value = q.iters;
+  marchUniforms.uMaxSteps.value = q.steps;
+  marchUniforms.uShadow.value = q.shadow;
+
+  if (state.moving) {
+    state.frameIdx = 0;
+    marchUniforms.uBlend.value = state.fresh ? 0 : 0.42;
+  } else {
+    state.frameIdx += 1;
+    marchUniforms.uBlend.value = state.frameIdx === 1 ? 0 : Math.min(0.96, state.frameIdx / (state.frameIdx + 1));
+  }
+  state.fresh = false;
+  marchUniforms.uSeed.value = (seedCounter += 1) % 997;
+  copyUniforms.uSeed.value = marchUniforms.uSeed.value;
+  copyUniforms.uBlend.value = marchUniforms.uBlend.value;
+
+  if (!state.converged) {
+    marchUniforms.uPrev.value = rtRead.texture;
+    quad.material = marchMat;
+    renderer.setRenderTarget(rtWrite);
+    renderer.render(scene, camera);
+
+    quad.material = copyMat;
+    copyUniforms.tSrc.value = rtWrite.texture;
+    renderer.setRenderTarget(null);
+    renderer.render(scene, camera);
+
+    const tmp = rtRead; rtRead = rtWrite; rtWrite = tmp;
+  }
+
+  /* adaptive resolution: hold ~42+ fps, relax upward when headroom */
+  if (!state.converged) {
+    frameTimes.push(dtRaw);
+    if (frameTimes.length > 50) frameTimes.shift();
+    if (--adaptCooldown <= 0 && frameTimes.length >= 30) {
+      let s = 0;
+      for (const ft of frameTimes) s += ft;
+      const avg = s / frameTimes.length;
+      if (avg > 1 / 42 && state.scale > 0.46) {
+        state.scale = Math.max(0.45, state.scale * 0.85);
+        applyRenderScale();
+        adaptCooldown = 45;
+      } else if (avg < 1 / 55 && state.scale < 0.995) {
+        state.scale = Math.min(1, state.scale * 1.1);
+        applyRenderScale();
+        adaptCooldown = 45;
+      }
+    }
+  } else {
+    frameTimes.length = 0;
+  }
+
+  /* HUD */
+  hudFrames += 1;
+  hudTime += dtRaw;
+  if (hudTime >= 0.5) {
+    const fps = Math.round(hudFrames / hudTime);
+    $('fps').textContent = state.converged ? 'IDLE' : fps + ' FPS';
+    $('resChip').textContent = Math.round(state.scale * 100) + '%';
+    $('spp').textContent = state.moving ? 'TAA' : Math.min(state.frameIdx + 1, 512) + ' SPP';
+    $('powerVal').textContent = 'p ' + state.powerNow.toFixed(1);
+    hudFrames = 0;
+    hudTime = 0;
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    renderer.setAnimationLoop(null);
+  } else {
+    lastNow = performance.now();
+    renderer.setAnimationLoop(tick);
+  }
+});
+
+applyPaletteUniforms();
+applyRenderScale();
+renderer.setAnimationLoop(tick);
+</script>
+</body>
+</html>

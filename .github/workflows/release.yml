@@ -90,6 +90,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            games/dustfall/package-lock.json
+            games/dead-parade/package-lock.json
       - name: Cache Godot and release templates
         id: godot-cache
         uses: actions/cache@v4
@@ -118,12 +125,18 @@ jobs:
             -d "$templates"
       - name: Add Godot to PATH
         run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Cache pinned Chromium package
+        uses: actions/cache@v4
+        with:
+          path: build/tools/godot_cef-store-v2.0.0.zip
+          key: godot-cef-store-2.0.0-6d58235aa47b654a
       - name: Export and package all platforms
         run: python3 .github/scripts/export_release.py
       - name: Check imported project
         run: |
           godot --headless --path . --script tests/smoke.gd
           godot --headless --path . --script tests/interview.gd
+          godot --headless --path . --script tests/campaign.gd
       - name: Upload release assets
         uses: actions/upload-artifact@v4
         with:

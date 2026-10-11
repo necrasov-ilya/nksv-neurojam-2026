@@ -1,0 +1,67 @@
+{
+  "repository": "https://github.com/alesha-pro/bench-portal",
+  "revision": "984d1b035125dad8cff96436862b96a92122a042",
+  "imported": [
+    {
+      "directory": "retrocraft-qwen3.8-27b",
+      "files": 3,
+      "bytes": 130240
+    },
+    {
+      "directory": "wow-mandelbulb-glm53-flash",
+      "files": 3,
+      "bytes": 86757
+    },
+    {
+      "directory": "wow-drift-city-glm53-flash",
+      "files": 3,
+      "bytes": 99236
+    },
+    {
+      "directory": "kart-astra-solo",
+      "files": 37,
+      "bytes": 1046861
+    },
+    {
+      "directory": "hanafubuki-grok-4-7",
+      "files": 4,
+      "bytes": 644468
+    },
+    {
+      "directory": "pagoda-ac130-glm53-flash",
+      "files": 3,
+      "bytes": 164530
+    },
+    {
+      "directory": "trenchcam-claude-opus-5.5",
+      "files": 419,
+      "bytes": 41784674
+    },
+    {
+      "directory": "voidbound-choir-of-ash",
+      "files": 6,
+      "bytes": 733332
+    },
+    {
+      "directory": "voidrunner-astra",
+      "files": 13,
+      "bytes": 10015955
+    },
+    {
+      "directory": "kerr-protocol-glm-5.3",
+      "files": 36,
+      "bytes": 248369
+    },
+    {
+      "directory": "rig-3090-astra",
+      "files": 16,
+      "bytes": 3670249
+    },
+    {
+      "directory": "rig-3090-fable-5.1",
+      "files": 6,
+      "bytes": 1059178
+    }
+  ],
+  "validation": "Every imported file matched its Git blob SHA-1 in the pinned tree; existing modules were preserved."
+}

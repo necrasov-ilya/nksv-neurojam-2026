@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LATENT SYSTEMS — испытательный стенд</title>
+  <style>html,body{margin:0;height:100%;background:#17121f;color:#eee8ff;font:20px system-ui}#launch-error{max-width:760px;margin:10vh auto;padding:30px;line-height:1.6}</style>
+</head>
+<body>
+  <div id="launch-error">Открывается контрольная среда…</div>
+  <script src="campaign-host.js"></script>
+  <script>
+    LatentHost.startNative().catch(error => {
+      document.getElementById('launch-error').textContent = error.message;
+      console.error(error);
+    });
+  </script>
+</body>
+</html>

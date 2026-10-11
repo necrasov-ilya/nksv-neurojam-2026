@@ -1,0 +1,2800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pagoda Garden AC-130</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0a0e24; }
+  #app, #app canvas { display: block; width: 100%; height: 100%; }
+</style>
+<script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+import * as THREE from 'three';
+
+// ===== helpers (integrator) =====
+const TAU = Math.PI * 2;
+const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const grng = mulberry32(20260830); // garden layout (fresh per build)
+const drng = mulberry32(7);        // destruction chaos
+const wrng = mulberry32(42);       // arsenal
+function makeCanvasTexture(size, painterFn) {
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+  painterFn(ctx, size, size);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+function makeSoftDiscTexture(size, inner, outer) {
+  return makeCanvasTexture(size, (ctx, w, h) => {
+    const g = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    g.addColorStop(0, inner);
+    g.addColorStop(1, outer);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+  });
+}
+
+// ===== SECTION A: GARDEN =====
+// AC-130 Pagoda Garden — Section A: dusk environment (ground, sky dome, glass ponds,
+// lily pads, stepping stones, cherry trees, rocks) + destructible block clusters
+// (five-tier pagoda, temple hall, three torii, eight stone lanterns) + materials,
+// thermal mode, deterministic reset, and per-frame ambient motion.
+// Top-level: buildGarden, resetGarden, applyThermal, gardenTick. G_-prefixed privates.
+
+const G_DISPOSE = []; // every A-owned GPU resource (geometry / material / texture / fog / color)
+function G_track(o) { G_DISPOSE.push(o); return o; }
+
+let G_env = null;        // per-build registry: {ground, sky, trunk, foliage, rock, lily, stone, tufts, clouds} {mesh,mat,thermal} + water
+let G_root = null;       // group holding all A-owned scene objects
+let G_saved = null;      // originals captured before the first thermal swap
+let G_thermalOn = false;
+let G_lilyMesh = null;
+let G_lilies = null;
+let G_ripple = null;
+let G_tick = null;
+let G_tuftMesh = null;
+let G_cloudMesh = null;
+let G_clouds = null;
+let G_booted = false;
+let G_baseMesh = null, G_baseMatNatural = null, G_baseMatThermal = null; // oversized base terrain (fills the sensor frame)
+const G_uTime = { value: 0 }; // shared sway uniform (trunk + foliage)
+
+function G_stdMat(hex, rough) {
+  return G_track(new THREE.MeshStandardMaterial({ color: hex, roughness: rough, metalness: 0 }));
+}
+function G_thermalStd(hex) {
+  return G_track(new THREE.MeshBasicMaterial({ color: hex, toneMapped: false }));
+}
+
+// world -> canvas mapping for the 240x240 ground plane (plane rotated -90deg about X,
+// so local +y maps to world -z; canvas y = (0.5 + z/240) * h, canvas x = (x+120)/240 * w)
+function G_paintGround(ctx, w, h, rng) {
+  const px = (x) => ((x + 120) / 240) * w;
+  const pz = (z) => (0.5 + z / 240) * h;
+  ctx.fillStyle = '#3e4e37';
+  ctx.fillRect(0, 0, w, h);
+  for (let i = 0; i < 2600; i++) {
+    ctx.fillStyle = rng() < 0.5 ? 'rgba(16,26,14,0.20)' : 'rgba(74,90,58,0.16)';
+    const s = 1 + rng() * 3;
+    ctx.fillRect(rng() * w, rng() * h, s, s);
+  }
+  // sandy path: main band along z (x in [-2.2, 2.2], z -34..28) + west branch to the temple hall
+  ctx.fillStyle = '#5a5142';
+  ctx.fillRect(px(-2.2), pz(-34), (4.4 / 240) * w, (62 / 240) * h);
+  ctx.fillRect(px(-30), pz(-8.5), (27.8 / 240) * w, (5 / 240) * h);
+  ctx.fillStyle = 'rgba(126,116,94,0.5)';
+  ctx.fillRect(px(-1.1), pz(-34), (2.2 / 240) * w, (62 / 240) * h);
+  ctx.fillRect(px(-28), pz(-7.2), (24.9 / 240) * w, (2.4 / 240) * h);
+  for (let i = 0; i < 420; i++) {
+    const onMain = rng() < 0.7;
+    const x = onMain ? px(-2.2) + rng() * (4.4 / 240) * w : px(-30) + rng() * (27.8 / 240) * w;
+    const z = onMain ? -34 + rng() * 62 : -8.5 + rng() * 5;
+    ctx.fillStyle = rng() < 0.5 ? 'rgba(88,80,62,0.5)' : 'rgba(142,130,106,0.4)';
+    ctx.fillRect(x, pz(z), 2, 2);
+  }
+  // pond areas: repaint grass (ponds float at y 0.06 on top)
+  const pondSpots = [[2, 2, 7], [-14, 16, 4.5]];
+  for (let i = 0; i < pondSpots.length; i++) {
+    const c = pondSpots[i];
+    ctx.fillStyle = '#3e4e37';
+    ctx.beginPath();
+    ctx.arc(px(c[0]), pz(c[1]), (c[2] / 240) * w, 0, TAU);
+    ctx.fill();
+    for (let j = 0; j < 40; j++) {
+      const a = rng() * TAU, rr = rng() * (c[2] / 240) * w;
+      ctx.fillStyle = rng() < 0.5 ? 'rgba(16,26,14,0.2)' : 'rgba(74,90,58,0.16)';
+      ctx.fillRect(px(c[0]) + Math.cos(a) * rr, pz(c[1]) + Math.sin(a) * rr, 2, 2);
+    }
+  }
+}
+
+function G_paintSky(ctx, w, h, rng) {
+  let filled = false;
+  try {
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#7ec8f5');
+    g.addColorStop(0.55, '#a8dcf0');
+    g.addColorStop(0.78, '#ffe8c8');
+    g.addColorStop(1, '#ffd9a8');
+    ctx.fillStyle = g;
+    filled = true;
+  } catch (err) { /* stub canvas: fall through to flat fill */ }
+  if (!filled) ctx.fillStyle = '#3a2a5e';
+  ctx.fillRect(0, 0, w, h);
+  for (let i = 0; i < 0; i++) { // stars off in daytime
+    const a = 0.25 + rng() * 0.75;
+    ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')';
+    const s = rng() < 0.85 ? 1 : 2;
+    ctx.fillRect(rng() * w, rng() * h * 0.4, s, s);
+  }
+}
+
+function G_paintRipple(ctx, w, h, rng) {
+  ctx.fillStyle = '#8fd4f0';
+  ctx.fillRect(0, 0, w, h);
+  for (let i = 0; i < 26; i++) {
+    ctx.strokeStyle = 'rgba(255,255,255,' + (0.10 + rng() * 0.15).toFixed(3) + ')';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(rng() * w, rng() * h, 4 + rng() * 14, rng() * TAU, rng() * TAU + 2 + rng() * 3);
+    ctx.stroke();
+  }
+  for (let i = 0; i < 60; i++) {
+    ctx.fillStyle = 'rgba(220,245,255,' + (0.08 + rng() * 0.12).toFixed(3) + ')';
+    ctx.fillRect(rng() * w, rng() * h, 2, 1);
+  }
+}
+
+// per-instance wind sway, injected at #include <begin_vertex> (trunk + foliage share G_uTime)
+function G_treeSway(shader) {
+  shader.uniforms.uTime = G_uTime;
+  shader.vertexShader = shader.vertexShader
+    .replace('#include <common>', '#include <common>\nuniform float uTime;')
+    .replace('#include <begin_vertex>', [
+      '#include <begin_vertex>',
+      '{',
+      '  float gph = fract(sin(dot(instanceMatrix[3].xz, vec2(12.9898, 78.233))) * 43758.5453) * 6.28318;',
+      '  float gy = max(0.0, transformed.y);',
+      '  transformed.x += (sin(uTime * 0.9 + gph) + 0.6 * sin(uTime * 2.1 + gph * 2.0)) * 0.06 * gy;',
+      '  transformed.z += (cos(uTime * 0.7 + gph) + 0.6 * cos(uTime * 1.6 + gph * 3.0)) * 0.06 * gy;',
+      '}'
+    ].join('\n'));
+}
+
+function buildGarden() {
+  const rng = mulberry32(20260830); // fresh RNG per build -> identical layout every time
+  const sc = state.scene;
+
+  G_root = new THREE.Group();
+  sc.add(G_root);
+
+  const m4 = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const e = new THREE.Euler();
+  const pv = new THREE.Vector3();
+  const sv = new THREE.Vector3();
+  const col = new THREE.Color();
+
+  // ---------- ground ----------
+  const groundMat = G_track(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0 }));
+  groundMat.map = G_track(makeCanvasTexture(1024, (c, w, h) => G_paintGround(c, w, h, rng)));
+  // WHOT ground: same paint desaturated to grayscale via a second canvas pass
+  const gsrc = groundMat.map.image;
+  const gth = document.createElement('canvas');
+  gth.width = (gsrc && gsrc.width) || 1024;
+  gth.height = (gsrc && gsrc.height) || 1024;
+  const gthc = gth.getContext('2d');
+  gthc.filter = 'grayscale(1) contrast(1.9) brightness(0.95)';
+  gthc.drawImage(gsrc, 0, 0);
+  const thermalGroundMat = G_track(new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false, map: G_track(new THREE.CanvasTexture(gth)) }));
+  const ground = new THREE.Mesh(G_track(new THREE.PlaneGeometry(240, 240)), groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  G_root.add(ground);
+  // oversized base terrain: the 240x240 painted plate floats in space beyond its edges;
+  // this fills the sensor frame with ground in every orbit phase (cold farmland in WHOT)
+  G_baseMatNatural = G_track(new THREE.MeshStandardMaterial({ color: 0x25301f, roughness: 1, metalness: 0 }));
+  G_baseMatThermal = G_track(new THREE.MeshBasicMaterial({ color: 0x2e2e2e, toneMapped: false }));
+  G_baseMesh = G_track(new THREE.Mesh(G_track(new THREE.PlaneGeometry(1400, 1400)), G_baseMatNatural));
+  G_baseMesh.rotation.x = -Math.PI / 2;
+  G_baseMesh.position.y = -0.03;
+  G_baseMesh.frustumCulled = false;
+  G_root.add(G_baseMesh);
+
+  // ---------- sky dome ----------
+  const skyMat = G_track(new THREE.MeshBasicMaterial({ side: THREE.BackSide, fog: false }));
+  skyMat.map = G_track(makeCanvasTexture(512, (c, w, h) => G_paintSky(c, w, h, rng)));
+  const sky = new THREE.Mesh(G_track(new THREE.SphereGeometry(420, 32, 16)), skyMat);
+  G_root.add(sky);
+
+  // ---------- water: two ponds ----------
+  G_ripple = G_track(makeCanvasTexture(128, (c, w, h) => G_paintRipple(c, w, h, rng)));
+  G_ripple.wrapS = THREE.RepeatWrapping;
+  G_ripple.wrapT = THREE.RepeatWrapping;
+  G_ripple.repeat.set(3, 3);
+  const waterNormal = G_track(new THREE.MeshPhongMaterial({
+    color: 0x2a7ab5, transparent: true, opacity: 0.88, shininess: 120,
+    specular: 0xffffff, map: G_ripple, depthWrite: true
+  }));
+  const waterCheap = G_track(new THREE.MeshPhongMaterial({
+    color: 0x2a7ab5, transparent: true, opacity: 0.88, shininess: 120, map: G_ripple
+  }));
+  const meshA = new THREE.Mesh(G_track(new THREE.CircleGeometry(7, 48)), waterNormal);
+  meshA.rotation.x = -Math.PI / 2;
+  meshA.position.set(2, 0.06, 2);
+  const meshB = new THREE.Mesh(G_track(new THREE.CircleGeometry(4.5, 40)), waterNormal);
+  meshB.rotation.x = -Math.PI / 2;
+  meshB.position.set(-14, 0.06, 16);
+  G_root.add(meshA, meshB);
+  state.water = { normal: waterNormal, cheap: waterCheap, meshA, meshB };
+
+  // ---------- lily pads (12, drifting in gardenTick) ----------
+  const lilyMat = G_stdMat(0x4f8a3f, 0.9);
+  G_lilyMesh = new THREE.InstancedMesh(G_track(new THREE.CylinderGeometry(1, 1, 0.06, 10)), lilyMat, 12);
+  G_lilyMesh.frustumCulled = false;
+  G_lilyMesh.receiveShadow = true;
+  G_lilies = [];
+  {
+    const greens = [0x4f8a3f, 0x5f9a48, 0x3f7a3a];
+    const ponds = [[2, 2, 3.4, 6.2, 7], [-14, 16, 1.6, 3.6, 5]];
+    let li = 0;
+    for (let p = 0; p < ponds.length; p++) {
+      const pd = ponds[p];
+      for (let i = 0; i < pd[4]; i++) {
+        const ang = (i / pd[4]) * TAU + (rng() - 0.5) * 0.5;
+        const r = pd[2] + (pd[3] - pd[2]) * rng();
+        const s = 0.35 + 0.45 * rng();
+        G_lilies.push({ cx: pd[0], cz: pd[1], r: r, ang: ang, rot: rng() * TAU, speed: 0.02 + 0.03 * rng(), s: s });
+        G_lilyMesh.setColorAt(li, col.set(greens[Math.floor(rng() * 3)]).multiplyScalar(0.9 + 0.2 * rng()));
+        li++;
+      }
+    }
+    for (let i = 0; i < G_lilies.length; i++) {
+      const l = G_lilies[i];
+      m4.compose(pv.set(l.cx + Math.cos(l.ang) * l.r, 0.12, l.cz + Math.sin(l.ang) * l.r),
+        q.setFromEuler(e.set(0, l.rot, 0)), sv.set(l.s, 1, l.s));
+      G_lilyMesh.setMatrixAt(i, m4);
+    }
+    G_lilyMesh.instanceMatrix.needsUpdate = true;
+    if (G_lilyMesh.instanceColor) G_lilyMesh.instanceColor.needsUpdate = true;
+  }
+  G_root.add(G_lilyMesh);
+
+  // ---------- stepping stones (10, across the big pond diagonally) ----------
+  const stoneMat = G_stdMat(0x6d6a66, 0.95);
+  const stoneMesh = new THREE.InstancedMesh(G_track(new THREE.BoxGeometry(1, 1, 1)), stoneMat, 10);
+  stoneMesh.frustumCulled = false;
+  stoneMesh.castShadow = true;
+  stoneMesh.receiveShadow = true;
+  {
+    for (let i = 0; i < 10; i++) {
+      const t = i / 9;
+      const x = lerp(2 - 4.5, 2 + 4.5, t) + (rng() - 0.5) * 0.6;
+      const z = lerp(2 + 4.5, 2 - 4.5, t) + (rng() - 0.5) * 0.6;
+      const s = 0.55 + 0.3 * rng();
+      m4.compose(pv.set(x, 0.14, z), q.setFromEuler(e.set(0, rng() * TAU, 0)), sv.set(s, 0.14, s * 0.8));
+      stoneMesh.setMatrixAt(i, m4);
+      stoneMesh.setColorAt(i, col.set(0x6d6a66).multiplyScalar(0.85 + 0.2 * rng()));
+    }
+    stoneMesh.instanceMatrix.needsUpdate = true;
+    if (stoneMesh.instanceColor) stoneMesh.instanceColor.needsUpdate = true;
+  }
+  G_root.add(stoneMesh);
+
+  // ---------- trees (10: instanced box trunks + VOXEL cube-cluster canopies, sway) ----------
+  // species: 0 cherry (pink/white), 1 maple (green), 2 ginkgo (orange)
+  const trunkMat = G_stdMat(0x5a3a2a, 0.95);
+  trunkMat.onBeforeCompile = G_treeSway;
+  trunkMat.customProgramCacheKey = () => 'pagodaTreeSway';
+  const foliageMat = G_stdMat(0xffffff, 0.85); // tint carried per-instance
+  foliageMat.onBeforeCompile = G_treeSway;
+  foliageMat.customProgramCacheKey = () => 'pagodaTreeSway';
+  const trunkGeo = G_track(new THREE.BoxGeometry(0.55, 2.6, 0.55));
+  const leafGeo = G_track(new THREE.BoxGeometry(1, 1, 1));
+  const treeSpots = [[-18, -20], [-18, 8], [12, -22], [-8, -30], [16, -10], [22, 6], [34, -4], [10, 26], [-24, 24], [24, 32]];
+  const speciesOf = [0, 0, 1, 0, 2, 1, 0, 2, 1, 0];
+  const speciesPalettes = [
+    [0xff9ec4, 0xffe8f0, 0xf77ba8],   // cherry: pink / white / deep pink
+    [0x5f9448, 0x6fa254, 0x7db562],   // maple greens
+    [0xd8a043, 0xe0b055, 0xc8903a]    // ginkgo oranges
+  ];
+  const treeData = [];
+  for (let i = 0; i < treeSpots.length; i++) {
+    const ts = 1.0 + 0.6 * rng();
+    const layers = 3 + Math.floor(rng() * 3); // 3-5 stacked layers
+    const cubes = [];
+    for (let k = 0; k < layers; k++) {
+      const grid = k < 2 ? 3 : (k < 4 ? 2 : 1);
+      const y = 2.2 * ts + k * 0.85;
+      const s0 = (0.95 + 0.3 * rng()) * ts * (1 - 0.08 * k);
+      for (let gx = 0; gx < grid; gx++) {
+        for (let gz = 0; gz < grid; gz++) {
+          if (grid === 3 && rng() < 0.18) continue; // ragged silhouette
+          const pal = speciesPalettes[speciesOf[i]];
+          const c = new THREE.Color(pal[Math.floor(rng() * 3)]).multiplyScalar(0.9 + 0.2 * rng());
+          const s = s0 * (0.85 + 0.3 * rng());
+          cubes.push({
+            dx: (gx - (grid - 1) / 2) * s,
+            dy: y,
+            dz: (gz - (grid - 1) / 2) * s,
+            s: s, c: c
+          });
+        }
+      }
+    }
+    treeData.push({ x: treeSpots[i][0], z: treeSpots[i][1], ts: ts, cubes: cubes });
+  }
+  let leafCount = 0;
+  for (let i = 0; i < treeData.length; i++) leafCount += treeData[i].cubes.length;
+  const trunkMesh = new THREE.InstancedMesh(trunkGeo, trunkMat, 10);
+  const foliageMesh = new THREE.InstancedMesh(leafGeo, foliageMat, leafCount);
+  trunkMesh.frustumCulled = false;
+  foliageMesh.frustumCulled = false;
+  trunkMesh.castShadow = true;
+  foliageMesh.castShadow = true;
+  {
+    let bi = 0;
+    for (let i = 0; i < 10; i++) {
+      const t = treeData[i];
+      m4.compose(pv.set(t.x, 1.3 * t.ts, t.z), q.identity(), sv.set(t.ts, t.ts, t.ts));
+      trunkMesh.setMatrixAt(i, m4);
+      trunkMesh.setColorAt(i, col.set(0x5a3a2a).multiplyScalar(0.9 + 0.15 * rng()));
+      for (let b = 0; b < t.cubes.length; b++) {
+        const cb = t.cubes[b];
+        m4.compose(pv.set(t.x + cb.dx, cb.dy, t.z + cb.dz), q.identity(), sv.set(cb.s, cb.s, cb.s));
+        foliageMesh.setMatrixAt(bi, m4);
+        foliageMesh.setColorAt(bi, cb.c);
+        bi++;
+      }
+    }
+    trunkMesh.instanceMatrix.needsUpdate = true;
+    foliageMesh.instanceMatrix.needsUpdate = true;
+    if (trunkMesh.instanceColor) trunkMesh.instanceColor.needsUpdate = true;
+    if (foliageMesh.instanceColor) foliageMesh.instanceColor.needsUpdate = true;
+  }
+  G_root.add(trunkMesh, foliageMesh);
+
+  // ---------- rocks (~16 dodecahedrons) ----------
+  const rockMat = G_stdMat(0x7d8288, 0.95);
+  const rockMesh = new THREE.InstancedMesh(G_track(new THREE.DodecahedronGeometry(1, 0)), rockMat, 16);
+  rockMesh.frustumCulled = false;
+  rockMesh.castShadow = true;
+  rockMesh.receiveShadow = true;
+  const rockSpots = [[-4, -16], [5, -6], [-10, 6], [9, 10], [15, -15], [-12, -18], [-6, 18], [-5, 26],
+    [6, -26], [-16, -26], [18, 14], [28, -8], [40, 26], [-36, -16], [14, 16], [10, 12]];
+  {
+    for (let i = 0; i < 16; i++) {
+      const x = rockSpots[i][0], z = rockSpots[i][1];
+      const sx = 0.5 + rng(), sz = 0.5 + rng(), sy = (0.5 + rng()) * 0.7;
+      m4.compose(pv.set(x, 0.55 * sy, z), q.setFromEuler(e.set(0, rng() * TAU, 0)), sv.set(sx, sy, sz));
+      rockMesh.setMatrixAt(i, m4);
+      rockMesh.setColorAt(i, col.set(0x7d8288).multiplyScalar(0.85 + 0.25 * rng()));
+    }
+    rockMesh.instanceMatrix.needsUpdate = true;
+    if (rockMesh.instanceColor) rockMesh.instanceColor.needsUpdate = true;
+  }
+  G_root.add(rockMesh);
+
+  // ---------- block clusters ----------
+  state.mats = {
+    wood: { normal: G_stdMat(0xa8895e, 0.8), thermal: null, mesh: null },
+    vermillion: { normal: G_stdMat(0xd43d2a, 0.6), thermal: null, mesh: null },
+    stone: { normal: G_stdMat(0x8a8f94, 0.95), thermal: null, mesh: null },
+    roof: { normal: G_stdMat(0x7a2f26, 0.85), thermal: null, mesh: null }
+  };
+  const blockThermal = G_thermalStd(0xffffff); // unlit white; per-instance gray carries the white-hot value
+  for (const mk of ['wood', 'vermillion', 'stone', 'roof']) state.mats[mk].thermal = blockThermal;
+
+  // HP model (damage: 25mm 1 / bofors 3 / rocket 8). Wood 3, lanterns 3, roof 4,
+  // vermillion + pagoda body 5, stone/temple walls 7, pagoda foundation 9.
+  function blockHp(mat, struct) {
+    if (struct === 'PAGODA') return mat === 'stone' ? 4 : (mat === 'roof' ? 2 : 2);
+    if (struct === 'TEMPLE HALL') return mat === 'roof' ? 2 : 3;
+    if (struct && struct.indexOf('LANTERN') === 0) return 1;
+    if (mat === 'vermillion') return 2;
+    if (mat === 'roof') return 2;
+    if (mat === 'stone') return 3;
+    return 1;
+  }
+
+  const unitBox = G_track(new THREE.BoxGeometry(1, 1, 1)); // shared by all block InstancedMeshes
+  const baseHex = { wood: 0xa8895e, vermillion: 0xd43d2a, stone: 0x8a8f94, roof: 0x7a2f26 };
+  const specs = { wood: [], vermillion: [], stone: [], roof: [] };
+  const structs = []; // roster order
+  let bid = 0;
+  function newStruct(name, points) {
+    const s = { name: name, points: points, ids: [] };
+    structs.push(s);
+    return s;
+  }
+  function addBlock(mat, struct, x, y, z, sx, sy, sz, supportedBy, euler) {
+    const id = bid++;
+    specs[mat].push({
+      id: id, struct: struct.name, x: x, y: y, z: z, sx: sx, sy: sy, sz: sz,
+      supportedBy: supportedBy, euler: euler
+    });
+    struct.ids.push(id);
+    return id;
+  }
+
+  // PAGODA (1000 pts) at (30, 0, 14): stone platform + 5 tiers (w = 11 - 1.6t) + non-destructible spire
+  {
+    const P = newStruct('PAGODA', 1000);
+    const X = 30, Z = 14;
+    const plat = addBlock('stone', P, X, 0.4, Z, 13, 0.8, 13, [], null);
+    let y0 = 0.8;
+    let prevRoof = plat;
+    for (let t = 0; t < 5; t++) {
+      const w = 11 - 1.6 * t;
+      const floor = addBlock('wood', P, X, y0 + 0.25, Z, w, 0.5, w, [prevRoof], null);
+      const top = y0 + 0.5;
+      const ins = w / 2 - 0.3;
+      const pil = [
+        addBlock('wood', P, X - ins, top + 1.2, Z - ins, 0.6, 2.4, 0.6, [floor], null),
+        addBlock('wood', P, X + ins, top + 1.2, Z - ins, 0.6, 2.4, 0.6, [floor], null),
+        addBlock('wood', P, X - ins, top + 1.2, Z + ins, 0.6, 2.4, 0.6, [floor], null),
+        addBlock('wood', P, X + ins, top + 1.2, Z + ins, 0.6, 2.4, 0.6, [floor], null)
+      ];
+      const wm = w - 0.8;
+      const wal = [
+        addBlock('wood', P, X, top + 1.0, Z - ins, wm, 2.0, 0.3, [floor], null),
+        addBlock('wood', P, X, top + 1.0, Z + ins, wm, 2.0, 0.3, [floor], null),
+        addBlock('wood', P, X - ins, top + 1.0, Z, 0.3, 2.0, wm, [floor], null),
+        addBlock('wood', P, X + ins, top + 1.0, Z, 0.3, 2.0, wm, [floor], null)
+      ];
+      const rw = w + 2.8;
+      const roof = addBlock('roof', P, X, top + 2.9 + 0.225, Z, rw, 0.45, rw, pil.concat(wal), null);
+      y0 = top + 2.9 + 0.45;
+      prevRoof = roof;
+    }
+  }
+
+  // TEMPLE HALL (800 pts) at (-30, 0, -6): 22x13 platform, 8 pillars, 4 walls, hipped roof (4+4 slabs + ridge)
+  {
+    const T = newStruct('TEMPLE HALL', 800);
+    const X = -30, Z = -6;
+    const plat = addBlock('stone', T, X, 0.4, Z, 22, 0.8, 13, [], null);
+    const pillars = [
+      addBlock('wood', T, X - 5.5, 2.55, Z - 5, 0.7, 3.5, 0.7, [plat], null),
+      addBlock('wood', T, X + 5.5, 2.55, Z - 5, 0.7, 3.5, 0.7, [plat], null),
+      addBlock('wood', T, X - 5.5, 2.55, Z + 5, 0.7, 3.5, 0.7, [plat], null),
+      addBlock('wood', T, X + 5.5, 2.55, Z + 5, 0.7, 3.5, 0.7, [plat], null),
+      addBlock('wood', T, X - 9.5, 2.55, Z - 3.25, 0.7, 3.5, 0.7, [plat], null),
+      addBlock('wood', T, X + 9.5, 2.55, Z - 3.25, 0.7, 3.5, 0.7, [plat], null),
+      addBlock('wood', T, X - 9.5, 2.55, Z + 3.25, 0.7, 3.5, 0.7, [plat], null),
+      addBlock('wood', T, X + 9.5, 2.55, Z + 3.25, 0.7, 3.5, 0.7, [plat], null)
+    ];
+    addBlock('wood', T, X, 2.1, Z - 5, 10.3, 2.6, 0.3, [plat], null);
+    addBlock('wood', T, X, 2.1, Z + 5, 10.3, 2.6, 0.3, [plat], null);
+    addBlock('wood', T, X - 9.5, 2.1, Z, 0.3, 2.6, 5.8, [plat], null);
+    addBlock('wood', T, X + 9.5, 2.1, Z, 0.3, 2.6, 5.8, [plat], null);
+    const sup = pillars.slice(); // all 9 roof blocks rest on all 8 pillars
+    const a1 = Math.atan(2.0 / 3.25), b1 = Math.atan(2.0 / 5.5); // layer 1 pitch (rise 2.0)
+    const a2 = Math.atan(1.7 / 3.25), b2 = Math.atan(1.7 / 5.5); // layer 2 pitch (rise 1.7)
+    addBlock('roof', T, X, 5.3, Z - 3.25, 22.4, 0.4, 4.0, sup, new THREE.Euler(a1, 0, 0));
+    addBlock('roof', T, X, 5.3, Z + 3.25, 22.4, 0.4, 4.0, sup, new THREE.Euler(Math.PI - a1, 0, 0));
+    addBlock('roof', T, X - 5.5, 5.3, Z, 6.1, 0.4, 13.4, sup, new THREE.Euler(0, 0, b1));
+    addBlock('roof', T, X + 5.5, 5.3, Z, 6.1, 0.4, 13.4, sup, new THREE.Euler(0, 0, -b1));
+    addBlock('roof', T, X, 7.15, Z - 1.625, 13.0, 0.4, 3.9, sup, new THREE.Euler(a2, 0, 0));
+    addBlock('roof', T, X, 7.15, Z + 1.625, 13.0, 0.4, 3.9, sup, new THREE.Euler(Math.PI - a2, 0, 0));
+    addBlock('roof', T, X - 2.75, 7.15, Z, 6.0, 0.4, 8.0, sup, new THREE.Euler(0, 0, b2));
+    addBlock('roof', T, X + 2.75, 7.15, Z, 6.0, 0.4, 8.0, sup, new THREE.Euler(0, 0, -b2));
+    addBlock('roof', T, X, 8.2, Z, 3, 0.4, 0.4, sup, null); // ridge cap
+  }
+
+  // TORII x3 (250 pts each), vermillion, scales 1.2 / 1.0 / 0.8
+  {
+    const torii = [
+      { name: 'TORII 1', x: 0, z: -30, s: 1.2 },
+      { name: 'TORII 2', x: 14, z: 4, s: 1.0 },
+      { name: 'TORII 3', x: 24, z: 22, s: 0.8 }
+    ];
+    for (let i = 0; i < torii.length; i++) {
+      const t = torii[i];
+      const S = newStruct(t.name, 250);
+      const s = t.s;
+      const p1 = addBlock('vermillion', S, t.x - 2.2 * s, 2.5 * s, t.z, 0.7 * s, 5 * s, 0.7 * s, [], null);
+      const p2 = addBlock('vermillion', S, t.x + 2.2 * s, 2.5 * s, t.z, 0.7 * s, 5 * s, 0.7 * s, [], null);
+      addBlock('vermillion', S, t.x, 3.2 * s, t.z, 5 * s, 0.4 * s, 0.5 * s, [p1, p2], null);
+      const up = addBlock('vermillion', S, t.x, 4.8 * s, t.z, 6.4 * s, 0.5 * s, 0.6 * s, [p1, p2], null);
+      addBlock('vermillion', S, t.x, 5.225 * s, t.z, 1.4 * s, 0.35 * s, 0.6 * s, [up], null);
+    }
+  }
+
+  // LANTERN x8 (150 pts each), stone, 4 stacked parts
+  {
+    const lanternPos = [[-3, -22], [3, -22], [-3, -10], [3, -10], [-3, 2], [3, 2], [8, -16], [-8, 10]];
+    for (let i = 0; i < lanternPos.length; i++) {
+      const lx = lanternPos[i][0], lz = lanternPos[i][1];
+      const S = newStruct('LANTERN ' + (i + 1), 150);
+      const base = addBlock('stone', S, lx, 0.25, lz, 0.8, 0.5, 0.8, [], null);
+      const shaft = addBlock('stone', S, lx, 1.3, lz, 0.35, 1.6, 0.35, [base], null);
+      const box = addBlock('stone', S, lx, 2.45, lz, 0.7, 0.7, 0.7, [shaft], null);
+      addBlock('stone', S, lx, 3.0, lz, 0.9, 0.3, 0.9, [box], null);
+    }
+  }
+
+  // structure roster; `blocks` gets the sub-block ids after subdivision (55% threshold counts real blocks)
+  state.structures = structs.map((s) => ({
+    id: s.name, name: s.name, points: s.points, blocks: [], destroyed: false, deadCount: 0
+  }));
+
+  // ---------- VOXEL SUBDIVISION: any parent block with a dimension > 2u becomes a cluster of
+  // 1-1.5u sub-blocks (visual voxel bricks, per-instance tint jitter 0.92-1.08).
+  // Sub-blocks inherit the FULL sub-block set of every parent that supports their parent,
+  // so a tier stays rigid until a majority of its supporting bricks is gone (cascade as before).
+  const subSpecs = { wood: [], vermillion: [], stone: [], roof: [] };
+  const parentSubs = new Array(bid);
+  let sid = 0;
+  {
+    const sQ = new THREE.Quaternion(), sE = new THREE.Euler(), sV = new THREE.Vector3();
+    for (const mk of ['wood', 'vermillion', 'stone', 'roof']) {
+      for (const p of specs[mk]) {
+        const nx = p.sx > 2 ? Math.ceil(p.sx / 1.5) : 1;
+        const ny = p.sy > 2 ? Math.ceil(p.sy / 1.5) : 1;
+        const nz = p.sz > 2 ? Math.ceil(p.sz / 1.5) : 1;
+        sQ.setFromEuler(p.euler ? sE.set(p.euler.x, p.euler.y, p.euler.z) : sE.set(0, 0, 0));
+        const subs = [];
+        for (let i = 0; i < nx; i++) {
+          for (let j = 0; j < ny; j++) {
+            for (let k = 0; k < nz; k++) {
+              sV.set((i - (nx - 1) / 2) * (p.sx / nx),
+                (j - (ny - 1) / 2) * (p.sy / ny),
+                (k - (nz - 1) / 2) * (p.sz / nz)).applyQuaternion(sQ);
+              subs.push({
+                mat: mk, struct: p.struct,
+                x: p.x + sV.x, y: p.y + sV.y, z: p.z + sV.z,
+                sx: (p.sx / nx) * (0.94 + 0.06 * rng()),
+                sy: Math.max(0.12, (p.sy / ny) * (0.94 + 0.06 * rng())),
+                sz: (p.sz / nz) * (0.94 + 0.06 * rng()),
+                quat: sQ.clone(),
+                supParents: p.supportedBy.slice()
+              });
+            }
+          }
+        }
+        parentSubs[p.id] = subs;
+        for (const s of subs) subSpecs[mk].push(s);
+      }
+    }
+    for (const mk of ['wood', 'vermillion', 'stone', 'roof']) {
+      for (const s of subSpecs[mk]) s.id = sid++;
+    }
+    for (const mk of ['wood', 'vermillion', 'stone', 'roof']) {
+      for (const s of subSpecs[mk]) {
+        s.supportedBy = [];
+        for (const pid of s.supParents) {
+          const arr = parentSubs[pid];
+          if (arr) for (const t of arr) s.supportedBy.push(t.id);
+        }
+      }
+    }
+  }
+
+  // one InstancedMesh per material (unit box, exact sub-block count, per-instance tint + HP)
+  const byId = new Array(sid);
+  const instIdx = { wood: 0, vermillion: 0, stone: 0, roof: 0 };
+  for (const mk of ['wood', 'vermillion', 'stone', 'roof']) {
+    const list = subSpecs[mk];
+    const mesh = new THREE.InstancedMesh(unitBox, state.mats[mk].normal, list.length);
+    mesh.frustumCulled = false;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    G_root.add(mesh);
+    state.mats[mk].mesh = mesh;
+    for (let i = 0; i < list.length; i++) {
+      const s = list[i];
+      const hp = blockHp(s.mat, s.struct);
+      const rec = {
+        id: s.id, mat: mk, inst: instIdx[mk]++,
+        pos: new THREE.Vector3(s.x, s.y, s.z),
+        quat: s.quat,
+        scale: new THREE.Vector3(s.sx, s.sy, s.sz),
+        initPos: new THREE.Vector3(s.x, s.y, s.z),
+        initQuat: s.quat.clone(),
+        size: new THREE.Vector3(s.sx, s.sy, s.sz),
+        hp: hp, maxHp: hp, alive: true, dynamic: false, settled: false, tint: 1,
+        vel: new THREE.Vector3(), ang: new THREE.Vector3(),
+        bounces: 0,
+        supports: [],
+        supportedBy: s.supportedBy,
+        structureId: s.struct,
+        color: new THREE.Color(baseHex[mk]).multiplyScalar(0.92 + 0.16 * rng())
+      };
+      byId[s.id] = rec;
+      m4.compose(rec.pos, rec.quat, rec.scale);
+      mesh.setMatrixAt(rec.inst, m4);
+      mesh.setColorAt(rec.inst, rec.color);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  }
+  state.blocks = byId; // byId[i].id === i
+  for (let i = 0; i < state.blocks.length; i++) {
+    const b = state.blocks[i];
+    for (let j = 0; j < b.supportedBy.length; j++) {
+      const sup = state.blocks[b.supportedBy[j]];
+      if (sup) sup.supports.push(b.id);
+    }
+  }
+  {
+    const byName = new Map();
+    for (const st of state.structures) byName.set(st.name, st);
+    for (const b of state.blocks) {
+      const st = byName.get(b.structureId);
+      if (st) st.blocks.push(b.id);
+    }
+  }
+
+  // non-destructible spire atop the pagoda top roof (top roof top face at y 17.55)
+  const spireMat = G_track(new THREE.MeshStandardMaterial({ color: 0xb08a3a, roughness: 0.35, metalness: 0.8 }));
+  const spire = new THREE.Group();
+  const spCyl = new THREE.Mesh(G_track(new THREE.CylinderGeometry(0.12, 0.22, 1.8, 8)), spireMat);
+  spCyl.position.y = 18.45;
+  const spRing = new THREE.Mesh(G_track(new THREE.TorusGeometry(0.42, 0.07, 8, 20)), spireMat);
+  spRing.rotation.x = Math.PI / 2;
+  spRing.position.y = 19.05;
+  const spOrb = new THREE.Mesh(G_track(new THREE.SphereGeometry(0.28, 12, 10)), spireMat);
+  spOrb.position.y = 19.55;
+  spCyl.castShadow = true;
+  spRing.castShadow = true;
+  spOrb.castShadow = true;
+  spire.add(spCyl, spRing, spOrb);
+  spire.position.set(30, 0, 14);
+  G_root.add(spire);
+
+  // ---------- atmosphere ----------
+  // ---------- ground tufts: 300 flat voxel grass tufts / stone tiles near the paths ----------
+  const tuftMat = G_stdMat(0xffffff, 0.95);
+  G_tuftMesh = new THREE.InstancedMesh(G_track(new THREE.BoxGeometry(1, 1, 1)), tuftMat, 300);
+  G_tuftMesh.frustumCulled = false;
+  G_tuftMesh.receiveShadow = true;
+  {
+    for (let i = 0; i < 300; i++) {
+      let x, z;
+      const r = rng();
+      if (r < 0.45) { x = -4 + rng() * 8; z = -36 + rng() * 64; }          // main path band
+      else if (r < 0.7) { x = -31 + rng() * 29; z = -9.5 + rng() * 7; }   // west branch
+      else { const a = rng() * TAU, rr = 12 + rng() * 48; x = Math.cos(a) * rr; z = Math.sin(a) * rr; }
+      const stone = rng() < 0.3;
+      const s = stone ? 0.8 + 0.5 * rng() : 0.3 + 0.5 * rng();
+      m4.compose(pv.set(x, 0.03, z), q.setFromEuler(e.set(0, rng() * TAU, 0)),
+        sv.set(s, 0.06, s * (0.7 + 0.6 * rng())));
+      G_tuftMesh.setMatrixAt(i, m4);
+      G_tuftMesh.setColorAt(i, col.set(stone ? 0x6a665e : 0x4d6239).multiplyScalar(0.85 + 0.25 * rng()));
+    }
+    G_tuftMesh.instanceMatrix.needsUpdate = true;
+    if (G_tuftMesh.instanceColor) G_tuftMesh.instanceColor.needsUpdate = true;
+  }
+  G_root.add(G_tuftMesh);
+
+  // ---------- voxel clouds: flat white cube clusters, drifting slowly at y ~60 ----------
+  const cloudMat = G_track(new THREE.MeshBasicMaterial({ color: 0xe8ecf4, fog: false }));
+  G_clouds = [];
+  for (let c = 0; c < 6; c++) {
+    const cx = -120 + rng() * 240, cz = -120 + rng() * 240, cy = 58 + rng() * 8;
+    const n = 7 + Math.floor(rng() * 4);
+    for (let k = 0; k < n; k++) {
+      G_clouds.push({
+        x: cx + (rng() - 0.5) * 7, y: cy + (rng() - 0.5) * 1.4, z: cz + (rng() - 0.5) * 4,
+        s: 1.6 + rng() * 2.2, sy: 0.5 + 0.3 * rng(),
+        c: new THREE.Color(0xf2f5fa).multiplyScalar(0.92 + 0.08 * rng())
+      });
+    }
+  }
+  G_cloudMesh = new THREE.InstancedMesh(G_track(new THREE.BoxGeometry(1, 1, 1)), cloudMat, G_clouds.length);
+  G_cloudMesh.frustumCulled = false;
+  {
+    for (let i = 0; i < G_clouds.length; i++) {
+      const c = G_clouds[i];
+      m4.compose(pv.set(c.x, c.y, c.z), q.identity(), sv.set(c.s, c.sy, c.s * 0.8));
+      G_cloudMesh.setMatrixAt(i, m4);
+      G_cloudMesh.setColorAt(i, c.c);
+    }
+    G_cloudMesh.instanceMatrix.needsUpdate = true;
+    if (G_cloudMesh.instanceColor) G_cloudMesh.instanceColor.needsUpdate = true;
+  }
+  G_root.add(G_cloudMesh);
+
+  sc.fog = G_track(new THREE.Fog(0x2a1e33, 90, 400));
+  sc.background = G_track(new THREE.Color(0x0a0e24));
+
+  // ---------- thermal variants (white-hot: grayscale, high contrast; swapped by applyThermal) ----------
+  const thermal = {
+    ground: thermalGroundMat,
+    sky: G_track(new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide, fog: false })),
+    trunk: G_thermalStd(0xffffff),
+    foliage: G_thermalStd(0xffffff),
+    rock: G_thermalStd(0xffffff),
+    lily: G_thermalStd(0xffffff),
+    stone: G_thermalStd(0xffffff),
+    tufts: G_thermalStd(0xffffff),
+    clouds: G_track(new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false, toneMapped: false })),
+    water: G_track(new THREE.MeshBasicMaterial({
+      color: 0x0c0c0e, toneMapped: false, transparent: true, opacity: 0.9
+    }))
+  };
+
+  G_env = {
+    ground: { mesh: ground, mat: groundMat, thermal: thermal.ground },
+    sky: { mesh: sky, mat: skyMat, thermal: thermal.sky },
+    trunk: { mesh: trunkMesh, mat: trunkMat, thermal: thermal.trunk },
+    foliage: { mesh: foliageMesh, mat: foliageMat, thermal: thermal.foliage },
+    rock: { mesh: rockMesh, mat: rockMat, thermal: thermal.rock },
+    lily: { mesh: G_lilyMesh, mat: lilyMat, thermal: thermal.lily },
+    stone: { mesh: stoneMesh, mat: stoneMat, thermal: thermal.stone },
+    tufts: { mesh: G_tuftMesh, mat: tuftMat, thermal: thermal.tufts },
+    clouds: { mesh: G_cloudMesh, mat: cloudMat, thermal: thermal.clouds },
+    water: thermal.water,
+    base: { mesh: G_baseMesh, mat: G_baseMatNatural, thermal: G_baseMatThermal },
+  };
+  // per-instance original colors, captured for WHOT desaturation + restore
+  G_env.inst = {};
+  for (const key of ['trunk', 'foliage', 'rock', 'lily', 'stone', 'tufts', 'clouds']) {
+    const m = G_env[key].mesh;
+    G_env.inst[key] = m.instanceColor ? m.instanceColor.array.slice() : null;
+  }
+  state.__gardenEnv = G_env; // headless verification handle
+
+  if (!G_booted) {
+    G_booted = true;
+    console.log('[GARDEN] built ' + state.blocks.length + ' blocks across ' + state.structures.length + ' structures');
+  }
+}
+
+function applyThermal(on) {
+  on = !!on;
+  if (!G_env || !state.mats) return;
+  if (G_saved === null) { // capture originals once, before the first swap
+    G_saved = {
+      ground: G_env.ground.mat,
+      sky: G_env.sky.mat,
+      trunk: G_env.trunk.mat,
+      foliage: G_env.foliage.mat,
+      rock: G_env.rock.mat,
+      lily: G_env.lily.mat,
+      stone: G_env.stone.mat,
+      tufts: G_env.tufts.mat,
+      clouds: G_env.clouds.mat,
+      fog: {
+        color: state.scene.fog ? state.scene.fog.color.getHex() : 0x2a1e33,
+        near: state.scene.fog ? state.scene.fog.near : 90,
+        far: state.scene.fog ? state.scene.fog.far : 400
+      },
+      bg: state.scene.background ? state.scene.background.getHex() : 0x0a0e24,
+      dir: {
+        color: state.lights.dir.color.getHex(),
+        intensity: state.lights.dir.intensity
+      },
+      hemi: {
+        sky: state.lights.hemi.color.getHex(),
+        ground: state.lights.hemi.groundColor.getHex(),
+        intensity: state.lights.hemi.intensity
+      },
+      base: G_env.base.mat
+    };
+  }
+  if (G_thermalOn === on) return; // idempotent
+  G_thermalOn = on;
+  const s = G_saved;
+  for (const key of ['ground', 'sky', 'trunk', 'foliage', 'rock', 'lily', 'stone', 'tufts', 'clouds', 'base']) {
+    G_env[key].mesh.material = on ? G_env[key].thermal : s[key];
+  }
+  const wm = on ? G_env.water : (state.downgraded ? state.water.cheap : state.water.normal);
+  state.water.meshA.material = wm;
+  state.water.meshB.material = wm;
+  for (const mk of ['wood', 'vermillion', 'stone', 'roof']) {
+    state.mats[mk].mesh.material = on ? state.mats[mk].thermal : state.mats[mk].normal;
+  }
+  // garden instance colors: WHOT = desaturated grayscale; off = restore originals
+  for (const key of ['trunk', 'foliage', 'rock', 'lily', 'stone', 'tufts']) {
+    const arr = G_env[key].mesh.instanceColor && G_env[key].mesh.instanceColor.array;
+    const src = G_env.inst[key];
+    if (!arr || !src) continue;
+    if (on) {
+      for (let i = 0; i < arr.length; i += 3) {
+        const g = clamp((0.2126 * src[i] + 0.7152 * src[i + 1] + 0.0722 * src[i + 2] - 0.18) * 1.9, 0, 1);
+        arr[i] = g; arr[i + 1] = g; arr[i + 2] = g;
+      }
+    } else {
+      for (let i = 0; i < arr.length; i++) arr[i] = src[i];
+    }
+    G_env[key].mesh.instanceColor.needsUpdate = true;
+  }
+  // clouds are a cold object -> flat dark silhouette in WHOT (luma mapping would make them white)
+  {
+    const cm = G_env.clouds.mesh;
+    const carr = cm.instanceColor && cm.instanceColor.array;
+    const csrc = G_env.inst.clouds;
+    if (carr) {
+      if (on) {
+        for (let i = 0; i < carr.length; i++) carr[i] = 0.14;
+      } else if (csrc) {
+        for (let i = 0; i < carr.length; i++) carr[i] = csrc[i];
+      }
+      cm.instanceColor.needsUpdate = true;
+    }
+  }
+  // structural blocks: display = _orig*tint in natural, its grayscale in WHOT
+  for (const b of state.blocks) {
+    if (!b.alive && !b.settled) continue;
+    const mrec = state.mats[b.mat];
+    if (!mrec || !mrec.mesh) continue;
+    FX_T_WHOT.copy(b.color);
+    if (on) FX_whotGray(FX_T_WHOT, FX_T_WHOT);
+    mrec.mesh.setColorAt(b.inst, FX_T_WHOT);
+  }
+  for (const mk of ['wood', 'vermillion', 'stone', 'roof']) {
+    if (state.mats[mk].mesh.instanceColor) state.mats[mk].mesh.instanceColor.needsUpdate = true;
+  }
+  const fog = state.scene.fog;
+  if (fog) {
+    if (on) { fog.color.setHex(0x000000); fog.near = 40; fog.far = 600; }
+    else { fog.color.setHex(s.fog.color); fog.near = s.fog.near; fog.far = s.fog.far; }
+  }
+  if (state.scene.background) state.scene.background.setHex(on ? 0x000000 : s.bg);
+  if (state.lights && state.lights.dir && state.lights.hemi) {
+    const d = state.lights.dir, h = state.lights.hemi;
+    if (on) {
+      d.color.setHex(0xffffff);
+      d.intensity = 0.5;
+      h.color.setHex(0x333333);
+      h.groundColor.setHex(0x0d0d0d);
+      h.intensity = 0.35;
+    } else {
+      d.color.setHex(s.dir.color);
+      d.intensity = s.dir.intensity;
+      h.color.setHex(s.hemi.sky);
+      h.groundColor.setHex(s.hemi.ground);
+      h.intensity = s.hemi.intensity;
+    }
+  }
+}
+
+function gardenTick(dt) {
+  if (!G_env) return;
+  G_uTime.value += dt; // tree sway
+  if (G_ripple) { // scroll the water ripple map
+    G_ripple.offset.x = (G_ripple.offset.x + dt * 0.015) % 1;
+    G_ripple.offset.y = (G_ripple.offset.y + dt * 0.011) % 1;
+  }
+  if (G_lilyMesh && G_lilies) { // slowly drift the lily pads
+    if (!G_tick) G_tick = {
+      m: new THREE.Matrix4(), q: new THREE.Quaternion(), e: new THREE.Euler(),
+      p: new THREE.Vector3(), s: new THREE.Vector3()
+    };
+    const tk = G_tick;
+    for (let i = 0; i < G_lilies.length; i++) {
+      const l = G_lilies[i];
+      l.ang += l.speed * dt;
+      l.rot += 0.08 * dt;
+      tk.m.compose(
+        tk.p.set(l.cx + Math.cos(l.ang) * l.r, 0.12, l.cz + Math.sin(l.ang) * l.r),
+        tk.q.setFromEuler(tk.e.set(0, l.rot, 0)),
+        tk.s.set(l.s, 1, l.s)
+      );
+      G_lilyMesh.setMatrixAt(i, tk.m);
+    }
+    G_lilyMesh.instanceMatrix.needsUpdate = true;
+  }
+  if (G_cloudMesh && G_clouds) { // drift the voxel clouds
+    if (!G_tick) G_tick = {
+      m: new THREE.Matrix4(), q: new THREE.Quaternion(), e: new THREE.Euler(),
+      p: new THREE.Vector3(), s: new THREE.Vector3()
+    };
+    const tk = G_tick;
+    for (let i = 0; i < G_clouds.length; i++) {
+      const c = G_clouds[i];
+      c.x += 0.6 * dt;
+      if (c.x > 140) c.x -= 280;
+      tk.m.compose(tk.p.set(c.x, c.y, c.z), tk.q.identity(), tk.s.set(c.s, c.sy, c.s * 0.8));
+      G_cloudMesh.setMatrixAt(i, tk.m);
+    }
+    G_cloudMesh.instanceMatrix.needsUpdate = true;
+  }
+}
+
+function resetGarden() {
+  if (G_thermalOn) applyThermal(false); // restore originals before disposing them
+  if (G_root && state.scene) state.scene.remove(G_root);
+  for (let i = 0; i < G_DISPOSE.length; i++) {
+    try { G_DISPOSE[i].dispose(); } catch (err) { /* noop */ }
+  }
+  G_DISPOSE.length = 0;
+  G_env = null;
+  G_baseMesh = null;
+  G_root = null;
+  G_saved = null;
+  G_thermalOn = false;
+  G_lilyMesh = null;
+  G_lilies = null;
+  G_ripple = null;
+  G_tick = null;
+  G_tuftMesh = null;
+  G_cloudMesh = null;
+  G_clouds = null;
+  state.blocks = [];
+  state.structures = [];
+  state.mats = {};
+  state.water = null;
+  buildGarden();
+}
+
+// ===== SECTION B: DESTRUCTION =====
+
+/*
+ * Section B — destructible block-cluster structures with procedural collapse.
+ *   hit()        : explosion FX (flash/dust/smoke/scorch) + block damage (destroy / knock)
+ *   destroy()    : kill a block -> debris burst + smoke emitter + support recheck
+ *   makeDynamic(): static block loses support -> tumbling rigid body
+ *   update()     : integrate dynamic blocks (gravity + spin + bounce + settle),
+ *                  drive all particle pools, drive continuous smoke emitters
+ *   reset()/stats()
+ * RNG: drng only (no Math.random / Date / document / window).
+ */
+
+// ---------- module-private constants ----------
+const FX_DEBRIS_POOL = 600;
+const FX_DUST_POOL = 512;
+const FX_SMOKE_POOL = 400;
+const FX_FLASH_POOL = 48;
+const FX_SCORCH_POOL = 96;
+
+const FX_G_BLOCK = 22;   // block gravity, m/s^2
+const FX_G_DEBRIS = 22;  // debris chunk gravity
+const FX_IMPULSE = 2.0;  // knock-impulse scale (tuned so bofors/rocket cross the makeDynamic
+                         // thresholds while cannon stays far below them)
+
+// zero-ish scale matrix for dead/hidden instances (1e-4 avoids singular-matrix NaN normals)
+const FX_ZERO_MAT = new THREE.Matrix4().makeScale(1e-4, 1e-4, 1e-4);
+
+// base material colors (dusk-lit, per contract §7)
+const FX_BASE_COLORS = {
+  wood: new THREE.Color(0xa8895e),
+  vermillion: new THREE.Color(0xd43d2a),
+  stone: new THREE.Color(0x8a8f94),
+  roof: new THREE.Color(0x7a2f26),
+};
+
+// reusable temps (each used within a single non-nested call)
+const FX_T_V3 = new THREE.Vector3();
+const FX_T_V3B = new THREE.Vector3();
+const FX_T_QUAT = new THREE.Quaternion();
+const FX_T_MAT = new THREE.Matrix4();
+const FX_T_COL = new THREE.Color();
+const FX_T_WHOT = new THREE.Color();
+// white-hot: luminance + contrast stretch -> grayscale 0..1
+function FX_whotGray(c, out) {
+  const l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  const g = clamp((l - 0.15) * 2.6, 0, 1);
+  out.setRGB(g, g, g);
+  return out;
+}
+const FX_D_AXIS = new THREE.Vector3();
+const FX_D_DQ = new THREE.Quaternion();
+const FX_D_Q = new THREE.Quaternion();
+
+let FX_DISC_TEX = null;
+function FX_discTex() {
+  if (!FX_DISC_TEX) FX_DISC_TEX = makeSoftDiscTexture(64, 'rgba(255,255,255,0.8)', 'rgba(255,255,255,0)');
+  return FX_DISC_TEX;
+}
+
+const FX_PARTICLE_VERT = [
+  'attribute float aSize;',
+  'attribute float aAlpha;',
+  'attribute vec3 aColor;',
+  'varying float vAlpha;',
+  'varying vec3 vColor;',
+  'void main() {',
+  '  vAlpha = aAlpha;',
+  '  vColor = aColor;',
+  '  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);',
+  '  float ps = aSize * (300.0 / -mvPosition.z);',
+  '  gl_PointSize = clamp(ps, 1.0, 256.0);',
+  '  gl_Position = projectionMatrix * mvPosition;',
+  '}',
+].join('\n');
+
+const FX_PARTICLE_FRAG = [
+  'uniform sampler2D uMap;',
+  'varying float vAlpha;',
+  'varying vec3 vColor;',
+  'void main() {',
+  '  vec4 tex = texture2D(uMap, gl_PointCoord);',
+  '  float a = tex.a * vAlpha;',
+  '  if (a < 0.004) discard;',
+  '  gl_FragColor = vec4(vColor * tex.rgb, a);',
+  '}',
+].join('\n');
+
+// ---------- particle pool (Points, compaction) ----------
+function FX_particlePool(capacity, blending, opts) {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(capacity * 3);
+  const size = new Float32Array(capacity);
+  const alpha = new Float32Array(capacity);
+  const color = new Float32Array(capacity * 3);
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+  geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1).setUsage(THREE.DynamicDrawUsage));
+  geo.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1).setUsage(THREE.DynamicDrawUsage));
+  geo.setAttribute('aColor', new THREE.BufferAttribute(color, 3).setUsage(THREE.DynamicDrawUsage));
+  geo.setDrawRange(0, 0);
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uMap: { value: FX_discTex() } },
+    vertexShader: FX_PARTICLE_VERT,
+    fragmentShader: FX_PARTICLE_FRAG,
+    transparent: true,
+    depthWrite: false,
+    blending: blending,
+  });
+  const pts = new THREE.Points(geo, mat);
+  pts.frustumCulled = false;
+  const pool = {
+    capacity, geo, mat, pts, pos, size, alpha, color,
+    vel: new Float32Array(capacity * 3),
+    age: new Float32Array(capacity),
+    maxLife: new Float32Array(capacity),
+    baseAlpha: new Float32Array(capacity),
+    baseSize: new Float32Array(capacity),
+    gravity: opts.gravity,   // y acceleration (negative = falls)
+    drag: opts.drag,         // fraction of velocity lost per second
+    grow: opts.grow,         // size grows (1 + grow*t) over life
+    count: 0,
+  };
+  pool.spawn = function (x, y, z, vx, vy, vz, size0, life, r, g, b, a0) {
+    if (this.count >= this.capacity) return;
+    const i = this.count++;
+    const i3 = i * 3;
+    this.pos[i3] = x; this.pos[i3 + 1] = y; this.pos[i3 + 2] = z;
+    this.vel[i3] = vx; this.vel[i3 + 1] = vy; this.vel[i3 + 2] = vz;
+    this.size[i] = size0; this.baseSize[i] = size0; this.alpha[i] = 0;
+    this.color[i3] = r; this.color[i3 + 1] = g; this.color[i3 + 2] = b;
+    this.age[i] = 0; this.maxLife[i] = life; this.baseAlpha[i] = a0;
+    // commit at SPAWN time so the first frame after the event shows the burst
+    this.geo.setDrawRange(0, this.count);
+    this.geo.attributes.position.needsUpdate = true;
+    this.geo.attributes.aSize.needsUpdate = true;
+    this.geo.attributes.aAlpha.needsUpdate = true;
+    this.geo.attributes.aColor.needsUpdate = true;
+  };
+  pool._kill = function (i) {
+    const last = --this.count;
+    if (i === last) return;
+    const i3 = i * 3, l3 = last * 3;
+    this.pos[i3] = this.pos[l3]; this.pos[i3 + 1] = this.pos[l3 + 1]; this.pos[i3 + 2] = this.pos[l3 + 2];
+    this.vel[i3] = this.vel[l3]; this.vel[i3 + 1] = this.vel[l3 + 1]; this.vel[i3 + 2] = this.vel[l3 + 2];
+    this.size[i] = this.size[last]; this.baseSize[i] = this.baseSize[last]; this.alpha[i] = this.alpha[last];
+    this.color[i3] = this.color[l3]; this.color[i3 + 1] = this.color[l3 + 1]; this.color[i3 + 2] = this.color[l3 + 2];
+    this.age[i] = this.age[last]; this.maxLife[i] = this.maxLife[last]; this.baseAlpha[i] = this.baseAlpha[last];
+  };
+  pool.update = function (dt) {
+    let i = 0;
+    while (i < this.count) {
+      this.age[i] += dt;
+      const ml = this.maxLife[i];
+      if (this.age[i] >= ml) { this._kill(i); continue; }
+      const i3 = i * 3;
+      this.vel[i3 + 1] += this.gravity * dt;
+      const dmp = Math.max(0, 1 - this.drag * dt);
+      this.vel[i3] *= dmp; this.vel[i3 + 1] *= dmp; this.vel[i3 + 2] *= dmp;
+      this.pos[i3] += this.vel[i3] * dt;
+      this.pos[i3 + 1] += this.vel[i3 + 1] * dt;
+      this.pos[i3 + 2] += this.vel[i3 + 2] * dt;
+      const t = this.age[i] / ml;
+      const fadeIn = t < 0.12 ? t / 0.12 : 1;
+      this.alpha[i] = this.baseAlpha[i] * fadeIn * (1 - t);
+      if (this.grow) this.size[i] = this.baseSize[i] * (1 + t * this.grow);
+      i++;
+    }
+    this.geo.setDrawRange(0, this.count);
+    if (this.count > 0) {
+      this.geo.attributes.position.needsUpdate = true;
+      this.geo.attributes.aAlpha.needsUpdate = true;
+      if (this.grow) this.geo.attributes.aSize.needsUpdate = true;
+    }
+  };
+  pool.clear = function () {
+    this.count = 0;
+    this.geo.setDrawRange(0, 0);
+    this.geo.attributes.position.needsUpdate = true;
+    this.geo.attributes.aAlpha.needsUpdate = true;
+    this.geo.attributes.aSize.needsUpdate = true;
+  };
+  return pool;
+}
+
+// ---------- debris pool (InstancedMesh of unit boxes, compaction) ----------
+function FX_debrisPool(capacity) {
+  const geo = new THREE.BoxGeometry(1, 1, 1);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0.0 });
+  const mesh = new THREE.InstancedMesh(geo, mat, capacity);
+  mesh.frustumCulled = false;
+  mesh.castShadow = true;
+  mesh.receiveShadow = false;
+  mesh.count = 0;
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  for (let i = 0; i < capacity; i++) mesh.setMatrixAt(i, FX_ZERO_MAT);
+  const pool = {
+    capacity, geo, mat, mesh,
+    pos: new Float32Array(capacity * 3),
+    vel: new Float32Array(capacity * 3),
+    quat: new Float32Array(capacity * 4),
+    ang: new Float32Array(capacity * 3),
+    baseScale: new Float32Array(capacity * 3),
+    age: new Float32Array(capacity),
+    maxLife: new Float32Array(capacity),
+    bounced: new Uint8Array(capacity),
+    count: 0,
+    onBounce: null, // (x,y,z) callback wired by Destruction
+  };
+  for (let i = 0; i < capacity; i++) pool.quat[i * 4 + 3] = 1;
+  pool._write = function (i) {
+    const i3 = i * 3, i4 = i * 4;
+    const t = i < this.count ? Math.min(1, this.age[i] / this.maxLife[i]) : 0;
+    const sf = Math.max(0.05, 1 - t); // shrink to ~0 over life
+    FX_D_Q.set(this.quat[i4], this.quat[i4 + 1], this.quat[i4 + 2], this.quat[i4 + 3]).normalize();
+    FX_T_V3.set(this.pos[i3], this.pos[i3 + 1], this.pos[i3 + 2]);
+    FX_T_V3B.set(this.baseScale[i3] * sf, this.baseScale[i3 + 1] * sf, this.baseScale[i3 + 2] * sf);
+    FX_T_MAT.compose(FX_T_V3, FX_D_Q, FX_T_V3B);
+    this.mesh.setMatrixAt(i, FX_T_MAT);
+  };
+  pool.add = function (x, y, z, vx, vy, vz, sx, sy, sz, ax, ay, az, r, g, b, life) {
+    if (this.count >= this.capacity) return;
+    const i = this.count++;
+    const i3 = i * 3, i4 = i * 4;
+    this.pos[i3] = x; this.pos[i3 + 1] = y; this.pos[i3 + 2] = z;
+    this.vel[i3] = vx; this.vel[i3 + 1] = vy; this.vel[i3 + 2] = vz;
+    this.quat[i4] = 0; this.quat[i4 + 1] = 0; this.quat[i4 + 2] = 0; this.quat[i4 + 3] = 1;
+    this.ang[i3] = ax; this.ang[i3 + 1] = ay; this.ang[i3 + 2] = az;
+    this.baseScale[i3] = sx; this.baseScale[i3 + 1] = sy; this.baseScale[i3 + 2] = sz;
+    this.age[i] = 0; this.maxLife[i] = life; this.bounced[i] = 0;
+    this.mesh.setColorAt(i, FX_T_COL.setRGB(r, g, b));
+    this._write(i); // initial matrix at spawn so frame one is correct
+  };
+  pool.commit = function () {
+    this.mesh.count = this.count;
+    this.mesh.instanceMatrix.needsUpdate = true;
+    if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+  };
+  pool.update = function (dt) {
+    let i = 0;
+    while (i < this.count) {
+      this.age[i] += dt;
+      if (this.age[i] >= this.maxLife[i]) { this._kill(i); continue; }
+      const i3 = i * 3, i4 = i * 4;
+      this.vel[i3 + 1] -= FX_G_DEBRIS * dt;
+      const dmp = Math.max(0, 1 - 0.25 * dt);
+      this.vel[i3] *= dmp; this.vel[i3 + 1] *= dmp; this.vel[i3 + 2] *= dmp;
+      this.pos[i3] += this.vel[i3] * dt;
+      this.pos[i3 + 1] += this.vel[i3 + 1] * dt;
+      this.pos[i3 + 2] += this.vel[i3 + 2] * dt;
+      const am = Math.sqrt(this.ang[i3] * this.ang[i3] + this.ang[i3 + 1] * this.ang[i3 + 1] + this.ang[i3 + 2] * this.ang[i3 + 2]);
+      if (am > 1e-6) {
+        FX_D_AXIS.set(this.ang[i3] / am, this.ang[i3 + 1] / am, this.ang[i3 + 2] / am);
+        FX_D_DQ.setFromAxisAngle(FX_D_AXIS, am * dt);
+        FX_D_Q.set(this.quat[i4], this.quat[i4 + 1], this.quat[i4 + 2], this.quat[i4 + 3]);
+        FX_D_Q.premultiply(FX_D_DQ);
+        FX_D_Q.normalize();
+        this.quat[i4] = FX_D_Q.x; this.quat[i4 + 1] = FX_D_Q.y; this.quat[i4 + 2] = FX_D_Q.z; this.quat[i4 + 3] = FX_D_Q.w;
+      }
+      const tt = Math.min(1, this.age[i] / this.maxLife[i]);
+      const sf = Math.max(0.05, 1 - tt);
+      const halfY = this.baseScale[i3 + 1] * sf * 0.5;
+      if (this.pos[i3 + 1] < halfY) {
+        this.pos[i3 + 1] = halfY;
+        if (Math.abs(this.vel[i3 + 1]) > 1) {
+          this.vel[i3 + 1] *= -0.38;
+          this.vel[i3] *= 0.72; this.vel[i3 + 2] *= 0.72;
+          this.ang[i3] *= 0.5; this.ang[i3 + 1] *= 0.5; this.ang[i3 + 2] *= 0.5;
+          this.bounced[i] = 1;
+          if (this.onBounce) this.onBounce(this.pos[i3], this.pos[i3 + 1], this.pos[i3 + 2]);
+        } else {
+          this.vel[i3] = 0; this.vel[i3 + 1] = 0; this.vel[i3 + 2] = 0;
+          this.ang[i3] = 0; this.ang[i3 + 1] = 0; this.ang[i3 + 2] = 0;
+        }
+      }
+      this._write(i);
+      i++;
+    }
+    this.mesh.count = this.count;
+    this.mesh.instanceMatrix.needsUpdate = true;
+    if (this.count > 0 && this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+  };
+  pool._kill = function (i) {
+    const last = --this.count;
+    if (i === last) return;
+    const i3 = i * 3, i4 = i * 4, l3 = last * 3, l4 = last * 4;
+    this.pos[i3] = this.pos[l3]; this.pos[i3 + 1] = this.pos[l3 + 1]; this.pos[i3 + 2] = this.pos[l3 + 2];
+    this.vel[i3] = this.vel[l3]; this.vel[i3 + 1] = this.vel[l3 + 1]; this.vel[i3 + 2] = this.vel[l3 + 2];
+    this.quat[i4] = this.quat[l4]; this.quat[i4 + 1] = this.quat[l4 + 1]; this.quat[i4 + 2] = this.quat[l4 + 2]; this.quat[i4 + 3] = this.quat[l4 + 3];
+    this.ang[i3] = this.ang[l3]; this.ang[i3 + 1] = this.ang[l3 + 1]; this.ang[i3 + 2] = this.ang[l3 + 2];
+    this.baseScale[i3] = this.baseScale[l3]; this.baseScale[i3 + 1] = this.baseScale[l3 + 1]; this.baseScale[i3 + 2] = this.baseScale[l3 + 2];
+    this.age[i] = this.age[last]; this.maxLife[i] = this.maxLife[last]; this.bounced[i] = this.bounced[last];
+    const ic = this.mesh.instanceColor;
+    if (ic && ic.array) {
+      ic.array[i3] = ic.array[l3]; ic.array[i3 + 1] = ic.array[l3 + 1]; ic.array[i3 + 2] = ic.array[l3 + 2];
+    }
+    this._write(i);
+  };
+  pool.clear = function () {
+    this.count = 0;
+    this.mesh.count = 0;
+    this.mesh.instanceMatrix.needsUpdate = true;
+    for (let i = 0; i < this.capacity; i++) this.mesh.setMatrixAt(i, FX_ZERO_MAT);
+  };
+  return pool;
+}
+
+// ---------- scorch pool (InstancedMesh of flat cylinders, append-only) ----------
+function FX_scorchPool(capacity) {
+  const geo = new THREE.CylinderGeometry(1, 1, 0.04, 20);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x151013, roughness: 1.0, metalness: 0.0 });
+  const mesh = new THREE.InstancedMesh(geo, mat, capacity);
+  mesh.frustumCulled = false;
+  mesh.castShadow = false;
+  mesh.receiveShadow = false;
+  mesh.count = 0;
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  for (let i = 0; i < capacity; i++) mesh.setMatrixAt(i, FX_ZERO_MAT);
+  return { capacity, geo, mat, mesh, count: 0 };
+}
+
+// ---------- the Destruction API ----------
+class Destruction {
+  constructor() {
+    const scene = state.scene;
+
+    this.debris = FX_debrisPool(FX_DEBRIS_POOL);
+    this.dust = FX_particlePool(FX_DUST_POOL, THREE.NormalBlending, { gravity: -2.0, drag: 2.5, grow: 0 });
+    this.smoke = FX_particlePool(FX_SMOKE_POOL, THREE.NormalBlending, { gravity: 2.6, drag: 0.5, grow: 2.2 });
+    this.flash = FX_particlePool(FX_FLASH_POOL, THREE.AdditiveBlending, { gravity: 0, drag: 0.3, grow: 1.5 });
+    this.scorch = FX_scorchPool(FX_SCORCH_POOL);
+
+    // shockwave rings (rocket only): expand 0 -> 8 over 0.4s, additive, fade out
+    this.shockMeshes = [];
+    for (let i = 0; i < 8; i++) {
+      const rm = new THREE.Mesh(
+        new THREE.RingGeometry(0.92, 1, 32),
+        new THREE.MeshBasicMaterial({ color: 0xffb070, transparent: true, opacity: 0, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      rm.rotation.x = -Math.PI / 2;
+      rm.visible = false;
+      scene.add(rm);
+      this.shockMeshes.push(rm);
+    }
+    this.shockT = new Float32Array(8); // elapsed; -1 = idle
+    for (let i = 0; i < 8; i++) this.shockT[i] = -1;
+
+    // render order: normal-blended first, additive glow last
+    this.dust.pts.renderOrder = 10;
+    this.smoke.pts.renderOrder = 11;
+    this.flash.pts.renderOrder = 12;
+
+    scene.add(this.debris.mesh);
+    scene.add(this.dust.pts);
+    scene.add(this.smoke.pts);
+    scene.add(this.flash.pts);
+    scene.add(this.scorch.mesh);
+
+    // debris bounce -> little dust puff + spark
+    this.debris.onBounce = (x, y, z) => {
+      for (let k = 0; k < 3; k++) this._spawnDustAt(x, y, z, 0.6);
+      this._spawnFlashAt(x, y, z, 0.4);
+    };
+
+    this.emitters = [];   // continuous smoke emitters { x, y, z, until, rate, acc }
+    this.recheck = [];    // work queue of block refs to recheck support for
+    this.byId = new Map();
+
+    // capture per-block original tints (for settle darkening + reset restore)
+    for (const b of state.blocks) {
+      this.byId.set(b.id, b);
+      b._origColor = b.color ? b.color.clone() : new THREE.Color(1, 1, 1);
+    }
+
+    this.simTime = 0;
+    state.destruction = this;
+  }
+
+  // ===== public API =====
+
+  hit(point, radius, dmg, power, weaponName) {
+    // --- FX spawn (committed at spawn time) ---
+    const isCannon = String(weaponName || '').toUpperCase().indexOf('CANNON') >= 0;
+    const isRocket = String(weaponName || '').toUpperCase().indexOf('ROCKET') >= 0;
+    const isNuke = String(weaponName || '').toUpperCase().indexOf('NUKE') >= 0;
+    const flashR = isNuke ? 30 : (isRocket ? 6 : (isCannon ? 0.9 : radius * 3));
+    const nFlash = isNuke ? 8 : (isRocket ? 2 : (isCannon ? 2 : 3)); // cannon: quick snap flash; bofors: HE ball
+    for (let k = 0; k < nFlash; k++) this._spawnFlashAt(point.x, point.y + 0.3, point.z, flashR);
+    const nDust = isNuke ? 220 : (isCannon ? 4 : Math.round(12 + 6 * radius));
+    for (let k = 0; k < nDust; k++) this._spawnDustAt(point.x, point.y, point.z, radius);
+    const nSmoke = isNuke ? 80 : (isCannon ? 0 : 8 + Math.floor(drng() * 9)); // cannon: no smoke, it is a snap hit
+    for (let k = 0; k < nSmoke; k++) this._spawnSmokeAt(point.x, point.y, point.z, radius);
+    if (!isCannon) this._spawnScorch(point.x, point.z, radius);
+    if (isCannon) {
+      // spark shower: fast tiny debris, short life (visible micro-pop on every hit)
+      for (let k = 0; k < 5; k++) {
+        if (this.debris.count >= this.debris.capacity) break;
+        const a = drng() * TAU;
+        const vs = 3 + 4 * drng();
+        const sf = 0.06 + 0.06 * drng();
+        this.debris.add(
+          point.x, point.y + 0.1, point.z,
+          Math.cos(a) * vs, 2 + 3 * drng(), Math.sin(a) * vs,
+          sf, sf, sf,
+          (drng() - 0.5) * 9, (drng() - 0.5) * 9, (drng() - 0.5) * 9,
+          1.0, 0.9, 0.6,
+          0.5 + 0.4 * drng()
+        );
+      }
+      this.debris.commit();
+    }
+    if (isRocket || isNuke) {
+      // rocket: 24 chunks; nuke: 100 chunks + multiple shockwave rings
+      const burstChunks = isNuke ? 100 : 24;
+      for (let k = 0; k < burstChunks; k++) {
+        if (this.debris.count >= this.debris.capacity) break;
+        const a = drng() * TAU;
+        const vs = 2 + 5 * drng();
+        const sf = 0.2 + 0.4 * drng();
+        this.debris.add(
+          point.x, point.y + 0.2, point.z,
+          Math.cos(a) * vs, 3 + 4 * drng(), Math.sin(a) * vs,
+          sf, sf * (0.5 + drng()), sf,
+          (drng() - 0.5) * 5, (drng() - 0.5) * 5, (drng() - 0.5) * 5,
+          0.85, 0.72, 0.55,
+          2.5 + 2 * drng()
+        );
+      }
+      this.debris.commit();
+      this._spawnShockwave(point.x, point.z);
+      if (isNuke) {
+        this._spawnShockwave(point.x + 5, point.z);
+        this._spawnShockwave(point.x - 5, point.z + 3);
+        this._spawnShockwave(point.x, point.z - 6);
+      }
+    }
+
+    // --- damage: per-block HP by material; destroy only when HP is exhausted ---
+    for (const b of state.blocks) {
+      if (!b.alive) continue;
+      const maxSize = Math.max(b.size.x, b.size.y, b.size.z);
+      // cannon: direct-hit pockmark only (no splash). bofors/rocket: weapon splash + block allowance.
+      const effective = isCannon ? 0.3 + 0.5 * maxSize : radius + 0.5 * maxSize;
+      const d = point.distanceTo(b.pos);
+      if (d < effective) {
+        if (isCannon) {
+          // pockmark: flat 1 damage, HP floored at 1 — the cannon can never bring anything down
+          if (b.hp > 1) {
+            b.hp = Math.max(1, b.hp - dmg);
+            this.wound(b);
+          }
+        } else {
+          let dm;
+          if (d < effective * 0.5) dm = dmg;          // core: full damage
+          else dm = dmg * (1 - d / effective);        // ring: falloff to zero
+          b.hp -= dm;
+          if (b.hp <= 0) { b.hp = 0; this.destroy(b); }
+          else this.wound(b);
+        }
+      } else if (d < effective + 1.5) {
+        // knock: impulse away from the blast, scaled by power and falloff.
+        // FX_T_V3B is used (not FX_T_V3) because makeDynamic() below clobbers FX_T_V3.
+        const mag = FX_IMPULSE * power * (1 - d / (effective + 1.5));
+        FX_T_V3B.subVectors(b.pos, point);
+        const dl = FX_T_V3B.length();
+        if (dl > 1e-6) FX_T_V3B.divideScalar(dl); else FX_T_V3B.set(0, 1, 0);
+        if (b.dynamic) {
+          b.vel.addScaledVector(FX_T_V3B, mag); // nudge an already-moving block
+        } else if (!isCannon) {
+          // only bofors/rocket can topple static blocks; cannon stays below the threshold
+          const live = this._liveSupporters(b);
+          if (mag > 1.5 || (mag > 2.5 && live < b.supportedBy.length)) {
+            this.makeDynamic(b);
+            b.vel.addScaledVector(FX_T_V3B, mag);
+          }
+        }
+      }
+    }
+    this._processRecheck();
+  }
+
+  // wounded: HP lost but still alive -> darken the instance color by HP fraction
+  // (1 -> 0.55) and emit a small debris puff. The block SURVIVES and stays structural.
+  wound(b) {
+    const f = 0.55 + 0.45 * (b.hp / b.maxHp);
+    b.tint = f;
+    this.FX_paintBlock(b);
+    const bc = state.thermal ? FX_whotGray(FX_BASE_COLORS[b.mat], FX_T_WHOT) : FX_BASE_COLORS[b.mat];
+    for (let k = 0; k < 3; k++) {
+      if (this.debris.count >= this.debris.capacity) break;
+      const a = drng() * TAU;
+      const vs = 0.6 + 1.4 * drng();
+      const s = 0.1 + 0.12 * drng();
+      this.debris.add(
+        b.pos.x, b.pos.y, b.pos.z,
+        Math.cos(a) * vs, 1 + 1.5 * drng(), Math.sin(a) * vs,
+        s, s * 0.8, s,
+        (drng() - 0.5) * 6, (drng() - 0.5) * 6, (drng() - 0.5) * 6,
+        bc.r, bc.g, bc.b,
+        1 + 0.9 * drng()
+      );
+    }
+    this.debris.commit();
+    for (let k = 0; k < 2; k++) this._spawnDustAt(b.pos.x, b.pos.y, b.pos.z, 0.7);
+  }
+
+  destroy(b) {
+    if (!b.alive) return;
+    b.alive = false;
+
+    // zero-scale the block instance
+    const mrec = state.mats[b.mat];
+    if (mrec && mrec.mesh) {
+      mrec.mesh.setMatrixAt(b.inst, FX_ZERO_MAT);
+      mrec.mesh.instanceMatrix.needsUpdate = true;
+    }
+
+    // debris 4-10 (proportional to block volume), outward + up velocities, life 3-5s
+    const vol = b.size.x * b.size.y * b.size.z;
+    const nDeb = 4 + Math.round(6 * clamp(vol / 15, 0, 1));
+    const bc = state.thermal ? FX_whotGray(FX_BASE_COLORS[b.mat] || FX_T_COL.setRGB(1, 1, 1), FX_T_WHOT) : (FX_BASE_COLORS[b.mat] || FX_T_COL.setRGB(1, 1, 1));
+    for (let k = 0; k < nDeb; k++) {
+      if (this.debris.count >= this.debris.capacity) break;
+      const a = drng() * TAU;
+      const vs = 1.5 + 3 * drng();
+      const sf = 0.15 + 0.35 * drng();
+      const v = 0.7 + 0.5 * drng();
+      const r = bc.r * v;
+      const g = bc.g * v;
+      const bl = bc.b * v;
+      this.debris.add(
+        b.pos.x + (drng() - 0.5) * b.size.x * 0.6,
+        b.pos.y + (drng() - 0.5) * b.size.y * 0.6,
+        b.pos.z + (drng() - 0.5) * b.size.z * 0.6,
+        Math.cos(a) * vs, 2 + 3 * drng(), Math.sin(a) * vs,
+        Math.max(0.15, b.size.x * sf), Math.max(0.12, b.size.y * sf), Math.max(0.15, b.size.z * sf),
+        (drng() - 0.5) * 5, (drng() - 0.5) * 5, (drng() - 0.5) * 5,
+        r, g, bl,
+        3 + 2 * drng()
+      );
+    }
+    this.debris.commit();
+
+    // dust + smoke
+    for (let k = 0; k < 6; k++) this._spawnDustAt(b.pos.x, b.pos.y, b.pos.z, 1.0);
+    for (let k = 0; k < 4; k++) this._spawnSmokeAt(b.pos.x, b.pos.y, b.pos.z, 1.0);
+
+    // continuous smoke emitter (2-4 pts/s until simTime+10+6*drng)
+    this.emitters.push({
+      x: b.pos.x, y: Math.max(0.3, b.pos.y + 0.5), z: b.pos.z,
+      until: this.simTime + 10 + 6 * drng(),
+      rate: 2 + 2 * drng(),
+      acc: 0,
+    });
+
+    // support recheck: blocks resting on this one
+    for (const id of b.supports) this.recheck.push(this.byId.get(id));
+
+    // notify + structure bookkeeping
+    if (state.onBlockDestroyed) state.onBlockDestroyed(b);
+    const struct = b.structureId != null ? this._findStruct(b.structureId) : null;
+    if (struct) {
+      struct.deadCount++;
+      if (!struct.destroyed && struct.deadCount >= 0.55 * struct.blocks.length) {
+        struct.destroyed = true;
+        if (state.onStructureDestroyed) state.onStructureDestroyed(struct);
+      }
+    }
+  }
+
+  update(dt) {
+    this.simTime += dt;
+    const sdt = Math.min(dt, 0.05); // clamp for stability
+
+    this._processRecheck();
+    this._integrateBlocks(sdt);
+
+    this.dust.update(sdt);
+    this.smoke.update(sdt);
+    this.flash.update(sdt);
+    this.debris.update(sdt);
+    this._updateShocks(sdt);
+
+    this._driveEmitters(sdt);
+  }
+
+  reset() {
+    // rebuild id map (safe if the garden was rebuilt with fresh block objects)
+    this.byId.clear();
+    for (const b of state.blocks) this.byId.set(b.id, b);
+
+    for (const b of state.blocks) {
+      if (!b._origColor) b._origColor = b.color ? b.color.clone() : new THREE.Color(1, 1, 1);
+      b.tint = b.settled ? 0.4 : 1;
+      b.color = b.color || new THREE.Color(1, 1, 1);
+      b.color.copy(b._origColor).multiplyScalar(b.tint);
+      b.alive = true;
+      b.dynamic = false;
+      b.settled = false;
+      b.hp = b.maxHp;
+      b.bounces = 0;
+      b.vel.set(0, 0, 0);
+      b.ang.set(0, 0, 0);
+      b.pos.copy(b.initPos);
+      b.quat.copy(b.initQuat);
+      const mrec = state.mats[b.mat];
+      if (mrec && mrec.mesh) {
+        FX_T_MAT.compose(b.pos, b.quat, b.scale);
+        mrec.mesh.setMatrixAt(b.inst, FX_T_MAT);
+        mrec.mesh.instanceMatrix.needsUpdate = true;
+        this.FX_paintBlock(b);
+      }
+    }
+
+    // clear all pools
+    this.debris.clear();
+    this.dust.clear();
+    this.smoke.clear();
+    this.flash.clear();
+    this.scorch.count = 0;
+    this.scorch.mesh.count = 0;
+    this.scorch.mesh.instanceMatrix.needsUpdate = true;
+    for (let i = 0; i < this.scorch.capacity; i++) this.scorch.mesh.setMatrixAt(i, FX_ZERO_MAT);
+    for (let i = 0; i < this.shockMeshes.length; i++) {
+      this.shockT[i] = -1;
+      this.shockMeshes[i].visible = false;
+      this.shockMeshes[i].material.opacity = 0;
+    }
+
+    this.emitters.length = 0;
+    this.recheck.length = 0;
+
+    // restore B-owned structure bookkeeping (idempotent; also safe on full-rebuild flows)
+    for (const s of state.structures) {
+      s.deadCount = 0;
+      s.destroyed = false;
+    }
+    this.simTime = 0;
+  }
+
+  stats() {
+    let destroyed = 0, settled = 0, active = 0, wounded = 0;
+    for (const b of state.blocks) {
+      if (!b.alive) destroyed++;
+      else {
+        if (b.hp < b.maxHp) wounded++;
+        if (b.settled) settled++;
+        else if (b.dynamic) active++;
+      }
+    }
+    return {
+      destroyedBlocks: destroyed,
+      settledBlocks: settled,
+      activeDynamic: active,
+      debris: this.debris.count,
+      dust: this.dust.count,
+      smoke: this.smoke.count,
+      flash: this.flash.count,
+      scorch: this.scorch.count,
+      wounded: wounded,
+    };
+  }
+
+  // ===== internals =====
+
+  _liveSupporters(b) {
+    // a live supporter is one that is alive, static and not collapsed (settled)
+    let live = 0;
+    for (const id of b.supportedBy) {
+      const s = this.byId.get(id);
+      if (s && s.alive && !s.dynamic && !s.settled) live++;
+    }
+    return live;
+  }
+
+  makeDynamic(b) {
+    if (!b || !b.alive || b.dynamic) return;
+    b.dynamic = true;
+    b.settled = false;
+    b.vel.set((drng() * 2 - 1) * 0.5, 0.2, (drng() * 2 - 1) * 0.5);
+    FX_T_V3.set(drng() * 2 - 1, drng() * 2 - 1, drng() * 2 - 1);
+    if (FX_T_V3.lengthSq() < 1e-6) FX_T_V3.set(0, 1, 0);
+    FX_T_V3.normalize();
+    const spd = 0.5 + drng();
+    b.ang.copy(FX_T_V3).multiplyScalar((drng() < 0.5 ? -1 : 1) * spd);
+    // a block that becomes dynamic no longer counts as a supporter -> cascade
+    for (const id of b.supports) this.recheck.push(this.byId.get(id));
+  }
+
+  _processRecheck() {
+    const q = this.recheck;
+    let i = 0;
+    while (i < q.length) {
+      const b = q[i++];
+      if (!b || !b.alive || b.dynamic || b.settled) continue;
+      if (b.supportedBy.length === 0) continue; // ground-supported: never tips
+      const live = this._liveSupporters(b);
+      const need = Math.max(1, Math.ceil(0.6 * b.supportedBy.length));
+      if (live < need) this.makeDynamic(b);
+    }
+    q.length = 0;
+  }
+
+  _integrateBlocks(dt) {
+    const touchedM = new Set();
+    const touchedC = new Set();
+    for (const b of state.blocks) {
+      if (!b.dynamic) continue;
+      b.vel.y -= FX_G_BLOCK * dt;
+      const dmp = Math.max(0, 1 - 0.06 * dt);
+      b.vel.x *= dmp; b.vel.y *= dmp; b.vel.z *= dmp;
+      b.pos.addScaledVector(b.vel, dt);
+      const aMag = b.ang.length();
+      if (aMag > 1e-6) {
+        FX_T_V3.copy(b.ang).multiplyScalar(1 / aMag);
+        FX_T_QUAT.setFromAxisAngle(FX_T_V3, aMag * dt);
+        b.quat.premultiply(FX_T_QUAT);
+        b.quat.normalize();
+      }
+      const halfY = b.scale.y * 0.5;
+      if (b.pos.y < halfY) {
+        b.pos.y = halfY;
+        if (Math.abs(b.vel.y) > 1) {
+          b.vel.y *= -0.38;
+          b.vel.x *= 0.72; b.vel.z *= 0.72;
+          b.ang.multiplyScalar(0.5);
+          b.bounces++;
+          for (let k = 0; k < 3; k++) this._spawnDustAt(b.pos.x, b.pos.y, b.pos.z, 0.6);
+          this._spawnFlashAt(b.pos.x, b.pos.y, b.pos.z, 0.4);
+        } else {
+          // settle into rubble
+          b.dynamic = false;
+          b.settled = true;
+          b.vel.set(0, 0, 0);
+          b.ang.set(0, 0, 0);
+          b.tint = 0.4;
+          this.FX_paintBlock(b);
+          // recheck its supports (a settled block no longer carries them)
+          for (const id of b.supports) this.recheck.push(this.byId.get(id));
+        }
+      }
+      this._writeBlockMatrix(b);
+      const mrec = state.mats[b.mat];
+      if (mrec && mrec.mesh) touchedM.add(mrec.mesh);
+    }
+    // one needsUpdate per touched material mesh
+    for (const m of touchedM) m.instanceMatrix.needsUpdate = true;
+    for (const m of touchedC) if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  }
+
+  _writeBlockMatrix(b) {
+    const mrec = state.mats[b.mat];
+    if (!mrec || !mrec.mesh) return;
+    FX_T_MAT.compose(b.pos, b.quat, b.scale);
+    mrec.mesh.setMatrixAt(b.inst, FX_T_MAT);
+  }
+
+  // display color of a live block: natural = _orig * tint; WHOT = grayscale of that
+  FX_paintBlock(b) {
+    const mrec = state.mats[b.mat];
+    if (!mrec || !mrec.mesh) return;
+    b.color.copy(b._origColor).multiplyScalar(b.tint || 1);
+    if (state.thermal) FX_whotGray(b.color, FX_T_WHOT);
+    mrec.mesh.setColorAt(b.inst, state.thermal ? FX_T_WHOT : b.color);
+    if (mrec.mesh.instanceColor) mrec.mesh.instanceColor.needsUpdate = true;
+  }
+
+  _driveEmitters(dt) {
+    const e = this.emitters;
+    for (let i = e.length - 1; i >= 0; i--) {
+      const em = e[i];
+      if (this.simTime >= em.until) { e.splice(i, 1); continue; }
+      em.acc += em.rate * dt;
+      while (em.acc >= 1) {
+        em.acc -= 1;
+        if (this.smoke.count < this.smoke.capacity) {
+          this._spawnSmokeAt(em.x, em.y, em.z, 0.8);
+        }
+      }
+    }
+  }
+
+  _findStruct(id) {
+    for (const s of state.structures) if (s.id === id) return s;
+    return null;
+  }
+
+  _spawnFlashAt(x, y, z, size) {
+    if (this.flash.count >= this.flash.capacity) return;
+    if (state.thermal) {
+      this.flash.spawn(x, y, z, 0, 0, 0, Math.max(0.5, size), 0.15 + 0.15 * drng(), 1.0, 1.0, 1.0, 1.0);
+    } else {
+      this.flash.spawn(x, y, z, 0, 0, 0, Math.max(0.5, size), 0.15 + 0.15 * drng(), 1.0, 0.95, 0.75, 1.0);
+    }
+  }
+
+  _spawnDustAt(x, y, z, radius) {
+    if (this.dust.count >= this.dust.capacity) return;
+    const a = drng() * TAU;
+    const r = drng() * radius * 0.6;
+    const va = drng() * TAU;
+    const vs = 1.5 + 3 * drng();
+    const tint = 0.8 + 0.4 * drng();
+    this.dust.spawn(
+      x + Math.cos(a) * r, Math.max(0.05, y + (drng() - 0.3) * 0.5), z + Math.sin(a) * r,
+      Math.cos(va) * vs * 0.6, 0.5 + 2 * drng(), Math.sin(va) * vs * 0.6,
+      0.6 + 1.4 * drng(), 1 + drng(),
+      0.72 * tint, 0.65 * tint, 0.55 * tint, 0.55
+    );
+  }
+
+  _spawnSmokeAt(x, y, z, radius) {
+    if (this.smoke.count >= this.smoke.capacity) return;
+    const a = drng() * TAU;
+    const r = drng() * radius * 0.8;
+    const va = drng() * TAU;
+    // darker, rises higher, grows 2.2x, persists 6-8s; white-hot in WHOT view
+    if (state.thermal) {
+      this.smoke.spawn(
+        x + Math.cos(a) * r, Math.max(0.1, y + drng() * 0.5), z + Math.sin(a) * r,
+        Math.cos(va) * (0.3 + 0.7 * drng()), 1.2 + 1.6 * drng(), Math.sin(va) * (0.3 + 0.7 * drng()),
+        1.2 + 2.2 * drng(), 6 + 2 * drng(),
+        0.82, 0.84, 0.86, 0.75
+      );
+    } else {
+      this.smoke.spawn(
+        x + Math.cos(a) * r, Math.max(0.1, y + drng() * 0.5), z + Math.sin(a) * r,
+        Math.cos(va) * (0.3 + 0.7 * drng()), 1.2 + 1.6 * drng(), Math.sin(va) * (0.3 + 0.7 * drng()),
+        1.2 + 2.2 * drng(), 6 + 2 * drng(),
+        0.30, 0.32, 0.36, 0.55
+      );
+    }
+  }
+
+  _spawnScorch(x, z, radius) {
+    if (this.scorch.count >= this.scorch.capacity) return;
+    const i = this.scorch.count++;
+    const s = Math.max(0.3, radius * 0.8);
+    FX_T_MAT.makeScale(s, 1, s).setPosition(x, 0.03, z);
+    this.scorch.mesh.setMatrixAt(i, FX_T_MAT);
+    this.scorch.mesh.count = this.scorch.count;
+    this.scorch.mesh.instanceMatrix.needsUpdate = true;
+  }
+  _spawnShockwave(x, z) {
+    for (let i = 0; i < this.shockMeshes.length; i++) {
+      if (this.shockT[i] >= 0) continue;
+      this.shockT[i] = 0;
+      const m = this.shockMeshes[i];
+      m.position.set(x, 0.12, z);
+      m.scale.set(0.001, 0.001, 0.001);
+      m.material.opacity = 0.55;
+      m.visible = true;
+      return;
+    }
+  }
+
+  _updateShocks(dt) {
+    for (let i = 0; i < this.shockMeshes.length; i++) {
+      if (this.shockT[i] < 0) continue;
+      this.shockT[i] += dt;
+      const m = this.shockMeshes[i];
+      const DUR = 0.4;
+      if (this.shockT[i] >= DUR) {
+        this.shockT[i] = -1;
+        m.visible = false;
+        m.material.opacity = 0;
+        continue;
+      }
+      const k = this.shockT[i] / DUR;
+      const r = 8 * (1 - (1 - k) * (1 - k)); // ease-out to radius 8
+      m.scale.set(r, r, r);
+      m.material.opacity = 0.55 * (1 - k);
+    }
+  }
+
+}
+
+// ===== SECTION C: WEAPONS/CAMERA/HUD =====
+// AC-130 gunship: the camera is HARD-LOCKED to the aircraft (sensor pod under the
+// belly, bank roll 0.1). The mouse slews the aim reticle across the ground plane,
+// clamped to a 35-degree cone around the boresight (gunship -> compound center) —
+// the sensor can only look where the plane can. Wheel steps the sensor zoom
+// (FOV 30/18/10 = x1/x2/x4). Default view: white-hot thermal (WHOT); N toggles to
+// the natural dusk view. Fire: click / RMB / Space (hold-to-fire). Weapons spawn
+// at the gunship and fly to the aim point.
+const HUD_CSS = `
+#hud { position: fixed; inset: 0; z-index: 10; pointer-events: none; font-family: "Courier New", ui-monospace, Menlo, Consolas, monospace; --acc: #f4f7ff; color: var(--acc); }
+body.natural #hud { --acc: #7df9ff; }
+#hud .scanlines { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, currentColor 0px, currentColor 1px, transparent 1px, transparent 3px); opacity: 0.10; }
+body.natural #hud .scanlines { opacity: 0.06; }
+#hud .grain { position: absolute; inset: 0; background-repeat: repeat; opacity: 0.06; animation: grainJit 0.32s steps(3) infinite; }
+body.natural #hud .grain { opacity: 0.025; }
+@keyframes grainJit { 0% { background-position: 0 0; } 33% { background-position: -28px 14px; } 66% { background-position: 17px -22px; } 100% { background-position: 0 0; } }
+#hud .vignette { position: absolute; inset: 0; box-shadow: inset 0 0 190px 40px rgba(0, 0, 0, 0.72); }
+body.thermal #hud .vignette { box-shadow: inset 0 0 240px 70px rgba(0, 0, 0, 0.88); }
+#hud .corner { position: absolute; width: 36px; height: 36px; border: 2px solid var(--acc); opacity: 0.9; }
+#hud .corner.c-tl { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
+#hud .corner.c-tr { top: 8px; right: 8px; border-left: 0; border-bottom: 0; }
+#hud .corner.c-bl { bottom: 8px; left: 8px; border-right: 0; border-top: 0; }
+#hud .corner.c-br { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
+#hud .tl { position: absolute; top: 14px; left: 16px; }
+#hud .title { font-size: 13px; letter-spacing: 3px; margin-bottom: 9px; text-shadow: 0 0 10px currentColor; }
+#hud .wchip { width: 220px; border: 1px solid rgba(244, 247, 255, 0.3); background: rgba(2, 4, 8, 0.42); padding: 5px 8px 7px; margin-bottom: 6px; }
+body.natural #hud .wchip { border-color: rgba(125, 249, 255, 0.3); }
+#hud .wchip.sel { border-color: var(--acc); background: rgba(244, 247, 255, 0.08); box-shadow: 0 0 12px rgba(244, 247, 255, 0.30); }
+body.natural #hud .wchip.sel { background: rgba(125, 249, 255, 0.1); box-shadow: 0 0 12px rgba(125, 249, 255, 0.28); }
+#hud .wchip .wrow { display: flex; align-items: center; gap: 8px; }
+#hud .wchip kbd { border: 1px solid currentColor; border-radius: 2px; padding: 0 4px; font-size: 10px; line-height: 15px; font-family: inherit; }
+#hud .wchip .wname { flex: 1; font-size: 11px; letter-spacing: 1px; }
+#hud .wchip .wammo { font-size: 11px; min-width: 3ch; text-align: right; }
+#hud .wchip .wbar { display: none; height: 3px; margin-top: 5px; background: rgba(244, 247, 255, 0.18); }
+body.natural #hud .wchip .wbar { background: rgba(125, 249, 255, 0.18); }
+#hud .wchip .wbarfill { height: 100%; width: 0; background: var(--acc); }
+#hud .therm { margin-top: 9px; font-size: 11px; letter-spacing: 2px; }
+#hud .tr { position: absolute; top: 14px; right: 16px; text-align: right; }
+#hud .tr .score { font-size: 12px; letter-spacing: 2px; margin-bottom: 8px; }
+#hud #score { font-size: 17px; text-shadow: 0 0 10px currentColor; }
+#hud .trow { display: flex; justify-content: flex-end; gap: 10px; font-size: 10px; letter-spacing: 1px; margin-top: 3px; }
+#hud .trow .tname { width: 90px; text-align: left; }
+#hud .trow .tpts { width: 36px; }
+#hud .trow .tstate { width: 52px; }
+#hud .trow.struck .tname { color: #ff3344; text-decoration: line-through; }
+#hud .trow.struck .tstate { color: #ff3344; }
+#hud .bl { position: absolute; bottom: 14px; left: 16px; font-size: 11px; letter-spacing: 2px; text-shadow: 0 0 8px currentColor; }
+#hud #zoom { margin-top: 5px; }
+#hud #fps { margin-top: 5px; opacity: 0.85; }
+#hud #help { display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: auto; background: rgba(3, 8, 14, 0.88); border: 1px solid var(--acc); padding: 14px 22px; font-size: 12px; letter-spacing: 1px; line-height: 2.1; text-align: center; box-shadow: 0 0 26px rgba(0, 0, 0, 0.65); }
+#hud #help.on { display: block; }
+#hud #help kbd { border: 1px solid currentColor; border-radius: 2px; padding: 0 5px; margin: 0 3px; font-family: inherit; font-size: 11px; }
+`;
+
+function initArsenal() {
+  const AR_WEAPONS = [
+    { name: '25MM CANNON', speed: 85, blast: 0.5, dmg: 2, power: 1,   maxAmmo: 600, fireRate: 8,   reload: 2.5, len: 7.5, rad: 0.05, color: 0xffd27a, g: 0,    drag: 0    },
+    { name: '40MM BOFORS', speed: 42, blast: 2.5, dmg: 3, power: 2.5, maxAmmo: 120,  fireRate: 3,   reload: 4,   len: 0.55, rad: 0.16, color: 0xffe0b0, g: 9,    drag: 0    },
+    { name:  '70MM ROCKET', speed: 26, blast: 4.5, dmg: 8, power: 6,   maxAmmo: 30,  fireRate: 1.2, reload: 6,   len: 1.6,  rad: 0.22, color: 0xff9a6a, g: 4,    drag: 0.15 },
+    { name: 'NUKE', speed: 18, blast: 28, dmg: 999, power: 50, maxAmmo: 3, fireRate: 0.25, reload: 12, len: 3.5, rad: 0.55, color: 0xffffff, g: 2, drag: 0.08 },
+  ];
+  for (const w of AR_WEAPONS) w.tcolor = new THREE.Color(w.color);
+  const AR_WHOT_T = new THREE.Color(1, 1, 1); // white-hot tracer override
+
+  let AR_sel = 0;
+  let AR_time = 0;
+  let AR_rmb = false;
+  let AR_space = false;
+  let AR_ptrInside = false;
+  let AR_aimActive = false;
+  let AR_helpOn = false;
+  let AR_hudAcc = 0;
+  let AR_fpsAcc = 0;
+  let AR_fpsFrames = 0;
+  let AR_fps = 60;
+  let AR_pCount = 0;
+  let AR_jT = 0;
+
+  // ---- sensor camera: hard-locked to the gunship ----
+  const AR_FOVS = [30, 18, 10];
+  const AR_ZOOM_X = ['1', '2', '4'];
+  let AR_zoom = 0;
+  const AR_camTgt = new THREE.Vector3(0, 0, 0);   // smoothed sensor look-at
+  const AR_PAN = [0.25, 0.55, 0.85];              // fraction of the way toward the aim point, per zoom level
+  const AR_camOff = new THREE.Vector3(0, -1.7, 2.2); // pod hangs under the belly, fore of center
+  const AR_COS35 = Math.cos(35 * Math.PI / 180);
+  const AR_SIN35 = Math.sin(35 * Math.PI / 180);
+  const AR_gazeDir = new THREE.Vector3(0, -1, 0);
+
+  const AR_ndc = new THREE.Vector2(0, 0);
+  const AR_ray = new THREE.Raycaster();
+  const AR_plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const AR_aimPoint = new THREE.Vector3(0, 0, 0);
+  const AR_aimRaw = new THREE.Vector3();
+  let AR_aimValid = false;
+
+  const AR_tV = new THREE.Vector3();
+  const AR_tV2 = new THREE.Vector3();
+  const AR_tV3 = new THREE.Vector3();
+  const AR_tQ = new THREE.Quaternion();
+  const AR_tM = new THREE.Matrix4();
+  const AR_tS = new THREE.Vector3();
+  const AR_Z_AXIS = new THREE.Vector3(0, 0, 1);
+
+  // ---- gunship (low-poly C-130, forward = +Z) ----
+  const AR_gsGroup = new THREE.Group();
+  const AR_gsMat = new THREE.MeshStandardMaterial({ color: 0x51625c, roughness: 0.75, metalness: 0.25 });
+  const AR_gsMat2 = new THREE.MeshStandardMaterial({ color: 0x46555e, roughness: 0.8, metalness: 0.2 });
+  const AR_addBox = (sx, sy, sz, x, y, z, mat) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat);
+    m.position.set(x, y, z);
+    AR_gsGroup.add(m);
+  };
+  AR_addBox(2.2, 2.2, 10, 0, 0, 0, AR_gsMat);        // fuselage
+  AR_addBox(18, 0.3, 2.6, 0, 0.3, 1.4, AR_gsMat2);   // main wing
+  AR_addBox(0.25, 2.4, 2.0, 0, 1.3, -4.0, AR_gsMat); // tail fin
+  AR_addBox(1.3, 0.9, 1.7, -6.5, -0.15, 1.4, AR_gsMat2);
+  AR_addBox(1.3, 0.9, 1.7, -3.2, -0.15, 1.4, AR_gsMat2);
+  AR_addBox(1.3, 0.9, 1.7, 3.2, -0.15, 1.4, AR_gsMat2);
+  AR_addBox(1.3, 0.9, 1.7, 6.5, -0.15, 1.4, AR_gsMat2);
+  const AR_navGeom = new THREE.BufferGeometry();
+  AR_navGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-9, 0.3, 1.4, 9, 0.3, 1.4]), 3));
+  const AR_navMat = new THREE.PointsMaterial({ color: 0xff2222, size: 0.8, sizeAttenuation: true, transparent: true, depthWrite: false });
+  AR_gsGroup.add(new THREE.Points(AR_navGeom, AR_navMat));
+  const AR_gs = (state.gunship = { pos: new THREE.Vector3(120, 95, 0), group: AR_gsGroup });
+  state.scene.add(AR_gsGroup);
+
+  // ---- reticle + laser designator ----
+  const AR_ringMat = new THREE.MeshBasicMaterial({ color: 0xdfe6ff });
+  const AR_ring = new THREE.Mesh(new THREE.TorusGeometry(5.0, 0.16, 8, 28), AR_ringMat);
+  AR_ring.rotation.x = -Math.PI / 2;
+  AR_ring.position.set(0, 0.05, 0);
+  AR_ring.visible = false;
+  state.scene.add(AR_ring);
+  // crosshair ticks: 4 bars flanking the ring so the aim point reads at AGL 95
+  const AR_ticks = new THREE.Group();
+  {
+    const tH = new THREE.BoxGeometry(3.6, 0.12, 0.3);
+    const tV = new THREE.BoxGeometry(0.3, 0.12, 3.6);
+    for (let q = 0; q < 4; q++) {
+      const horiz = q % 2 === 0;
+      const bm = new THREE.Mesh(horiz ? tH : tV, AR_ringMat);
+      const sgn = q < 2 ? 1 : -1;
+      if (horiz) bm.position.set(sgn * 2.7, 0, 0); else bm.position.set(0, 0, sgn * 2.7);
+      AR_ticks.add(bm);
+    }
+  }
+  AR_ticks.position.y = 0.05;
+  AR_ticks.visible = false;
+  state.scene.add(AR_ticks);
+
+  const AR_laserGeom = new THREE.BufferGeometry();
+  AR_laserGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0, 0, 0, 0, 0, 0]), 3));
+  const AR_laserMat = new THREE.LineDashedMaterial({ color: 0x9aa0b0, transparent: true, opacity: 0.3, dashSize: 0.7, gapSize: 0.5 });
+  const AR_laser = new THREE.Line(AR_laserGeom, AR_laserMat);
+  AR_laser.visible = false;
+  state.scene.add(AR_laser);
+
+  // ---- projectile pool (one InstancedMesh, compaction) ----
+  const AR_pMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial(), 200);
+  AR_pMesh.frustumCulled = false;
+  AR_pMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  AR_pMesh.count = 0; // instance count (geometry.drawRange is ignored for instance count in r170)
+  state.scene.add(AR_pMesh);
+  const AR_muz = new THREE.Vector3();
+  const AR_pData = new Array(200);
+  const AR_H = 1 / 60; // fixed physics step (matches launch solver)
+  let AR_pAcc = 0;
+
+  const AR_ammo = AR_WEAPONS.map(w => w.maxAmmo);
+  const AR_reloading = [false, false, false];
+  const AR_reloadT = [0, 0, 0];
+  const AR_cd = [0, 0, 0];
+  const AR_rows = [];
+
+  // ---- HUD DOM ----
+  const styleEl = document.createElement('style');
+  styleEl.textContent = HUD_CSS;
+  document.head.appendChild(styleEl);
+
+  const hud = document.createElement('div');
+  hud.id = 'hud';
+  const scanlines = document.createElement('div');
+  scanlines.className = 'scanlines';
+  const grain = document.createElement('div');
+  grain.className = 'grain';
+  {
+    // film grain: 64x64 noise tile, jittered by the grainJit keyframes
+    const gcan = document.createElement('canvas');
+    gcan.width = 64;
+    gcan.height = 64;
+    const gc = gcan.getContext('2d');
+    const grng = mulberry32(7);
+    for (let i = 0; i < 220; i++) {
+      gc.fillStyle = 'rgba(255,255,255,' + (0.05 + 0.3 * grng()).toFixed(2) + ')';
+      gc.fillRect((i % 64) | 0, (i / 64) | 0, 1, 1);
+    }
+    grain.style.backgroundImage = 'url(' + gcan.toDataURL() + ')';
+  }
+  const vignette = document.createElement('div');
+  vignette.className = 'vignette';
+  hud.appendChild(scanlines);
+  hud.appendChild(grain);
+  hud.appendChild(vignette);
+  for (const cn of ['c-tl', 'c-tr', 'c-bl', 'c-br']) {
+    const c = document.createElement('div');
+    c.className = 'corner ' + cn;
+    hud.appendChild(c);
+  }
+
+  const tl = document.createElement('div');
+  tl.className = 'tl';
+  const title = document.createElement('div');
+  title.className = 'title';
+  title.textContent = 'AC-130 // SENSORS';
+  tl.appendChild(title);
+  const AR_chips = [];
+  const AR_wammos = [];
+  const AR_wbars = [];
+  const AR_wbarfills = [];
+  AR_WEAPONS.forEach((w, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'wchip';
+    const row = document.createElement('div');
+    row.className = 'wrow';
+    const kbd = document.createElement('kbd');
+    kbd.textContent = String(i + 1);
+    const name = document.createElement('span');
+    name.className = 'wname';
+    name.textContent = w.name;
+    const ammo = document.createElement('span');
+    ammo.className = 'wammo';
+    ammo.textContent = String(w.maxAmmo);
+    row.appendChild(kbd);
+    row.appendChild(name);
+    row.appendChild(ammo);
+    const bar = document.createElement('div');
+    bar.className = 'wbar';
+    const fill = document.createElement('div');
+    fill.className = 'wbarfill';
+    bar.appendChild(fill);
+    chip.appendChild(row);
+    chip.appendChild(bar);
+    tl.appendChild(chip);
+    AR_chips.push(chip);
+    AR_wammos.push(ammo);
+    AR_wbars.push(bar);
+    AR_wbarfills.push(fill);
+  });
+  const therm = document.createElement('div');
+  therm.id = 'therm';
+  therm.className = 'therm';
+  therm.textContent = 'SENSOR [N]  WHOT';
+  tl.appendChild(therm);
+  hud.appendChild(tl);
+
+  const tr = document.createElement('div');
+  tr.className = 'tr';
+  const scoreLine = document.createElement('div');
+  scoreLine.className = 'score';
+  scoreLine.textContent = 'SCORE  ';
+  const score = document.createElement('span');
+  score.id = 'score';
+  score.textContent = '0000';
+  scoreLine.appendChild(score);
+  tr.appendChild(scoreLine);
+  const tlist = document.createElement('div');
+  tr.appendChild(tlist);
+  hud.appendChild(tr);
+
+  const bl = document.createElement('div');
+  bl.className = 'bl';
+  const aim = document.createElement('div');
+  aim.id = 'aim';
+  aim.textContent = 'E ---.0  Z ---.0   RNG ---.0   AGL 0095';
+  const zoomEl = document.createElement('div');
+  zoomEl.id = 'zoom';
+  zoomEl.textContent = 'ZOOM x1';
+  const fps = document.createElement('div');
+  fps.id = 'fps';
+  fps.textContent = 'FPS 60';
+  bl.appendChild(aim);
+  bl.appendChild(zoomEl);
+  bl.appendChild(fps);
+  hud.appendChild(bl);
+
+  const help = document.createElement('div');
+  help.id = 'help';
+  help.innerHTML = '<div class="hline"><kbd>MOUSE</kbd> sensor slew &middot; <kbd>WHEEL</kbd> zoom x1/x2/x4 &middot; <kbd>CLICK / RMB / SPACE</kbd> fire &middot; <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd> weapon &middot; <kbd>N</kbd> whot/dusk &middot; <kbd>R</kbd> reset &middot; <kbd>H</kbd> help</div>';
+  hud.appendChild(help);
+
+  document.body.appendChild(hud);
+
+  // ---- HUD updaters ----
+  const AR_pad4 = v => String(Math.max(0, Math.min(9999, Math.round(v)))).padStart(4, '0');
+  const AR_pad1 = v => String(Math.max(0, Math.min(9999.9, v))).padStart(6, '0');
+
+  function AR_updateAmmo() {
+    for (let i = 0; i < AR_WEAPONS.length; i++) {
+      AR_wammos[i].textContent = String(AR_ammo[i]);
+      if (AR_reloading[i]) {
+        AR_wbars[i].style.display = 'block';
+        AR_wbarfills[i].style.width = (clamp(AR_reloadT[i] / AR_WEAPONS[i].reload, 0, 1) * 100).toFixed(1) + '%';
+      } else {
+        AR_wbars[i].style.display = 'none';
+      }
+    }
+  }
+
+  function AR_updateScore() {
+    let sum = 0;
+    for (const s of state.structures) if (s.destroyed) sum += s.points;
+    state.score = sum;
+    score.textContent = AR_pad4(sum);
+  }
+
+  function AR_fmtCoord(v) {
+    const s = v < 0 ? '-' : '+';
+    const a = Math.abs(v);
+    let i = Math.floor(a);
+    let d = Math.round((a - i) * 10);
+    if (d === 10) { i += 1; d = 0; }
+    return s + String(i).padStart(3, '0') + '.' + d;
+  }
+
+  function AR_updateAim() {
+    if (AR_aimValid && AR_aimActive) {
+      const rng = AR_aimPoint.distanceTo(AR_gs.pos);
+      aim.textContent = 'E ' + AR_fmtCoord(AR_aimPoint.x) + '  Z ' + AR_fmtCoord(AR_aimPoint.z) +
+        '   RNG ' + AR_pad1(rng) + '   AGL ' + AR_pad1(AR_gs.pos.y);
+    } else {
+      aim.textContent = 'E ---.0  Z ---.0   RNG ---.0   AGL ' + AR_pad1(AR_gs.pos.y);
+    }
+  }
+
+  function AR_updateFps() { fps.textContent = 'FPS ' + AR_fps; }
+
+  function AR_updateZoom() { zoomEl.textContent = 'ZOOM x' + AR_ZOOM_X[AR_zoom]; }
+
+  function AR_updateTherm() { therm.textContent = 'SENSOR [N]  ' + (state.thermal ? 'WHOT' : 'DUSK'); }
+
+  function refreshHud() {
+    tlist.innerHTML = '';
+    AR_rows.length = 0;
+    for (const s of state.structures) {
+      const row = document.createElement('div');
+      row.className = s.destroyed ? 'trow struck' : 'trow';
+      const nm = document.createElement('span');
+      nm.className = 'tname';
+      nm.textContent = s.name;
+      const pt = document.createElement('span');
+      pt.className = 'tpts';
+      pt.textContent = String(s.points);
+      const st = document.createElement('span');
+      st.className = 'tstate';
+      st.textContent = s.destroyed ? 'STRUCK' : 'ALIVE';
+      row.appendChild(nm);
+      row.appendChild(pt);
+      row.appendChild(st);
+      tlist.appendChild(row);
+      AR_rows.push(row);
+    }
+    AR_updateScore();
+    AR_updateAmmo();
+    AR_updateTherm();
+    AR_updateAim();
+    AR_updateZoom();
+    AR_updateFps();
+  }
+
+  function markStructure(s) {
+    const idx = state.structures.indexOf(s);
+    if (idx < 0) return;
+    const row = AR_rows[idx];
+    if (!row) return;
+    row.className = s.destroyed ? 'trow struck' : 'trow';
+    row.children[2].textContent = s.destroyed ? 'STRUCK' : 'ALIVE';
+    AR_updateScore();
+  }
+
+  // ---- weapons ----
+  function AR_writeProj(i) {
+    const p = AR_pData[i];
+    AR_tV.copy(p.vel).normalize();
+    AR_tQ.setFromUnitVectors(AR_Z_AXIS, AR_tV);
+    AR_tS.set(p.w.rad, p.w.rad, p.w.len); // long axis on Z: quaternion maps +Z to velocity
+    AR_tM.compose(p.pos, AR_tQ, AR_tS);
+    AR_pMesh.setMatrixAt(i, AR_tM);
+  }
+
+  function AR_touchProj(i) {
+    AR_pMesh.setColorAt(i, state.thermal ? AR_WHOT_T : AR_pData[i].w.tcolor);
+    AR_pMesh.count = AR_pCount;
+    AR_pMesh.instanceMatrix.needsUpdate = true;
+    if (AR_pMesh.instanceColor) AR_pMesh.instanceColor.needsUpdate = true;
+  }
+
+  // ballistic launch solver: choose the initial velocity so the projectile, integrated
+  // with the SAME semi-implicit Euler / fixed step as tick(), arrives at `target`.
+  // The integrator is linear in v0 per axis, so this is EXACT:
+  //   A = displacement per unit initial velocity (identical for all axes)
+  //   B = y-displacement from gravity alone (dragged)
+  //   v0 = (D - B) / A
+  function AR_solveLaunch(from, to, w) {
+    const dx = to.x - from.x, dy = to.y - from.y, dz = to.z - from.z;
+    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    const T = clamp(dist / w.speed, 0.3, 12);
+    const n = Math.max(1, Math.round(T / AR_H));
+    const f = w.drag ? 1 - w.drag * AR_H : 1;
+    let A = 0, pow = 1;
+    for (let s = 0; s < n; s++) { pow *= f; A += pow * AR_H; }
+    let B = 0, vyy = 0;
+    for (let s = 0; s < n; s++) { vyy = (vyy - (w.g || 0) * AR_H) * f; B += vyy * AR_H; }
+    return new THREE.Vector3(dx / A, (dy - B) / A, dz / A);
+  }
+
+  function AR_spawnProj(from, target) {
+    if (AR_pCount >= 200) return;
+    const w = AR_WEAPONS[AR_sel];
+    const i = AR_pCount++;
+    const vel = AR_solveLaunch(from, target, w);
+    AR_pData[i] = { pos: from.clone(), vel: vel, w: w,
+      target: w.name === 'NUKE' ? target.clone() : null, age: 0 };
+    AR_writeProj(i);
+    AR_touchProj(i);
+  }
+
+  function AR_killProj(i) {
+    const last = AR_pCount - 1;
+    if (i !== last) {
+      AR_pData[i] = AR_pData[last];
+      AR_writeProj(i);
+      AR_touchProj(i);
+    }
+    AR_pCount = last;
+    AR_pMesh.count = AR_pCount;
+    if (AR_pMesh.instanceColor) AR_pMesh.instanceColor.needsUpdate = true;
+  }
+
+  // ---- procedural weapon audio (WebAudio; starts after first user gesture) ----
+  let AR_audio = null;
+  let AR_master = null;
+  let AR_audioSeed = 0xAC130;
+
+  function AR_randAudio() {
+    AR_audioSeed = (Math.imul(1664525, AR_audioSeed) + 1013904223) >>> 0;
+    return AR_audioSeed / 4294967296;
+  }
+
+  function AR_audioInit() {
+    if (!AR_audio) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      AR_audio = new AC();
+      const comp = AR_audio.createDynamicsCompressor();
+      comp.threshold.value = -10; comp.knee.value = 12; comp.ratio.value = 8;
+      comp.attack.value = 0.002; comp.release.value = 0.22;
+      AR_master = AR_audio.createGain();
+      AR_master.gain.value = 0.72;
+      AR_master.connect(comp).connect(AR_audio.destination);
+    }
+    if (AR_audio.state === 'suspended') AR_audio.resume();
+    return AR_audio;
+  }
+
+  function AR_tone(f0, f1, dur, vol, type = 'sine', delay = 0) {
+    const ac = AR_audioInit(); if (!ac) return;
+    const now = ac.currentTime + delay;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(Math.max(1, f0), now);
+    o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), now + dur);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(vol, now + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    o.connect(g).connect(AR_master); o.start(now); o.stop(now + dur + 0.02);
+  }
+
+  function AR_noise(dur, vol, cutoff, delay = 0, highpass = 0) {
+    const ac = AR_audioInit(); if (!ac) return;
+    const now = ac.currentTime + delay;
+    const n = Math.max(64, Math.ceil(ac.sampleRate * dur));
+    const buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (AR_randAudio() * 2 - 1) * (1 - i / n * 0.35);
+    const src = ac.createBufferSource(), lp = ac.createBiquadFilter();
+    const hp = ac.createBiquadFilter(), g = ac.createGain();
+    src.buffer = buf; lp.type = 'lowpass'; lp.frequency.value = cutoff;
+    hp.type = 'highpass'; hp.frequency.value = highpass;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(vol, now + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    src.connect(lp).connect(hp).connect(g).connect(AR_master);
+    src.start(now); src.stop(now + dur + 0.02);
+  }
+
+  function AR_audioShot(w) {
+    const n = w.name;
+    if (n.indexOf('25MM') >= 0) {
+      AR_noise(0.055, 0.18, 7500, 0, 900); AR_tone(135, 62, 0.095, 0.24, 'square');
+      AR_tone(920, 410, 0.035, 0.045, 'sawtooth', 0.012);
+    } else if (n.indexOf('40MM') >= 0) {
+      AR_noise(0.22, 0.34, 2600, 0, 70); AR_tone(92, 34, 0.34, 0.52, 'sine');
+      AR_tone(210, 72, 0.12, 0.18, 'triangle', 0.015);
+    } else if (n.indexOf('70MM') >= 0) {
+      AR_noise(0.55, 0.25, 4200, 0, 180); AR_tone(78, 42, 0.65, 0.35, 'sawtooth');
+      AR_tone(420, 125, 0.32, 0.08, 'triangle', 0.04);
+    } else if (n.indexOf('NUKE') >= 0) {
+      AR_noise(0.9, 0.30, 1800, 0, 40); AR_tone(54, 24, 1.1, 0.62, 'sawtooth');
+      AR_tone(180, 48, 0.55, 0.18, 'triangle', 0.06);
+    }
+  }
+
+  function AR_audioImpact(w) {
+    const n = w.name;
+    if (n.indexOf('25MM') >= 0) {
+      AR_noise(0.035, 0.07, 9000, 0, 1800); AR_tone(260, 120, 0.045, 0.05, 'square');
+    } else if (n.indexOf('40MM') >= 0) {
+      AR_noise(0.38, 0.30, 1900, 0, 35); AR_tone(76, 27, 0.48, 0.48, 'sine');
+      AR_noise(0.15, 0.12, 6000, 0.02, 800);
+    } else if (n.indexOf('70MM') >= 0) {
+      AR_noise(0.85, 0.45, 2200, 0, 25); AR_tone(68, 19, 1.05, 0.65, 'sine');
+      AR_tone(135, 34, 0.42, 0.22, 'sawtooth', 0.025);
+    } else if (n.indexOf('NUKE') >= 0) {
+      AR_noise(2.8, 0.72, 1700, 0, 12); AR_noise(0.09, 0.52, 11000, 0, 700);
+      AR_tone(48, 14, 3.2, 0.90, 'sine'); AR_tone(82, 19, 1.5, 0.52, 'sawtooth', 0.08);
+      AR_tone(61, 16, 1.8, 0.42, 'sine', 0.28); AR_noise(1.35, 0.32, 850, 0.42, 8);
+      AR_tone(39, 12, 2.4, 0.55, 'triangle', 0.58);
+    }
+  }
+
+  function AR_explode(p, w) {
+    AR_audioImpact(w);
+    if (state.destruction) state.destruction.hit(p, w.blast, w.dmg, w.power, w.name);
+  }
+
+  function fireAt(point) {
+    if (!point || typeof point.x !== 'number') return;
+    if (AR_reloading[AR_sel] || AR_ammo[AR_sel] <= 0) return;
+    AR_ammo[AR_sel]--;
+    AR_audioShot(AR_WEAPONS[AR_sel]);
+    AR_muz.set(-4.5, -2.2, 1.8).applyQuaternion(AR_gs.group.quaternion).add(AR_gs.pos);
+    AR_spawnProj(AR_muz, point);
+    if (AR_ammo[AR_sel] <= 0) {
+      AR_reloading[AR_sel] = true;
+      AR_reloadT[AR_sel] = 0;
+    }
+    AR_updateAmmo();
+  }
+
+  function AR_tryHold() {
+    if (!AR_aimValid) return;
+    if (AR_reloading[AR_sel] || AR_ammo[AR_sel] <= 0 || AR_cd[AR_sel] > 0) return;
+    AR_cd[AR_sel] = 1 / AR_WEAPONS[AR_sel].fireRate;
+    fireAt(AR_aimPoint);
+  }
+
+  function selectWeapon(i) {
+    i = clamp(Math.round(i), 0, AR_WEAPONS.length - 1);
+    if (i === AR_sel) return;
+    AR_sel = i;
+    for (let j = 0; j < AR_WEAPONS.length; j++) AR_chips[j].classList.toggle('sel', j === i);
+    AR_updateAmmo();
+  }
+
+  // sensor zoom: discrete steps, like the real FLIR (FOV 30/18/10)
+  function zoom(delta) {
+    AR_zoom = clamp(AR_zoom + delta, 0, 2);
+    state.camera.fov = AR_FOVS[AR_zoom];
+    state.camera.updateProjectionMatrix();
+    AR_updateZoom();
+  }
+
+  // sensor slew: point the reticle at NDC (nx, ny) and latch it
+  function slew(nx, ny) {
+    AR_ndc.x = clamp(nx, -1.2, 1.2);
+    AR_ndc.y = clamp(ny, -1.2, 1.2);
+    AR_aimActive = true;
+  }
+
+  function setThermal(on) {
+    state.thermal = on;
+    if (state.applyThermal) state.applyThermal(on);
+    document.body.classList.toggle('thermal', on);
+    document.body.classList.toggle('natural', !on);
+    AR_ringMat.color.setHex(on ? 0xdfe6ff : 0xff3344);
+    AR_laserMat.color.setHex(on ? 0x9aa0b0 : 0xff2233);
+    AR_updateTherm();
+  }
+
+  function AR_toggleHelp() {
+    AR_helpOn = !AR_helpOn;
+    help.classList.toggle('on', AR_helpOn);
+  }
+
+  function reset() {
+    for (let i = 0; i < AR_WEAPONS.length; i++) {
+      AR_ammo[i] = AR_WEAPONS[i].maxAmmo;
+      AR_reloading[i] = false;
+      AR_reloadT[i] = 0;
+      AR_cd[i] = 0;
+    }
+    AR_sel = 0;
+    for (let j = 0; j < AR_WEAPONS.length; j++) AR_chips[j].classList.toggle('sel', j === 0);
+    AR_pCount = 0;
+    AR_pAcc = 0;
+    AR_pMesh.count = 0;
+    AR_rmb = false;
+    AR_space = false;
+    refreshHud();
+  }
+
+  // ---- input ----
+  let AR_lmb = null;
+  let AR_lmbHeld = false;
+
+  const AR_onDown = e => {
+    if (e.button === 0) {
+      AR_lmb = { x0: e.clientX, y0: e.clientY, dragged: false };
+      AR_lmbHeld = true;
+      AR_tryHold();
+    } else if (e.button === 2) {
+      AR_rmb = true;
+      AR_tryHold();
+    }
+  };
+
+  const AR_onMove = e => {
+    AR_ptrInside = true;
+    AR_ndc.x = (e.clientX / window.innerWidth) * 2 - 1;
+    AR_ndc.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    AR_aimActive = true;
+    if (AR_lmb && !AR_lmb.dragged && Math.hypot(e.clientX - AR_lmb.x0, e.clientY - AR_lmb.y0) > 5) {
+      AR_lmb.dragged = true; // a swipe is not a shot
+    }
+  };
+
+  const AR_onUp = e => {
+    if (e.button === 2) AR_rmb = false;
+    if (e.button === 0) { AR_lmbHeld = false; AR_lmb = null; }
+  };
+
+  window.addEventListener('pointerdown', AR_onDown);
+  window.addEventListener('pointermove', AR_onMove);
+  window.addEventListener('pointerup', AR_onUp);
+  window.addEventListener('pointercancel', AR_onUp);
+  window.addEventListener('blur', () => {
+    AR_rmb = false;
+    AR_space = false;
+    AR_lmbHeld = false;
+    AR_lmb = null;
+    AR_ptrInside = false;
+  });
+  window.addEventListener('contextmenu', e => e.preventDefault());
+  window.addEventListener('wheel', e => {
+    e.preventDefault();
+    zoom(e.deltaY < 0 ? 1 : -1);
+  }, { passive: false });
+  document.addEventListener('pointerover', () => { AR_ptrInside = true; });
+  document.addEventListener('pointerout', e => { if (!e.relatedTarget) AR_ptrInside = false; });
+
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      AR_space = true;
+      AR_tryHold();
+    } else if (e.code === 'Digit1') selectWeapon(0);
+    else if (e.code === 'Digit2') selectWeapon(1);
+    else if (e.code === 'Digit3') selectWeapon(2);
+    else if (e.code === 'Digit4') selectWeapon(3);
+    else if (e.key === 'n' || e.key === 'N') setThermal(!state.thermal);
+    else if (e.key === 'r' || e.key === 'R') { if (state.onResetRequest) state.onResetRequest(); }
+    else if (e.key === 'h' || e.key === 'H') AR_toggleHelp();
+  });
+  window.addEventListener('keyup', e => {
+    if (e.code === 'Space') AR_space = false;
+  });
+
+  // ---- per-frame ----
+  function tick(dt) {
+    dt = clamp(dt, 0, 0.1);
+    AR_time += dt;
+
+    // gunship slow circle (r 120, h 95, 60 s), face travel, bank 0.1
+    const ga = AR_time * TAU / 60;
+    AR_gs.pos.set(Math.cos(ga) * 120, 95, Math.sin(ga) * 120);
+    AR_gs.group.position.copy(AR_gs.pos);
+    AR_tV.set(-Math.sin(ga), 0, Math.cos(ga)).add(AR_gs.pos);
+    AR_gs.group.lookAt(AR_tV);
+    AR_gs.group.rotateZ(0.1);
+    AR_navMat.opacity = Math.sin(AR_time * TAU * 2) > 0 ? 1 : 0.06;
+
+    // camera: sensor pod under the gunship; look-at drifts toward the slewed aim point.
+    // At x1 mostly fixed on the compound; deeper zoom pans the sensor (real FLIR behavior).
+    state.camera.position.set(AR_gs.pos.x, AR_gs.pos.y - 2.5, AR_gs.pos.z);
+    if (AR_aimValid) AR_camTgt.lerp(AR_aimPoint, 1 - Math.exp(-dt * 2.5));
+    const AR_lk = AR_tV2.set(0, 0, 0).lerp(AR_camTgt, AR_PAN[AR_zoom]);
+    state.camera.lookAt(AR_lk);
+    state.camera.updateMatrixWorld();
+
+    // aim: sensor ray through the reticle NDC, clamped to the 35-degree slew cone
+    // around the boresight (gunship -> compound center)
+    AR_aimValid = false;
+    if (AR_aimActive) {
+      AR_gazeDir.set(-AR_gs.pos.x, -AR_gs.pos.y, -AR_gs.pos.z).normalize();
+      AR_ray.setFromCamera(AR_ndc, state.camera);
+      if (AR_ray.ray.intersectPlane(AR_plane, AR_aimRaw)) {
+        const v = AR_tV2.subVectors(AR_aimRaw, AR_gs.pos);
+        if (v.length() > 0.5) {
+          v.normalize();
+          const ca = v.dot(AR_gazeDir);
+          if (ca < AR_COS35) {
+            // rotate the over-slew vector onto the cone rim
+            AR_tV3.copy(v).addScaledVector(AR_gazeDir, -ca);
+            if (AR_tV3.lengthSq() > 1e-8) {
+              AR_tV3.normalize();
+              v.copy(AR_gazeDir).multiplyScalar(AR_COS35).addScaledVector(AR_tV3, AR_SIN35);
+            } else {
+              v.copy(AR_gazeDir);
+            }
+          }
+          if (v.y < -1e-4) {
+            AR_aimPoint.copy(AR_gs.pos).addScaledVector(v, -AR_gs.pos.y / v.y);
+          } else {
+            AR_aimPoint.copy(AR_gs.pos).addScaledVector(AR_gazeDir, -AR_gs.pos.y / AR_gazeDir.y);
+          }
+          AR_aimPoint.y = 0;
+          AR_aimValid = true;
+        }
+      }
+    }
+
+    // reticle with subtle sensor micro-jitter (visual only; firing uses the exact point)
+    AR_jT += dt;
+    const jx = 0.1 * Math.sin(AR_jT * 6.1) + 0.07 * Math.sin(AR_jT * 13.7 + 1.3);
+    const jz = 0.1 * Math.sin(AR_jT * 5.3 + 0.7) + 0.07 * Math.sin(AR_jT * 11.9 + 2.1);
+    AR_ring.visible = AR_aimValid;
+    AR_ticks.visible = AR_aimValid;
+    if (AR_aimValid) {
+      AR_ring.position.set(AR_aimPoint.x + jx, 0.05, AR_aimPoint.z + jz);
+      AR_ticks.position.set(AR_ring.position.x, 0.05, AR_ring.position.z);
+      const lp = AR_laserGeom.attributes.position;
+      lp.setXYZ(0, AR_gs.pos.x, AR_gs.pos.y, AR_gs.pos.z);
+      lp.setXYZ(1, AR_aimPoint.x, 0.05, AR_aimPoint.z);
+      lp.needsUpdate = true;
+      AR_laser.computeLineDistances();
+    }
+
+    // hold-to-fire (RMB / Space), rate-limited
+    if (AR_rmb || AR_space || AR_lmbHeld) AR_tryHold();
+    for (let i = 0; i < AR_WEAPONS.length; i++) if (AR_cd[i] > 0) AR_cd[i] = Math.max(0, AR_cd[i] - dt);
+
+    // reload timers
+    for (let i = 0; i < AR_WEAPONS.length; i++) {
+      if (!AR_reloading[i]) continue;
+      AR_reloadT[i] += dt;
+      if (AR_reloadT[i] >= AR_WEAPONS[i].reload) {
+        AR_reloading[i] = false;
+        AR_ammo[i] = AR_WEAPONS[i].maxAmmo;
+        AR_updateAmmo();
+      }
+    }
+
+    // projectiles (fixed-step integration: deterministic match to the launch solver)
+    AR_pAcc += dt;
+    let pGuard = 0;
+    while (AR_pAcc >= AR_H && pGuard++ < 10) {
+      AR_pAcc -= AR_H;
+      for (let i = 0; i < AR_pCount; i++) {
+        const p = AR_pData[i];
+        const w = p.w;
+        // NUKE: guided 3-second cinematic flight, guaranteed detonation at designated point.
+        if (p.target) {
+          p.age += AR_H;
+          AR_tV.subVectors(p.target, p.pos);
+          const left = AR_tV.length();
+          if (left > 0.01) {
+            AR_tV.multiplyScalar(Math.min(1, 55 * AR_H / left));
+            p.pos.add(AR_tV);
+            p.vel.copy(AR_tV).multiplyScalar(1 / AR_H);
+          }
+          if (left <= 2 || p.age >= 3) {
+            p.pos.copy(p.target);
+            AR_explode(p.pos, w);
+            AR_killProj(i);
+            i--;
+          } else {
+            AR_writeProj(i);
+          }
+          continue;
+        }
+        if (w.g) p.vel.y -= w.g * AR_H;
+        if (w.drag) {
+          const f = 1 - w.drag * AR_H;
+          p.vel.x *= f;
+          p.vel.y *= f;
+          p.vel.z *= f;
+        }
+        p.pos.x += p.vel.x * AR_H;
+        p.pos.y += p.vel.y * AR_H;
+        p.pos.z += p.vel.z * AR_H;
+        let boom = p.pos.y <= 0;
+        if (!boom) {
+          const rr = (w.blast + 0.3) * (w.blast + 0.3);
+          const blocks = state.blocks;
+          for (let j = 0; j < blocks.length; j++) {
+            const b = blocks[j];
+            if (!b.alive) continue;
+            const bdx = b.pos.x - p.pos.x;
+            const bdy = b.pos.y - p.pos.y;
+            const bdz = b.pos.z - p.pos.z;
+            if (bdx * bdx + bdy * bdy + bdz * bdz < rr) { boom = true; break; }
+          }
+        }
+        if (boom) {
+          AR_explode(p.pos, w);
+          AR_killProj(i);
+          i--;
+        } else {
+          AR_writeProj(i);
+        }
+      }
+      if (AR_pCount > 0) AR_pMesh.instanceMatrix.needsUpdate = true;
+    }
+
+    // fps + 10 Hz text updates
+    AR_fpsFrames++;
+    AR_fpsAcc += dt;
+    if (AR_fpsAcc >= 0.1) {
+      AR_fps = Math.round(AR_fpsFrames / AR_fpsAcc);
+      AR_fpsFrames = 0;
+      AR_fpsAcc = 0;
+    }
+    AR_hudAcc += dt;
+    if (AR_hudAcc >= 0.1) {
+      AR_hudAcc = 0;
+      AR_updateAmmo();
+      AR_updateAim();
+      AR_updateFps();
+    }
+  }
+
+  AR_chips[0].classList.add('sel');
+  refreshHud();
+  console.log('[ARSENAL] C-130 online: sensor-locked camera, 3 weapons, WHOT default');
+
+  return {
+    selectWeapon,
+    fireAt,
+    tick,
+    reset,
+    refreshHud,
+    markStructure,
+    setThermal,
+    zoom,
+    slew,
+    aimPoint: AR_aimPoint,
+  };
+}
+
+// ===== SECTION D: MAIN =====
+const app = document.getElementById('app');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.5, 900);
+camera.position.set(0, 95, 0);
+
+const dir = new THREE.DirectionalLight(0xfff2dd, 3.0); // soft warm daylight, high
+dir.position.set(60, 90, -40);
+dir.target.position.set(4, 0, 6);
+dir.castShadow = true;
+dir.shadow.mapSize.set(2048, 2048);
+dir.shadow.camera.left = -60;
+dir.shadow.camera.right = 60;
+dir.shadow.camera.top = 60;
+dir.shadow.camera.bottom = -60;
+dir.shadow.camera.near = 5;
+dir.shadow.camera.far = 260;
+dir.shadow.bias = -0.0004;
+scene.add(dir, dir.target);
+const hemi = new THREE.HemisphereLight(0xbfe3ff, 0x7a9a5a, 2.2);
+const fill = new THREE.DirectionalLight(0xcfe4ff, 1.1); // bright sky fill from the opposite side
+fill.position.set(-60, 40, 50);
+scene.add(fill);
+scene.add(hemi);
+
+const state = {
+  scene: scene,
+  camera: camera,
+  blocks: [],
+  structures: [],
+  mats: {},
+  water: null,
+  lights: { dir: dir, hemi: hemi },
+  thermal: true,
+  score: 0,
+  downgraded: false,
+  gunship: null,
+  destruction: null,
+  arsenal: null,
+  applyThermal: null,
+  onBlockDestroyed: null,
+  onStructureDestroyed: null,
+  onResetRequest: null,
+};
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({antialias:true});
+} catch (err) {
+  console.warn('[MAIN] WebGL unavailable:', err);
+  throw err;
+}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+scene.fog = new THREE.Fog(0xdfeeff, 180, 700); // airy depth haze
+renderer.toneMappingExposure = 1.45;
+app.appendChild(renderer.domElement);
+
+buildGarden();
+state.applyThermal = applyThermal;
+state.destruction = new Destruction();
+state.arsenal = initArsenal();
+state.arsenal.setThermal(true); // WHOT is the default view (body class + scene swap)
+state.onBlockDestroyed = () => {};
+state.onStructureDestroyed = (s) => { if (state.arsenal) state.arsenal.markStructure(s); };
+state.onResetRequest = () => resetAll();
+
+function resetAll() {
+  resetGarden();
+  if (state.destruction) state.destruction.reset();
+  if (state.arsenal) state.arsenal.reset();
+  state.score = 0;
+  if (state.thermal) applyThermal(true);
+}
+
+let lastT = -1;
+let fpsE = 60;
+let lowT = 0;
+function frame(tms) {
+  const dt = lastT < 0 ? 0.016 : clamp((tms - lastT) / 1000, 0, 0.05);
+  lastT = tms;
+  if (dt > 0) fpsE += (1 / dt - fpsE) * 0.05;
+  gardenTick(dt);
+  if (state.arsenal) state.arsenal.tick(dt);
+  if (state.destruction) state.destruction.update(dt);
+  if (!state.downgraded) {
+    if (fpsE < 42) {
+      lowT += dt;
+      if (lowT > 3) downgrade();
+    } else {
+      lowT = 0;
+    }
+  }
+  renderer.render(scene, camera);
+}
+
+function downgrade() {
+  state.downgraded = true;
+  renderer.setPixelRatio(1);
+  if (state.water) {
+    state.water.meshA.material = state.water.cheap;
+    state.water.meshB.material = state.water.cheap;
+  }
+  dir.shadow.mapSize.set(1024, 1024);
+  if (dir.shadow.map) { dir.shadow.map.dispose(); dir.shadow.map = null; }
+  console.log('[MAIN] performance downgrade: DPR 1, cheap water, shadow map 1024');
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+// headless-verification hook: exposes internals to the node harness/probe
+state.THREE = THREE;
+window.__ac130 = { state: state, THREE: THREE, renderer: renderer };
+renderer.setAnimationLoop(frame);
+
+</script>
+</body>
+</html>

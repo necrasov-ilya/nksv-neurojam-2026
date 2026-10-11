@@ -1,6 +1,7 @@
 extends Node3D
 ## Articulated commuters and cafe patrons, six shared instanced draws per root.
 ## Coordinates and motion stay local to this root, including elevated interiors.
+signal reached_destination
 const Geometry = preload("res://scripts/intro/geometry.gd")
 const TICK := 1.0 / 20.0
 const DRAW_DISTANCE := 125.0
@@ -92,6 +93,7 @@ class Walker:
 	var seat_height := 0.505
 	var waiter := false
 	var service_stops := PackedInt32Array()
+	var one_shot := false
 
 var _walkers: Array[Walker] = []
 var _obstacles: Array[Obstacle] = []
@@ -258,6 +260,27 @@ func populate_stationary(p: Vector3, yaw: float = 0.0, appearance_id: int = 0) -
 	_build_person(walker, appearance)
 	_walkers.append(walker)
 	_finish_population()
+
+## A scripted single actor keeps the existing articulated appearance and gait.
+func walk_to(destination: Vector3, speed_value: float = 1.6) -> void:
+	if _walkers.size() != 1:
+		push_error("walk_to requires one actor")
+		return
+	var walker := _walkers[0]
+	walker.route = PackedVector3Array([walker.position, destination])
+	walker.route_position = walker.position
+	walker.target = 1
+	walker.direction = 1
+	walker.stationary = false
+	walker.one_shot = true
+	walker.looping = false
+	walker.wait = 0
+	walker.lane = 0
+	walker.lane_offset = Vector3.ZERO
+	walker.speed = speed_value
+	walker.heading = (destination - walker.position).normalized()
+	set_process(true)
+
 
 func _finish_population() -> void:
 	_build_batches()
@@ -662,6 +685,11 @@ func _stop_step(w: Walker) -> void:
 	w.desired_velocity = Vector3.ZERO
 
 func _next_target(w: Walker) -> void:
+	if w.one_shot and w.target == w.route.size() - 1:
+		w.stationary = true
+		w.one_shot = false
+		reached_destination.emit()
+		return
 	var service_stop := w.waiter and (w.service_stops.has(w.target) or (w.looping and w.target == w.route.size() - 1 and w.service_stops.has(0)))
 	var endpoint := w.target == 0 or w.target == w.route.size() - 1
 	if endpoint:
@@ -755,7 +783,7 @@ func _prepare_step(w: Walker, dt: float) -> void:
 	var distance := w.route_position.distance_to(destination)
 	if distance < 0.001:
 		_next_target(w)
-		if w.wait > 0.0:
+		if w.wait > 0.0 or w.stationary:
 			return
 		destination = w.route[w.target]
 		distance = w.route_position.distance_to(destination)

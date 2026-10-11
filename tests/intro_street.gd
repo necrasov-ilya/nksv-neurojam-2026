@@ -26,7 +26,7 @@ func _check() -> void:
 		_expect(game._find_action() != action, "Street action is usable from too far away: " + action)
 	_look_at_action(game, "street_bus")
 	game._perform_action("street_bus")
-	_expect(game.player.enabled and not game._dialogue_panel.visible, "Driver conversation locks movement")
+	_expect(game.player.enabled, "Driver conversation locks movement")
 	_expect(game._subtitle_panel.visible, "Driver speech is not visible with subtitles enabled")
 	extras.tick(0.5, game.player.position, true, false)
 	var line: String = game._subtitle_label.text
@@ -130,11 +130,23 @@ func _check() -> void:
 	_expect(extras.current_speech.is_empty() and game._voice_player.playing, "Reception ownership loses the hero voice or retains a street queue")
 	line = game._subtitle_label.text
 	extras.tick(30.0, game.player.position, false, false)
-	_expect(game._subtitle_label.text == line and game._dialogue_panel.visible, "Old street speech overwrites reception")
-	game._advance_dialogue()
-	_expect(game._voice_player.playing, "Reception voice does not play")
-	game._advance_dialogue()
-	_expect(not game._voice_player.playing and not game._dialogue_panel.visible, "Reception skip leaves its voice playing")
+	_expect(game._subtitle_label.text == line, "Old street speech overwrites reception")
+	var reception_remaining: float = game._subtitle_remaining
+	game._unhandled_input(pause_event)
+	game._process(2.0)
+	_expect(game._subtitle_remaining == reception_remaining and game._voice_player.stream_paused and not game.player.enabled, "Pause advances mandatory reception speech")
+	game._resume()
+	_expect(not game.player.enabled, "Reception resume unlocks movement before explanation ends")
+	var use_event := InputEventAction.new()
+	use_event.action = "intro_use"
+	use_event.pressed = true
+	game._unhandled_input(use_event)
+	_expect(game._subtitle_label.text == line, "E skips automatic reception speech")
+	var deadline := Time.get_ticks_msec() + 30000
+	while game._dialogue_index >= 0 and Time.get_ticks_msec() < deadline:
+		await create_timer(0.05).timeout
+		game._process(0.05)
+	_expect(game.reception_done and game.player.enabled and not game._voice_player.playing, "Reception does not finish automatically and restore movement")
 	await _check_office_entry(game)
 	game._on_sound_toggled(original_sound)
 	game._on_subtitles_toggled(original_subtitles)
@@ -168,6 +180,7 @@ func _check_pause_physics(game) -> void:
 	Input.action_release("intro_forward")
 	_expect(game.player.global_position == standing_position and game.player.velocity == standing_velocity, "ESC settings or returning focus move the paused player")
 	game._unhandled_input(pause_event)
+	await create_timer(0.35).timeout
 	Input.action_press("intro_forward")
 	for tick in 12:
 		await physics_frame

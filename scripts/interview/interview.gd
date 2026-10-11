@@ -9,6 +9,8 @@ const Assessment := preload("res://scripts/interview/assessment.gd")
 const Voices := preload("res://scripts/core/dialogue_voices.gd")
 const PIXEL_FONT := preload("res://assets/interview/fonts/Galmuri11-Subset.ttf")
 const UI_FONT := preload("res://assets/fonts/OpenRunde-Regular.woff2")
+const UIStyle := preload("res://scripts/ui/hud_style.gd")
+const PauseUI := preload("res://scripts/ui/pause_drawer.gd")
 const CARRIAGE := preload("res://assets/audio/interview/carriage_return.wav")
 const MUSIC := preload("res://assets/audio/interview/long_note_one.ogg")
 const ROOM := preload("res://assets/audio/intro/office_bed.ogg")
@@ -49,7 +51,7 @@ var _status: Label
 var _error: Label
 var _hint: Label
 var _material: ShaderMaterial
-var _pause_root: Control
+var _pause_root: PauseUI
 var _pause_body: VBoxContainer
 var _credits_body: VBoxContainer
 var _continue_button: Button
@@ -137,57 +139,45 @@ func _build_ui() -> void:
 
 
 func _build_pause() -> void:
-	_pause_root = Control.new()
+	_pause_root = PauseUI.new()
 	_pause_root.name = "InterviewPause"
-	_full_rect(_pause_root, self)
-	_pause_root.mouse_filter = Control.MOUSE_FILTER_STOP
-	var veil := ColorRect.new()
-	veil.color = Color(0.015, 0.02, 0.018, 0.82)
-	_full_rect(veil, _pause_root)
-	veil.mouse_filter = Control.MOUSE_FILTER_STOP
-	var center := CenterContainer.new()
-	_full_rect(center, _pause_root)
-	center.mouse_filter = Control.MOUSE_FILTER_STOP
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size.x = 340
-	panel.add_theme_stylebox_override("panel", _plate(Color("171d1a"), 24))
-	center.add_child(panel)
-	_pause_body = VBoxContainer.new()
-	_pause_body.add_theme_constant_override("separation", 12)
-	panel.add_child(_pause_body)
-	_pause_body.add_child(_label("Пауза", 28, UI_FONT))
-	_continue_button = _button("Продолжить", _resume)
+	add_child(_pause_root)
+	_pause_root.close_requested.connect(_resume)
+	_pause_body = _pause_root.body
+	_continue_button = _pause_button("Продолжить", _pause_root.request_close, "play", true)
 	_pause_body.add_child(_continue_button)
-	_pause_body.add_child(_button("Собеседование заново", _restart))
-	var sound := CheckButton.new()
-	sound.text = "Звук"
-	sound.button_pressed = GameSettings.sound_enabled
-	sound.add_theme_font_override("font", UI_FONT)
-	sound.add_theme_font_size_override("font_size", 20)
-	sound.add_theme_color_override("font_color", CREAM)
-	sound.toggled.connect(_toggle_sound)
-	_pause_body.add_child(sound)
-	_pause_body.add_child(_button("Авторство", _show_credits))
-	_pause_body.add_child(_button("В главное меню", _menu))
-	_credits_body = VBoxContainer.new()
-	_credits_body.add_theme_constant_override("separation", 14)
-	panel.add_child(_credits_body)
-	_credits_body.add_child(_label("Музыка и звук", 25, UI_FONT))
+	_pause_body.add_child(_pause_button("Собеседование заново", _restart, "rotate-ccw"))
+	_pause_body.add_child(_pause_button("Настройки", _pause_root.show_settings, "sliders-horizontal"))
+	_pause_root.add_settings(_toggle_sound, GameSettings.set_subtitles_enabled)
+	_pause_body.add_child(_pause_button("Авторство", _show_credits, "info"))
+	_pause_body.add_child(_pause_button("В главное меню", _menu, "log-out"))
+	_credits_body = _pause_root.add_page("credits", "Авторство")
+	_credits_body.add_child(UIStyle.label("Музыка и звук", 25))
 	var credits := RichTextLabel.new()
 	credits.bbcode_enabled = true
 	credits.fit_content = true
 	credits.scroll_active = false
-	credits.custom_minimum_size.x = 320
+	credits.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	credits.add_theme_font_override("normal_font", UI_FONT)
 	credits.add_theme_font_size_override("normal_font_size", 16)
-	credits.add_theme_color_override("default_color", CREAM)
+	credits.add_theme_color_override("default_color", UIStyle.INK)
+	credits.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	credits.add_theme_color_override("selection_color", UIStyle.ACCENT)
+	credits.add_theme_color_override("font_selected_color", Color.WHITE)
 	credits.text = "Long note One — Kevin MacLeod\n[url=https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100418]incompetech.com[/url] · [url=https://creativecommons.org/licenses/by/4.0/]CC BY 4.0[/url]\nНормализация и конвертация в Ogg.\n\nTypewriter bell & carriage reset — knufds\n[url=https://freesound.org/people/knufds/sounds/345955/]freesound.org[/url] · [url=https://creativecommons.org/publicdomain/zero/1.0/]CC0[/url]\nВыделение каретки, EQ, компрессия и фейды.\n\nОзвучка терминала — [url=https://fish.audio/]Fish Audio[/url] (Fish Speech).\n\nФон предоставлен участником проекта."
 	credits.meta_clicked.connect(func(url: Variant): OS.shell_open(str(url)))
 	_credits_body.add_child(credits)
-	_credits_back = _button("Назад", _hide_credits)
+	_credits_back = _pause_button("Назад", _hide_credits, "rotate-ccw")
 	_credits_body.add_child(_credits_back)
-	_credits_body.hide()
-	_pause_root.hide()
+
+
+func _pause_button(value: String, action: Callable, icon_name: String, primary: bool = false) -> Button:
+	var button := Button.new()
+	button.text = value
+	button.pressed.connect(action)
+	UIStyle.apply_button(button, primary)
+	button.icon = load(UIStyle.ICON_PATH + icon_name + ".svg")
+	return button
 
 
 func _build_audio() -> void:
@@ -464,7 +454,6 @@ func _toggle_sound(enabled: bool) -> void:
 
 func _pause() -> void:
 	_paused = true
-	_hide_credits()
 	_pause_root.show()
 	for button in _answers:
 		button.disabled = true
@@ -503,14 +492,12 @@ func _restart() -> void:
 
 
 func _show_credits() -> void:
-	_pause_body.hide()
-	_credits_body.show()
+	_pause_root.show_page("credits")
 	_credits_back.grab_focus()
 
 
 func _hide_credits() -> void:
-	_pause_body.show()
-	_credits_body.hide()
+	_pause_root.show_page("main")
 	_continue_button.grab_focus()
 
 
@@ -530,14 +517,8 @@ func _input(event: InputEvent) -> void:
 			_wait_release = false
 		if _phase not in [Phase.QUESTION, Phase.ASSESSMENT] and not _paused and _phase != Phase.COMPLETE:
 			get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("ui_cancel") and not event.is_echo():
-		if _paused:
-			if _credits_body.visible:
-				_hide_credits()
-			else:
-				_resume()
-		else:
-			_pause()
+	elif event.is_action_pressed("ui_cancel") and not event.is_echo() and not _paused:
+		_pause()
 		get_viewport().set_input_as_handled()
 
 

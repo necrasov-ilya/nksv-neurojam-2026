@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RetroCraft ★ best viewed at 800x600 ★</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%A7%8A%3C/text%3E%3C/svg%3E">
+<style>
+/* ============ RESET / PAGE ============ */
+:root { --ui: 1; } /* HUD scale, driven by stage size in resizeGL() */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; }
+body {
+  background-color: #040111;
+  background-image:
+    radial-gradient(circle at 12% 22%, rgba(255,255,255,.9) .6px, transparent 1.6px),
+    radial-gradient(circle at 68% 12%, rgba(120,255,255,.7) .7px, transparent 1.7px),
+    radial-gradient(circle at 42% 68%, rgba(255,120,255,.5) .6px, transparent 1.6px),
+    radial-gradient(circle at 88% 48%, rgba(255,255,255,.8) .7px, transparent 1.7px),
+    radial-gradient(circle at 28% 88%, rgba(255,255,255,.55) .6px, transparent 1.6px),
+    linear-gradient(180deg, #0b0221 0%, #040111 60%);
+  background-size: 260px 260px, 340px 340px, 300px 300px, 420px 420px, 380px 380px, 100% 100%;
+  font-family: "Courier New", Courier, monospace;
+  color: #cfd3ff;
+  padding: 8px 0 34px;
+  overflow-x: hidden;
+}
+
+/* ============ MARQUEE HEADER ============ */
+#topbar {
+  background: linear-gradient(90deg, #12002e, #3d006b 45%, #6a0f8a 55%, #3d006b, #12002e);
+  border-top: 2px solid #7df9ff;
+  border-bottom: 2px solid #ff2975;
+  color: #ffd23f;
+  font-family: "Comic Sans MS", "Comic Sans", cursive;
+  font-size: 15px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 5px 0;
+  text-shadow: 0 0 6px #ff297588;
+}
+
+/* ============ DOS WINDOW ============ */
+#win {
+  /* as wide as the viewport height allows, so the stage fits without scrolling */
+  width: min(1680px, 98vw, max(760px, calc((100vh - 290px) * 16 / 9)));
+  margin: 14px auto 10px;
+  background: #c0c0c0;
+  padding: 6px;
+  border: 2px solid;
+  border-color: #fff #4a4a4a #4a4a4a #fff;
+  box-shadow: 0 0 44px rgba(122, 43, 255, .30), 0 0 120px rgba(255, 41, 117, .12);
+}
+#titlebar {
+  display: flex; align-items: center; gap: 8px;
+  background: linear-gradient(90deg, #000082, #1084d0);
+  color: #fff;
+  font-weight: bold;
+  font-size: 13px;
+  letter-spacing: 1px;
+  padding: 4px 6px;
+  user-select: none;
+}
+#titlebar .ticon { color: #7dff8a; text-shadow: 0 0 6px #7dff8a; }
+#titlebar .tspacer { flex: 1; }
+.tbtn {
+  width: 20px; height: 18px; line-height: 15px;
+  background: #c0c0c0; color: #000;
+  border: 2px solid; border-color: #fff #4a4a4a #4a4a4a #fff;
+  text-align: center; font-size: 11px; font-weight: bold;
+  cursor: pointer;
+}
+.tbtn:active { border-color: #4a4a4a #fff #fff #4a4a4a; }
+#menubar { display: flex; gap: 2px; font-size: 12px; padding: 2px 2px 0; user-select: none; }
+#menubar span { padding: 2px 9px; cursor: pointer; }
+#menubar span:hover { background: #000082; color: #fff; }
+#stage {
+  position: relative;
+  margin-top: 4px;
+  background: #000;
+  border: 2px solid;
+  border-color: #555 #fff #fff #555;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+}
+#hud, #overlay, #loading { line-height: normal; }
+#gl {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+  cursor: crosshair;
+}
+
+/* ============ MAXIMIZED / RECORDING MODE ============ */
+body.maxed { padding: 0; overflow: hidden; }
+body.maxed #topbar, body.maxed #footer { display: none; }
+body.maxed #win {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  border-width: 0;
+  box-shadow: none;
+}
+body.maxed #stage {
+  flex: 1;
+  aspect-ratio: auto;
+  min-height: 0;
+}
+
+/* ============ CRT FX ============ */
+#scan {
+  position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px);
+}
+#roll {
+  position: absolute; left: 0; right: 0; top: -15%; z-index: 6; pointer-events: none;
+  height: 90px;
+  background: linear-gradient(180deg, transparent, rgba(160,220,255,.07), transparent);
+  animation: roll 7s linear infinite;
+}
+#vig {
+  position: absolute; inset: 0; z-index: 7; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(5,0,22,.55) 100%);
+}
+#waterTint {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none; display: none;
+  background: rgba(18, 58, 190, .32);
+}
+#stage.noscan #scan, #stage.noscan #roll { display: none; }
+@keyframes roll { from { top: -18%; } to { top: 112%; } }
+
+/* ============ HUD ============ */
+#hud { position: absolute; inset: 0; z-index: 8; pointer-events: none; }
+#cross { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+#cross::before, #cross::after {
+  content: ""; position: absolute; background: #fff;
+  mix-blend-mode: difference;
+  box-shadow: 0 0 4px #000;
+}
+#cross::before {
+  width: calc(17px * var(--ui)); height: calc(2px * var(--ui));
+  left: calc(-8px * var(--ui)); top: calc(-1px * var(--ui));
+}
+#cross::after {
+  width: calc(2px * var(--ui)); height: calc(17px * var(--ui));
+  left: calc(-1px * var(--ui)); top: calc(-8px * var(--ui));
+}
+#debug {
+  position: absolute; top: 8px; left: 10px;
+  font-size: calc(11px * var(--ui)); line-height: 1.6;
+  color: #7dff8a; text-shadow: 0 0 6px #0f0;
+  white-space: pre;
+}
+#blockName {
+  position: absolute; bottom: calc(86px * var(--ui)); left: 0; right: 0;
+  text-align: center;
+  font-size: calc(12px * var(--ui)); font-weight: bold; letter-spacing: 3px;
+  color: #ff9df0; text-shadow: 0 0 8px #ff2975;
+}
+#hotbar {
+  position: absolute; bottom: calc(10px * var(--ui)); left: 50%; transform: translateX(-50%);
+  display: flex; gap: calc(5px * var(--ui)); pointer-events: auto;
+}
+.slot {
+  position: relative;
+  width: calc(52px * var(--ui)); height: calc(52px * var(--ui));
+  background: #23233a;
+  border: 2px solid; border-color: #555 #fff #fff #555;
+  display: grid; place-items: center;
+  cursor: pointer;
+}
+.slot canvas { width: calc(36px * var(--ui)); height: calc(36px * var(--ui)); image-rendering: pixelated; }
+.slot .key {
+  position: absolute; top: 1px; right: 4px;
+  font-size: calc(10px * var(--ui)); font-weight: bold; color: #9ff;
+}
+.slot.sel {
+  background: #3c3c60;
+  box-shadow: 0 0 10px rgba(125,249,255,.75), inset 0 0 6px rgba(125,249,255,.4);
+  border-color: #fff #7df9ff #7df9ff #fff;
+}
+
+/* ============ OVERLAYS ============ */
+#overlay {
+  position: absolute; inset: 0; z-index: 10;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px;
+  background: rgba(3, 0, 14, .78);
+  text-align: center;
+  cursor: pointer;
+}
+#logo {
+  font-size: clamp(38px, 7vw, 64px);
+  font-weight: bold;
+  letter-spacing: 10px;
+  background: linear-gradient(180deg, #7df9ff 0%, #4dd0ff 38%, #ff4de3 66%, #ff2975 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 10px rgba(255,77,227,.55)) drop-shadow(0 0 26px rgba(77,208,255,.35));
+  animation: flick 4s linear infinite;
+}
+@keyframes flick {
+  0%, 91%, 94%, 98%, 100% { opacity: 1; }
+  92% { opacity: .55; } 96% { opacity: .8; }
+}
+#ovSub { color: #7df9ff; font-size: 12px; letter-spacing: 4px; }
+#ovCtrls {
+  display: grid; grid-template-columns: auto auto; gap: 4px 18px;
+  font-size: 12px; color: #cfd3ff;
+  padding: 10px 18px;
+  background: rgba(10, 4, 34, .65);
+  border: 1px solid #341a6b;
+}
+#ovCtrls .k { color: #ffd23f; text-align: right; font-weight: bold; }
+#playBtn {
+  font-family: inherit;
+  font-size: 15px; font-weight: bold; letter-spacing: 2px;
+  color: #000;
+  background: #c0c0c0;
+  border: 2px solid; border-color: #fff #4a4a4a #4a4a4a #fff;
+  padding: 10px 30px;
+  cursor: pointer;
+}
+#playBtn:hover { background: #000082; color: #fff; }
+#playBtn:active { border-color: #4a4a4a #fff #fff #4a4a4a; }
+#ovCounter { font-size: 11px; color: #7dff8a; text-shadow: 0 0 6px #0f0; }
+#ovPause { font-size: 30px; font-weight: bold; letter-spacing: 8px; color: #ffd23f; text-shadow: 0 0 12px #ff2975aa; }
+
+/* loading */
+#loading {
+  position: absolute; inset: 0; z-index: 11;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  background: #030010;
+  font-size: 14px; letter-spacing: 2px; color: #7df9ff;
+}
+#lbar { width: min(420px, 70%); height: 18px; border: 2px solid #7df9ff; padding: 2px; }
+#lbar i { display: block; height: 100%; width: 0%; background: repeating-linear-gradient(90deg, #ff2975 0 10px, #ff9d00 10px 20px, #ffd23f 20px 30px, #7dff8a 30px 40px); }
+#lmsg { font-size: 11px; color: #8a8ab0; }
+
+/* ============ STATUS BAR ============ */
+#statusbar { display: flex; gap: 4px; margin-top: 6px; font-size: 11px; font-weight: bold; color: #111; user-select: none; }
+#statusbar > span {
+  padding: 3px 10px;
+  background: #c0c0c0;
+  border: 2px solid; border-color: #555 #fff #fff #555;
+}
+#sbMsg { flex: 1; text-align: center; color: #000082; }
+#sbAudio { cursor: pointer; }
+#sbAudio:hover { background: #d8d8d8; }
+
+/* ============ FOOTER ============ */
+#footer {
+  width: min(1020px, 98vw);
+  margin: 8px auto 0;
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center;
+  font-size: 11px;
+}
+.badge {
+  display: inline-block;
+  font-size: 10px; font-weight: bold; letter-spacing: 1px;
+  padding: 4px 9px;
+  background: #1c1c30; color: #cfd3ff;
+  border: 2px outset #8888aa;
+  cursor: pointer;
+  text-decoration: none;
+}
+.badge:hover { color: #7df9ff; }
+.badge.gold { background: #1a1204; color: #ffd23f; border-color: #aa8844; }
+.badge.blue { background: #04111f; color: #7ddcff; border-color: #4488aa; }
+.badge.constr {
+  background: repeating-linear-gradient(45deg, #111 0 10px, #e6c700 10px 20px);
+  background-size: 28px 28px;
+  color: #fff; text-shadow: 0 0 4px #000, 0 0 4px #000;
+  border-color: #e6c700;
+  animation: cstripe 1.2s linear infinite;
+}
+@keyframes cstripe { to { background-position: 28px 0; } }
+#vcounter {
+  background: #000; color: #7dff8a;
+  border: 2px solid; border-color: #555 #fff #fff #555;
+  padding: 4px 8px;
+  font-size: 12px; letter-spacing: 3px;
+  text-shadow: 0 0 6px #0f0;
+}
+#copy { width: 100%; text-align: center; margin-top: 6px; font-size: 10px; color: #6a6a9a; font-family: "Comic Sans MS", cursive; }
+.blink { animation: blink 1.06s step-start infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.marquee-star { color: #ff2975; }
+</style>
+</head>
+<body>
+
+<header id="topbar">
+  <marquee behavior="scroll" scrollamount="5">
+    <span class="marquee-star">★</span> WELCOME TO RETROCRAFT <span class="marquee-star">★</span>
+    THE ULTIMATE 8-BIT VOXEL EXPERIENCE <span class="marquee-star">★</span>
+    NOW WITH NEON BLOCKS <span class="marquee-star">★</span>
+    <span class="blink">NEW!</span> FLY MODE <span class="marquee-star">★</span>
+    100% HAND-CODED, 0% PLUGINS <span class="marquee-star">★</span>
+    BEST VIEWED AT 800x600 IN A BROWSER NOT INVENTED YET <span class="marquee-star">★</span> SIGN THE GUESTBOOK <span class="marquee-star">★</span>
+  </marquee>
+</header>
+
+<div id="win">
+  <div id="titlebar">
+    <span class="ticon">▚</span>
+    <span>RETROCRAFT.EXE — 8-BIT VOXEL WORLD v1.0</span>
+    <span class="tspacer"></span>
+    <span class="tbtn" id="tMin" title="minimize">_</span>
+    <span class="tbtn" id="tMax" title="maximize">□</span>
+    <span class="tbtn" id="tX" title="close">×</span>
+  </div>
+  <div id="menubar">
+    <span id="mFile">File</span><span id="mEdit">Edit</span><span id="mView">View</span><span id="mBlocks">Blocks</span><span id="mHelp">Help</span>
+    <span style="margin-left:auto;font-weight:normal;color:#444">▓▒░</span>
+  </div>
+  <div id="stage">
+    <canvas id="gl" width="960" height="540"></canvas>
+    <div id="waterTint"></div>
+    <div id="roll"></div>
+    <div id="scan"></div>
+    <div id="vig"></div>
+    <div id="hud">
+      <div id="debug"></div>
+      <div id="cross"></div>
+      <div id="blockName">GRASS</div>
+      <div id="hotbar"></div>
+    </div>
+    <div id="overlay" style="display:none">
+      <div id="ovPause" style="display:none">— PAUSED —</div>
+      <div id="ovStart">
+        <div id="logo">RETROCRAFT</div>
+        <div id="ovSub">EST. 1996 ★ 64x64 WORLD ★ SUNSET PROTOCOL ENGAGED</div>
+        <div id="ovCtrls">
+          <span class="k">W A S D</span><span>move</span>
+          <span class="k">MOUSE</span><span>look</span>
+          <span class="k">SPACE</span><span>jump / swim up</span>
+          <span class="k">L-CLICK</span><span>mine block</span>
+          <span class="k">R-CLICK</span><span>place block</span>
+          <span class="k">1 – 8 / WHEEL</span><span>pick block</span>
+          <span class="k">SHIFT</span><span>sprint</span>
+          <span class="k">F</span><span>toggle fly</span>
+          <span class="k">V</span><span>maximize / fullscreen</span>
+          <span class="k">M</span><span>music on/off</span>
+          <span class="k">R</span><span>respawn</span>
+          <span class="k">ESC</span><span>pause</span>
+        </div>
+        <button id="playBtn">► CLICK TO PLAY ◄</button>
+        <div id="ovCounter"></div>
+      </div>
+    </div>
+    <div id="loading">
+      <div style="letter-spacing:6px;font-weight:bold">RETROCRAFT</div>
+      <div id="lbar"><i></i></div>
+      <div id="lmsg">BOOTING...</div>
+    </div>
+  </div>
+  <div id="statusbar">
+    <span id="sbFps">FPS --</span>
+    <span id="sbPos">X:032 Y:015 Z:032</span>
+    <span id="sbMsg">READY.</span>
+    <span id="sbAudio" title="music">♪ ON</span>
+  </div>
+</div>
+
+<footer id="footer">
+  <span class="badge gold" id="bNetscape">NETSCAPE NOW!</span>
+  <span class="badge" id="bNotepad">MADE WITH NOTEPAD.EXE</span>
+  <span class="badge blue" id="bRes">800 x 600</span>
+  <span class="badge" id="bY2k">Y2K READY</span>
+  <span class="badge constr" id="bConstr">UNDER CONSTRUCTION</span>
+  <span class="badge gold" id="bMidi">♪ MIDI: ON</span>
+  <span class="badge blue" id="bGuest">&lt;&lt; GUESTBOOK &gt;&gt;</span>
+  <span class="badge" id="bWebring">◄ RETRO WEBRING — JOIN ►</span>
+  <span id="vcounter">000000</span>
+  <div id="copy">© 1996–2026 RetroCraft Industries · all pixels reserved · <span class="blink">no rights were harmed</span></div>
+</footer>
+
+<script>
+'use strict';
+/* ================================================================
+   RETROCRAFT — a laser-wave voxel sandbox in one file
+   ================================================================ */
+
+/* ---------------- utils ---------------- */
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------------- world config ---------------- */
+const W = 64, H = 40, D = 64, SEA = 13;
+const AIR = 0, GRASS = 1, DIRT = 2, STONE = 3, LOG = 4, LEAVES = 5,
+      SAND = 6, WATER = 7, BEDROCK = 8, PLANK = 9, NEON = 10;
+const SOLID_SET = new Set([GRASS, DIRT, STONE, LOG, LEAVES, SAND, BEDROCK, PLANK, NEON]);
+const BLOCK_NAME = { 0:'', 1:'GRASS', 2:'DIRT', 3:'STONE', 4:'LOG', 5:'LEAVES',
+                     6:'SAND', 7:'WATER', 8:'BEDROCK', 9:'PLANKS', 10:'NEON' };
+// [top, side, bottom] tile index in the atlas
+const FACE_TILE = { 1:[0,1,2], 2:[2,2,2], 3:[3,3,3], 4:[5,4,5], 5:[6,6,6],
+                    6:[7,7,7], 7:[8,8,8], 8:[9,9,9], 9:[10,10,10], 10:[11,11,11] };
+// face corners CCW from outside, with uv corners (0..1)
+const FACES = [
+  { d:[ 1, 0, 0], sh:.72, c:[[1,0,0],[1,1,0],[1,1,1],[1,0,1]], uv:[[0,1],[0,0],[1,0],[1,1]] },
+  { d:[-1, 0, 0], sh:.72, c:[[0,0,0],[0,0,1],[0,1,1],[0,1,0]], uv:[[0,1],[1,1],[1,0],[0,0]] },
+  { d:[ 0, 1, 0], sh:1.0, c:[[0,1,1],[1,1,1],[1,1,0],[0,1,0]], uv:[[0,0],[1,0],[1,1],[0,1]] },
+  { d:[ 0,-1, 0], sh:.50, c:[[1,0,1],[0,0,1],[0,0,0],[1,0,0]], uv:[[0,0],[1,0],[1,1],[0,1]] },
+  { d:[ 0, 0, 1], sh:.84, c:[[0,0,1],[1,0,1],[1,1,1],[0,1,1]], uv:[[0,1],[1,1],[1,0],[0,0]] },
+  { d:[ 0, 0,-1], sh:.84, c:[[1,0,0],[0,0,0],[0,1,0],[1,1,0]], uv:[[1,1],[0,1],[0,0],[1,0]] },
+];
+
+const HOTBAR = [
+  { id: GRASS,  icon: 1,  name: 'GRASS'  },
+  { id: DIRT,   icon: 2,  name: 'DIRT'   },
+  { id: STONE,  icon: 3,  name: 'STONE'  },
+  { id: LOG,    icon: 4,  name: 'LOG'    },
+  { id: PLANK,  icon: 10, name: 'PLANKS' },
+  { id: SAND,   icon: 7,  name: 'SAND'   },
+  { id: LEAVES, icon: 6,  name: 'LEAVES' },
+  { id: NEON,   icon: 11, name: 'NEON'   },
+];
+
+const B = new Uint8Array(W * H * D);
+const idx = (x, y, z) => x + W * (z + D * y);
+function blk(x, y, z) {
+  if (y < 0) return BEDROCK;
+  if (y >= H) return AIR;
+  if (x < 0 || x >= W || z < 0 || z >= D) return AIR;
+  return B[idx(x, y, z)];
+}
+function inPlaza(x, z) { return x >= 25 && x <= 38 && z >= 25 && z <= 38; }
+function bAt(x, y, z) { return blk(Math.floor(x), Math.floor(y), Math.floor(z)); }
+
+/* ---------------- noise + world gen ---------------- */
+function hash2(i, j, seed) {
+  let n = (Math.imul(i, 374761393) + Math.imul(j, 668265263) + Math.imul(seed | 0, 974634721)) | 0;
+  n = Math.imul(n ^ n >>> 13, 1274126177);
+  n = (n ^ (n >>> 16)) >>> 0;
+  return n / 4294967296;
+}
+function vnoise(x, z, seed) {
+  const xi = Math.floor(x), zi = Math.floor(z);
+  const xf = x - xi, zf = z - zi;
+  const u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf);
+  const a = hash2(xi, zi, seed), b = hash2(xi + 1, zi, seed);
+  const c = hash2(xi, zi + 1, seed), d = hash2(xi + 1, zi + 1, seed);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+function fbm(x, z) {
+  let a = 0, amp = 1, f = 1 / 28, tot = 0;
+  for (let o = 0; o < 4; o++) {
+    a += vnoise(x * f + o * 17.3, z * f + o * 31.7, 1337 + o * 101) * amp;
+    tot += amp; amp *= 0.5; f *= 2;
+  }
+  return a / tot;
+}
+
+function genWorld() {
+  const r = mulberry32(4242);
+  for (let x = 0; x < W; x++) {
+    for (let z = 0; z < D; z++) {
+      let top;
+      if (inPlaza(x, z)) top = 14;
+      else {
+        top = Math.floor(6 + fbm(x, z) * 15);
+        top = clamp(top, 3, H - 10);
+      }
+      const beach = top <= SEA + 1;
+      for (let y = 0; y <= top; y++) {
+        let b;
+        if (y === 0) b = BEDROCK;
+        else if (y === 1 && r() < 0.5) b = BEDROCK;
+        else if (beach && y >= top - 2) b = SAND;
+        else if (y < top - 2) b = STONE;
+        else if (y < top) b = DIRT;
+        else b = beach ? SAND : GRASS;
+        B[idx(x, y, z)] = b;
+      }
+      for (let y = top + 1; y <= SEA; y++) B[idx(x, y, z)] = WATER;
+    }
+  }
+  // plaza decorations
+  for (let x = 25; x <= 38; x++) for (let z = 25; z <= 38; z++) {
+    if (x === 25 || x === 38 || z === 25 || z === 38) B[idx(x, 14, z)] = SAND;
+  }
+  for (let x = 29; x <= 34; x++) for (let z = 29; z <= 34; z++) B[idx(x, 14, z)] = NEON;
+  for (const [px, pz] of [[29,29],[34,29],[29,34],[34,34]])
+    for (let y = 15; y <= 18; y++) B[idx(px, y, pz)] = LOG;
+  for (let i = 27; i <= 36; i++) { // floating synth-ring
+    B[idx(i, 20, 27)] = NEON; B[idx(i, 20, 36)] = NEON;
+    B[idx(27, 20, i)] = NEON; B[idx(36, 20, i)] = NEON;
+  }
+  // trees
+  for (let x = 2; x < W - 3; x++) {
+    for (let z = 2; z < D - 3; z++) {
+      if (inPlaza(x, z)) continue;
+      let top = -1;
+      for (let y = H - 1; y > SEA; y--) if (SOLID_SET.has(blk(x, y, z))) { top = y; break; }
+      if (blk(x, top, z) !== GRASS) continue;
+      if (hash2(x, z, 777) > 0.028) continue;
+      const th = 4 + (hash2(x, z, 999) < 0.4 ? 1 : 0);
+      const tTop = top + th;
+      for (let y = top + 1; y <= tTop; y++) B[idx(x, y, z)] = LOG;
+      for (let ly = tTop - 1; ly <= tTop + 1; ly++) {
+        const rad = ly === tTop + 1 ? 1 : 3;
+        for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) {
+          if (Math.abs(dx) + Math.abs(dz) > rad) continue;
+          if (dx === 0 && dz === 0 && ly <= tTop) continue; // trunk
+          if (blk(x + dx, ly, z + dz) === AIR) B[idx(x + dx, ly, z + dz)] = LEAVES;
+        }
+      }
+    }
+  }
+}
+
+function topSolidAt(x, z) {
+  for (let y = H - 1; y >= 0; y--) if (SOLID_SET.has(blk(x, y, z))) return y;
+  return 0;
+}
+
+/* ---------------- texture atlas (12 x 16x16 tiles) ---------------- */
+let atlasCanvas = null;
+function makeAtlas() {
+  atlasCanvas = document.createElement('canvas');
+  atlasCanvas.width = 16 * 12; atlasCanvas.height = 16;
+  const g = atlasCanvas.getContext('2d');
+  const rnd = mulberry32(1337);
+  const R = (a, b) => a + rnd() * (b - a);
+  let t = 0;
+  const tile = fn => {
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      const col = fn(x, y);
+      if (col.a !== undefined) g.globalAlpha = col.a;
+      g.fillStyle = 'rgb(' + (col[0] | 0) + ',' + (col[1] | 0) + ',' + (col[2] | 0) + ')';
+      g.fillRect(t * 16 + x, y, 1, 1);
+      g.globalAlpha = 1;
+    }
+    t++;
+  };
+  // 0 grass top
+  tile((x, y) => {
+    const v = R(0, 1);
+    return [ 52 + v * 30, 135 + v * 42, 44 + v * 26 ];
+  });
+  // 1 grass side
+  tile((x, y) => {
+    if (y < 3 || (y === 3 && rnd() < 0.5)) {
+      const v = R(0, 1);
+      return [ 50 + v * 28, 138 + v * 40, 46 + v * 24 ];
+    }
+    const v = R(0, 1);
+    return [ 112 + v * 34, 78 + v * 26, 48 + v * 20 ];
+  });
+  // 2 dirt
+  tile((x, y) => {
+    const v = R(0, 1);
+    return [ 110 + v * 36, 76 + v * 28, 46 + v * 22 ];
+  });
+  // 3 stone
+  tile((x, y) => {
+    const v = R(0, 1);
+    const dark = rnd() < 0.07 ? 42 : 0;
+    return [ 104 + v * 34 - dark, 106 + v * 34 - dark, 110 + v * 34 - dark ];
+  });
+  // 4 log side
+  tile((x, y) => {
+    const v = R(0, 1);
+    const stripe = (x % 4 === 0 || x % 4 === 3) ? 38 : 0;
+    return [ 122 - stripe + v * 24, 88 - stripe * 0.7 + v * 20, 52 - stripe * 0.5 + v * 14 ];
+  });
+  // 5 log top (rings)
+  tile((x, y) => {
+    const d = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5));
+    const v = R(0, 1);
+    const base = Math.floor(d) % 2 === 0 ? 1 : 0;
+    return [ 140 - base * 42 + v * 18, 102 - base * 34 + v * 16, 60 - base * 22 + v * 10 ];
+  });
+  // 6 leaves
+  tile((x, y) => {
+    const v = R(0, 1);
+    if (rnd() < 0.16) return [ 14, 44, 20 ];
+    return [ 28 + v * 30, 92 + v * 52, 34 + v * 26 ];
+  });
+  // 7 sand
+  tile((x, y) => {
+    const v = R(0, 1);
+    return [ 216 + v * 26, 204 + v * 22, 148 + v * 26 ];
+  });
+  // 8 water (semi-transparent)
+  tile((x, y) => {
+    const v = R(0, 1);
+    const hi = ((y + x * 3) % 7 < 2) ? 30 : 0;
+    return { a: 0.62, 0: 26 + v * 34 + hi, 1: 92 + v * 52, 2: 208 + v * 46 };
+  });
+  // 9 bedrock
+  tile((x, y) => {
+    const v = rnd() < 0.5 ? R(18, 44) : R(58, 88);
+    return [ v, v, v + 4 ];
+  });
+  // 10 planks
+  tile((x, y) => {
+    const v = R(0, 1);
+    let base = 168 + v * 24;
+    if (y % 4 === 3) base -= 62;
+    if (rnd() < 0.04) base -= 34;
+    return [ base, base * 0.72, base * 0.45 ];
+  });
+  // 11 NEON — magenta/cyan checker
+  tile((x, y) => {
+    const on = ((x >> 1) + (y >> 1)) % 2 === 0;
+    return on ? [ 0, 242, 255 ] : [ 255, 0, 221 ];
+  });
+}
+
+/* ---------------- mesh building ---------------- */
+let OP = [], WP = []; // {vbo, ibo, n}
+const MAXV = 16000;
+
+function buildMesh() {
+  // delete old GPU buffers
+  for (const p of OP.concat(WP)) { gl.deleteBuffer(p.vbo); gl.deleteBuffer(p.ibo); }
+  OP = []; WP = [];
+
+  const oParts = [], wParts = [];
+  let oV = [], oI = [], wV = [], wI = [];
+  const flush = () => {
+    if (oI.length) oParts.push({ v: oV, i: oI });
+    if (wI.length) wParts.push({ v: wV, i: wI });
+    oV = []; oI = []; wV = []; wI = [];
+  };
+
+  for (let y = 0; y < H; y++) {
+    for (let z = 0; z < D; z++) {
+      for (let x = 0; x < W; x++) {
+        const b = B[idx(x, y, z)];
+        if (b === AIR) continue;
+        const tiles = FACE_TILE[b];
+        for (let fi = 0; fi < 6; fi++) {
+          const f = FACES[fi];
+          const n = blk(x + f.d[0], y + f.d[1], z + f.d[2]);
+          let vis;
+          if (n === AIR) vis = true;
+          else if (b === WATER) vis = false;
+          else vis = (n === WATER);
+          if (!vis) continue;
+
+          const V = b === WATER ? wV : oV;
+          const I = b === WATER ? wI : oI;
+          if (V.length / 6 + 4 > MAXV) flush();
+          const tile = fi === 2 ? tiles[0] : fi === 3 ? tiles[2] : tiles[1];
+          const base = V.length / 6;
+          for (let ci = 0; ci < 4; ci++) {
+            const c = f.c[ci];
+            const uv = f.uv[ci];
+            V.push(
+              x + c[0], y + c[1], z + c[2],
+              (16 * tile + 16 * uv[0] + 0.5) / 192,
+              (16 * uv[1] + 0.5) / 16,
+              f.sh
+            );
+          }
+          I.push(base, base + 1, base + 2, base, base + 2, base + 3);
+        }
+      }
+    }
+  }
+  flush();
+
+  for (const p of oParts) {
+    const vbo = gl.createBuffer(), ibo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(p.v), gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(p.i), gl.STATIC_DRAW);
+    OP.push({ vbo, ibo, n: p.i.length });
+  }
+  for (const p of wParts) {
+    const vbo = gl.createBuffer(), ibo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(p.v), gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(p.i), gl.STATIC_DRAW);
+    WP.push({ vbo, ibo, n: p.i.length });
+  }
+}
+
+/* ---------------- webgl ---------------- */
+let gl = null;
+let T = null, S = null, L = null; // programs
+let triVbo = null, lineVbo = null, tex = null;
+let proj = null;
+const FOG = [0.93, 0.40, 0.55];
+const SUN_DIR = norm3([-0.35, 0.14, -0.91]);
+const LINE_VS =
+`attribute vec3 aPos;
+uniform mat4 uMVP; uniform vec3 uOff;
+void main(){ gl_Position = uMVP * vec4(aPos * 1.008 - 0.004 + uOff, 1.0); }`;
+const LINE_FS =
+`precision mediump float;
+uniform vec4 uColor;
+void main(){ gl_FragColor = uColor; }`;
+const TERR_VS =
+`attribute vec3 aPos;
+attribute vec2 aUV;
+attribute float aShade;
+uniform mat4 uProj; uniform mat4 uView;
+varying vec2 vUV; varying float vShade; varying float vDist;
+void main(){
+  vec4 vp = uView * vec4(aPos, 1.0);
+  gl_Position = uProj * vp;
+  vUV = aUV; vShade = aShade;
+  vDist = length(vp.xyz);
+}`;
+const TERR_FS =
+`precision mediump float;
+varying vec2 vUV; varying float vShade; varying float vDist;
+uniform sampler2D uTex; uniform vec3 uFog;
+void main(){
+  vec4 c = texture2D(uTex, vUV);
+  vec3 col = c.rgb * vShade;
+  col = mix(col, uFog, smoothstep(26.0, 78.0, vDist));
+  gl_FragColor = vec4(col, c.a);
+}`;
+const SKY_VS =
+`attribute vec2 aPos;
+varying vec2 vPos;
+void main(){ vPos = aPos; gl_Position = vec4(aPos, 0.0, 1.0); }`;
+const SKY_FS =
+`precision highp float;
+varying vec2 vPos;
+uniform vec3 uFwd; uniform vec3 uRight; uniform vec3 uUp;
+uniform float uTan; uniform float uAspect; uniform float uTime;
+float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+void main(){
+  vec3 rd = normalize(uFwd + uRight * (vPos.x * uAspect * uTan) + uUp * (vPos.y * uTan));
+  float h = rd.y;
+  vec3 top = vec3(0.05, 0.01, 0.16);
+  vec3 mid = vec3(0.38, 0.08, 0.48);
+  vec3 hor = vec3(0.98, 0.42, 0.42);
+  vec3 col = mix(hor, mid, smoothstep(0.0, 0.28, h));
+  col = mix(col, top, smoothstep(0.18, 0.65, h));
+  col += vec3(0.25, 0.06, 0.10) * (1.0 - smoothstep(0.0, 0.12, abs(h)));
+  vec3 sunDir = normalize(vec3(-0.35, 0.14, -0.91));
+  float sd = dot(rd, sunDir);
+  float disc = smoothstep(0.9928, 0.9941, sd);
+  float lineVal = fract(rd.y * 26.0 - uTime * 0.25);
+  float line = smoothstep(0.10, 0.45, lineVal);
+  line = mix(line, 1.0, smoothstep(sunDir.y + 0.015, sunDir.y + 0.07, rd.y));
+  vec3 sunCol = mix(vec3(1.0, 0.30, 0.85), vec3(1.0, 0.92, 0.45),
+                    smoothstep(sunDir.y - 0.12, sunDir.y + 0.09, rd.y));
+  col += sunCol * disc * line * 1.15;
+  col += vec3(1.0, 0.30, 0.60) * pow(max(sd, 0.0), 20.0) * 0.40;
+  if (h > 0.04) {
+    vec2 sp = rd.xz / (h + 0.12) * 60.0;
+    vec2 id = floor(sp);
+    float f1 = hash(id);
+    vec2 f = fract(sp) - 0.5 + (vec2(hash(id + 7.3), hash(id + 3.1)) - 0.5) * 0.7;
+    float star = smoothstep(0.09, 0.0, length(f)) * step(0.93, f1);
+    float tw = 0.55 + 0.45 * sin(uTime * 3.0 + f1 * 40.0);
+    col += vec3(0.85, 0.90, 1.0) * star * tw * smoothstep(0.04, 0.20, h) * 0.7;
+  }
+  gl_FragColor = vec4(col, 1.0);
+}`;
+const LINE_EDGES = new Float32Array([
+  0,0,0, 1,0,0,   1,0,0, 1,0,1,   1,0,1, 1,0,0,   1,0,0, 1,0,1,
+  0,1,0, 0,1,1,   0,1,1, 0,1,0,   0,1,1, 0,1,1,   0,1,0, 0,1,1,
+  0,0,0, 0,1,0,   1,0,1, 0,1,1,   1,1,1, 0,1,1,   0,0,1, 1,0,1,
+]);
+
+function norm3(v) {
+  const l = Math.hypot(v[0], v[1], v[2]);
+  return [v[0] / l, v[1] / l, v[2] / l];
+}
+function sh(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+    throw new Error('shader: ' + gl.getShaderInfoLog(s));
+  return s;
+}
+function mkProg(vs, fs, attribs) {
+  const p = gl.createProgram();
+  gl.attachShader(p, sh(gl.VERTEX_SHADER, vs));
+  gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+  for (const name of Object.keys(attribs)) gl.bindAttribLocation(p, attribs[name], name);
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS))
+    throw new Error('link: ' + gl.getProgramInfoLog(p));
+  return p;
+}
+function unp(p, name) { return gl.getUniformLocation(p, name); }
+
+function persp(fovy, aspect, near, far) {
+  const f = 1 / Math.tan(fovy / 2), nf = 1 / (near - far);
+  const m = new Float32Array(16);
+  m[0] = f / aspect; m[5] = f;
+  m[10] = (far + near) * nf; m[11] = -1; m[14] = 2 * far * near * nf;
+  return m;
+}
+function makeView(eye, yaw, pitch) {
+  const cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const m = new Float32Array(16);
+  m[0] = cy;        m[1] = sp * sy;   m[2] = -cp * sy;   m[3] = 0;
+  m[4] = 0;         m[5] = cp;        m[6] = sp;         m[7] = 0;
+  m[8] = sy;        m[9] = -sp * cy;  m[10] = cp * cy;   m[11] = 0;
+  m[12] = -(cy * eye[0] + sy * eye[2]);
+  m[13] = -(sp * sy * eye[0] + cp * eye[1] - sp * cy * eye[2]);
+  m[14] = -(-cp * sy * eye[0] + sp * eye[1] + cp * cy * eye[2]);
+  m[15] = 1;
+  return m;
+}
+function mat4Mul(a, b) {
+  const o = new Float32Array(16);
+  for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
+    o[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] +
+                   a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
+  }
+  return o;
+}
+
+function initGL() {
+  gl = $('gl').getContext('webgl', { antialias: false, alpha: false });
+  if (!gl) throw new Error('no webgl');
+
+  T = mkProg(TERR_VS, TERR_FS, { aPos: 0, aUV: 1, aShade: 2 });
+  T.u = { proj: unp(T.p = T, 'uProj'), view: unp(T, 'uView'), tex: unp(T, 'uTex'), fog: unp(T, 'uFog') };
+  S = mkProg(SKY_VS, SKY_FS, { aPos: 0 });
+  S.u = { fwd: unp(S, 'uFwd'), right: unp(S, 'uRight'), up: unp(S, 'uUp'),
+          tan: unp(S, 'uTan'), aspect: unp(S, 'uAspect'), time: unp(S, 'uTime') };
+  L = mkProg(LINE_VS, LINE_FS, { aPos: 0 });
+  L.u = { mvp: unp(L, 'uMVP'), off: unp(L, 'uOff'), color: unp(L, 'uColor') };
+  T.p = T; S.p = S; L.p = L;
+
+  gl.enableVertexAttribArray(0);
+  gl.enableVertexAttribArray(1);
+  gl.enableVertexAttribArray(2);
+
+  triVbo = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, triVbo);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+
+  lineVbo = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, lineVbo);
+  gl.bufferData(gl.ARRAY_BUFFER, LINE_EDGES, gl.STATIC_DRAW);
+
+  tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlasCanvas);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  resizeGL();
+  gl.clearColor(0.02, 0.008, 0.04, 1);
+}
+
+/* ---------------- viewport sizing ----------------
+   The stage is fluid now, so the drawing buffer, the projection and the sky
+   aspect all follow the CSS box instead of a baked 960x540.                */
+let VIEW_W = 960, VIEW_H = 540, ASPECT = 960 / 540;
+const MAX_BUFFER_W = 2560; // keep the fill rate sane on 4K / hidpi screens
+
+function resizeGL() {
+  const c = $('gl');
+  const cw = c.clientWidth || 960, ch = c.clientHeight || 540;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let bw = Math.max(1, Math.round(cw * dpr));
+  let bh = Math.max(1, Math.round(ch * dpr));
+  if (bw > MAX_BUFFER_W) { bh = Math.max(1, Math.round(bh * MAX_BUFFER_W / bw)); bw = MAX_BUFFER_W; }
+  if (c.width !== bw || c.height !== bh) { c.width = bw; c.height = bh; }
+  VIEW_W = bw; VIEW_H = bh; ASPECT = bw / bh;
+  proj = persp(1.15, ASPECT, 0.08, 300);
+  if (gl) gl.viewport(0, 0, bw, bh);
+  document.documentElement.style.setProperty('--ui', (clamp(cw / 960, 1, 1.75)).toFixed(3));
+  const badge = $('bRes');
+  if (badge) badge.textContent = bw + ' x ' + bh;
+}
+
+function drawParts(parts) {
+  for (const e of parts) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, e.vbo);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
+    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 24, 12);
+    gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 24, 16);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, e.ibo);
+    gl.drawElements(gl.TRIANGLES, e.n, gl.UNSIGNED_SHORT, 0);
+  }
+}
+
+/* ---------------- player / physics ---------------- */
+const HW = 0.3, PH = 1.8, EYE = 1.62;
+const player = {
+  pos: [31.5, 20, 31.5], vel: [0, 0, 0],
+  yaw: -0.37, pitch: -0.05,
+  onGround: false, fly: false, slot: 0,
+};
+let SPAWN = [31.5, 15, 31.5];
+
+function solidAt(x, y, z) {
+  if (y < 0) return true;
+  if (x < 0 || x >= W || z < 0 || z >= D) return true;
+  if (y >= H) return false;
+  return SOLID_SET.has(B[idx(x, y, z)]);
+}
+function boxHits(px, py, pz) {
+  const x0 = Math.floor(px - HW), x1 = Math.floor(px + HW);
+  const y0 = Math.floor(py), y1 = Math.floor(py + PH);
+  const z0 = Math.floor(pz - HW), z1 = Math.floor(pz + HW);
+  for (let y = y0; y <= y1; y++)
+    for (let x = x0; x <= x1; x++)
+      for (let z = z0; z <= z1; z++)
+        if (solidAt(x, y, z)) return true;
+  return false;
+}
+function moveAxis(axis, amt) {
+  player.pos[axis] += amt;
+  if (!boxHits(player.pos[0], player.pos[1], player.pos[2])) return false;
+  const p = player.pos;
+  if (axis === 0) p[0] = amt > 0 ? Math.floor(p[0] + HW) - HW - 1e-4 : Math.floor(p[0] - HW) + 1 + HW + 1e-4;
+  if (axis === 2) p[2] = amt > 0 ? Math.floor(p[2] + HW) - HW - 1e-4 : Math.floor(p[2] - HW) + 1 + HW + 1e-4;
+  if (axis === 1) {
+    if (amt > 0) p[1] = Math.floor(p[1] + PH) - PH - 1e-4;
+    else { p[1] = Math.floor(p[1]) + 1 + 1e-4; player.onGround = true; }
+  }
+  return true;
+}
+const keys = new Set();
+function currentWish() {
+  let f = 0, s = 0;
+  if (keys.has('KeyW') || keys.has('ArrowUp')) f++;
+  if (keys.has('KeyS') || keys.has('ArrowDown')) f--;
+  if (keys.has('KeyA') || keys.has('ArrowLeft')) s--;
+  if (keys.has('KeyD') || keys.has('ArrowRight')) s++;
+  const sy = Math.sin(player.yaw), cy = Math.cos(player.yaw);
+  let wx = sy * f + cy * s, wz = -cy * f + sy * s;
+  const l = Math.hypot(wx, wz);
+  if (l > 1) { wx /= l; wz /= l; }
+  return [wx, wz];
+}
+function step1(h) {
+  const p = player, v = p.vel;
+  const [wx, wz] = currentWish();
+  const eye = [p.pos[0], p.pos[1] + EYE, p.pos[2]];
+  const inWater = bAt(eye[0], eye[1], eye[2]) === WATER ||
+                  bAt(p.pos[0], p.pos[1] + 0.4, p.pos[2]) === WATER;
+  const wasGround = p.onGround;
+  p.onGround = false;
+  const sprint = keys.has('ShiftLeft') || keys.has('ShiftRight');
+  const speed = p.fly ? 9 : (sprint ? 6.2 : 4.4);
+
+  if (p.fly) {
+    v[0] = wx * speed; v[2] = wz * speed;
+    let vy = 0;
+    if (keys.has('Space')) vy += speed;
+    if (sprint) vy -= speed;
+    v[1] = vy;
+  } else {
+    const k = Math.min(1, h * 14);
+    v[0] += (wx * speed - v[0]) * k;
+    v[2] += (wz * speed - v[2]) * k;
+    v[1] -= (inWater ? 9 : 26) * h;
+    if (inWater) {
+      v[1] *= Math.max(0, 1 - h * 2.2);
+      if (keys.has('Space')) v[1] += 26 * h;
+      v[1] = clamp(v[1], -4.5, 5.5);
+    }
+    if (keys.has('Space') && wasGround) v[1] = 8.6;
+  }
+
+  moveAxis(0, v[0] * h);
+  moveAxis(2, v[2] * h);
+  const hitY = moveAxis(1, v[1] * h);
+  if (hitY) v[1] = 0;
+  if (p.pos[1] < -10) respawn(false);
+}
+function physics(dt) {
+  const steps = Math.max(1, Math.ceil(dt / (1 / 90)));
+  const h = dt / steps;
+  for (let i = 0; i < steps; i++) step1(h);
+}
+function setSpawn() {
+  const ty = topSolidAt(31, 31);
+  SPAWN = [31.5, ty + 1.02, 31.5];
+  player.pos = SPAWN.slice();
+  player.vel = [0, 0, 0];
+  player.yaw = -0.37; player.pitch = -0.05;
+}
+function respawn(msg) {
+  const ty = topSolidAt(31, 31);
+  player.pos = [31.5, ty + 1.02, 31.5];
+  player.vel = [0, 0, 0];
+  if (msg !== false) say('RESPAWNED. THE GRID MERCIFULLY FORGIVES.');
+}
+
+/* ---------------- raycast ---------------- */
+function raycast(ox, oy, oz, dx, dy, dz, maxD) {
+  let x = Math.floor(ox), y = Math.floor(oy), z = Math.floor(oz);
+  let px = x, py = y, pz = z;
+  const sx = dx > 0 ? 1 : -1, sy = dy > 0 ? 1 : -1, sz = dz > 0 ? 1 : -1;
+  const tdx = dx !== 0 ? Math.abs(1 / dx) : Infinity;
+  const tdy = dy !== 0 ? Math.abs(1 / dy) : Infinity;
+  const tdz = dz !== 0 ? Math.abs(1 / dz) : Infinity;
+  let tmx = dx !== 0 ? (dx > 0 ? (x + 1 - ox) : (ox - x)) * tdx : Infinity;
+  let tmy = dy !== 0 ? (dy > 0 ? (y + 1 - oy) : (oy - y)) * tdy : Infinity;
+  let tmz = dz !== 0 ? (dz > 0 ? (z + 1 - oz) : (oz - z)) * tdz : Infinity;
+  for (let i = 0; i < 300; i++) {
+    px = x; py = y; pz = z;
+    if (tmx < tmy && tmx < tmz) { if (tmx > maxD) return null; x += sx; tmx += tdx; }
+    else if (tmy < tmz)        { if (tmy > maxD) return null; y += sy; tmy += tdy; }
+    else                       { if (tmz > maxD) return null; z += sz; tmz += tdz; }
+    const b = blk(x, y, z);
+    if (b !== AIR) return { x, y, z, px, py, pz, b };
+    if (y < -8) break;
+  }
+  return null;
+}
+function eyePos() { return [player.pos[0], player.pos[1] + EYE, player.pos[2]]; }
+function fwdVec() {
+  const cp = Math.cos(player.pitch);
+  return [
+    cp * Math.sin(player.yaw),
+    -Math.sin(player.pitch),
+    -cp * Math.cos(player.yaw),
+  ];
+}
+function doRay() { const e = eyePos(), f = fwdVec(); return raycast(e[0], e[1], e[2], f[0], f[1], f[2], 6); }
+
+let lastEdit = 0;
+function setBlock(x, y, z, v) {
+  B[idx(x, y, z)] = v;
+  lastEdit = performance.now();
+  buildMesh();
+}
+function mine() {
+  const r = doRay();
+  if (!r) return;
+  if (r.b === WATER) { say("CAN'T MINE WATER. TRY THE LANDS."); return; }
+  if (r.b === BEDROCK) { say('BEDROCK IS PERMANENT, LIKE THIS SITE\'S LAYOUT.'); return; }
+  setBlock(r.x, r.y, r.z, AIR);
+  blip(180, 0.12, 0.30);
+  say('MINED: ' + BLOCK_NAME[r.b]);
+}
+function place() {
+  const r = doRay();
+  if (!r) return;
+  const { px, py, pz } = r;
+  if (px < 0 || px >= W || py <= 0 || py >= H || pz < 0 || pz >= D) return;
+  const cur = blk(px, py, pz);
+  if (cur !== AIR && cur !== WATER) return;
+  const p = player.pos;
+  const overlap =
+    px + 1 > p[0] - HW && px < p[0] + HW &&
+    py + 1 > p[1] && py < p[1] + PH &&
+    pz + 1 > p[2] - HW && pz < p[2] + HW;
+  if (overlap) { say('THAT CELL IS OCCUPIED (BY YOU).'); return; }
+  setBlock(px, py, pz, HOTBAR[player.slot].id);
+  blip(430, 0.09, 0.24);
+  say('PLACED: ' + HOTBAR[player.slot].name);
+}
+
+/* ---------------- render ---------------- */
+let target = null;
+function render(t) {
+  const e = eyePos();
+  const view = makeView(e, player.yaw, player.pitch);
+  gl.viewport(0, 0, VIEW_W, VIEW_H);
+  gl.enable(gl.DEPTH_TEST);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  // sky
+  gl.disable(gl.DEPTH_TEST);
+  gl.useProgram(S.p);
+  const cp = Math.cos(player.pitch);
+  const fy = Math.sin(player.yaw), cy = Math.cos(player.yaw);
+  const sp = Math.sin(player.pitch);
+  gl.uniform3f(S.u.fwd, cp * fy, -sp, -cp * cy);
+  gl.uniform3f(S.u.right, cy, 0, fy);
+  gl.uniform3f(S.u.up, cp * fy * sp, cp * cp, -cp * cy * sp);
+  gl.uniform1f(S.u.tan, Math.tan(1.15 / 2));
+  gl.uniform1f(S.u.aspect, ASPECT);
+  gl.uniform1f(S.u.time, t * 0.001);
+  gl.bindBuffer(gl.ARRAY_BUFFER, triVbo);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8, 0);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.enable(gl.DEPTH_TEST);
+
+  // terrain
+  target = doRay();
+  gl.useProgram(T.p);
+  gl.uniformMatrix4fv(T.u.proj, false, proj);
+  gl.uniformMatrix4fv(T.u.view, false, view);
+  gl.uniform3fv(T.u.fog, FOG);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.uniform1i(T.u.tex, 0);
+  gl.enable(gl.CULL_FACE);
+  drawParts(OP);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.depthMask(false);
+  gl.disable(gl.CULL_FACE);
+  drawParts(WP);
+  gl.depthMask(true);
+  gl.disable(gl.BLEND);
+
+  // highlight
+  if (target) {
+    gl.useProgram(L.p);
+    gl.uniformMatrix4fv(L.u.mvp, false, mat4Mul(proj, view));
+    gl.uniform3f(L.u.off, target.x, target.y, target.z);
+    gl.uniform4f(L.u.color, 1, 1, 1, 0.5 + 0.35 * Math.sin(t * 0.008));
+    gl.bindBuffer(gl.ARRAY_BUFFER, lineVbo);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 12, 0);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.lineWidth(2);
+    gl.drawArrays(gl.LINES, 0, 24);
+    gl.disable(gl.BLEND);
+  }
+
+  $('waterTint').style.display =
+    (bAt(e[0], e[1], e[2]) === WATER) ? 'block' : 'none';
+}
+
+/* ---------------- input ---------------- */
+let playing = false, startedOnce = false;
+
+function lockPointer() {
+  initAudio();
+  if (AC && AC.state === 'suspended') AC.resume();
+  const c = $('gl');
+  const p = c.requestPointerLock && c.requestPointerLock();
+  if (p && p.catch) p.catch(() => {});
+}
+document.addEventListener('pointerlockchange', () => {
+  playing = document.pointerLockElement === $('gl');
+  const ov = $('overlay');
+  if (playing) {
+    startedOnce = true;
+    ov.style.display = 'none';
+  } else {
+    keys.clear();
+    ov.style.display = 'flex';
+    $('ovStart').style.display = startedOnce ? 'none' : 'block';
+    $('ovPause').style.display = startedOnce ? 'block' : 'none';
+  }
+});
+$('overlay').addEventListener('click', () => {
+  if (!playing) lockPointer();
+});
+document.addEventListener('mousemove', e => {
+  if (!playing) return;
+  const s = 0.0022;
+  player.yaw += e.movementX * s;
+  player.pitch = clamp(player.pitch + e.movementY * s, -1.55, 1.55);
+});
+$('gl').addEventListener('mousedown', e => {
+  if (!playing) return;
+  e.preventDefault();
+  if (e.button === 0) mine();
+  else if (e.button === 2) place();
+});
+document.addEventListener('contextmenu', e => e.preventDefault());
+window.addEventListener('keydown', e => {
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) e.preventDefault();
+  keys.add(e.code);
+  if (e.code === 'KeyV') { toggleMaxed(); return; } // works paused too, unlike the rest
+  if (!playing) return;
+  if (e.code === 'KeyF') {
+    player.fly = !player.fly;
+    player.vel[1] = 0;
+    say(player.fly ? 'FLY MODE: ON. GRAVITY IS A SOCIAL CONSTRUCT.' : 'FLY MODE: OFF. BACK TO 9.8');
+  }
+  if (e.code === 'KeyR') respawn();
+  if (e.code === 'KeyM') toggleAudio();
+  const m = /^Digit([1-8])$/.exec(e.code);
+  if (m) selectSlot(+m[1] - 1);
+});
+window.addEventListener('keyup', e => keys.delete(e.code));
+window.addEventListener('blur', () => keys.clear());
+$('stage').addEventListener('wheel', e => {
+  e.preventDefault();
+  if (playing) selectSlot((player.slot + (e.deltaY > 0 ? 1 : 7)) % 8);
+}, { passive: false });
+
+function selectSlot(i) {
+  player.slot = i;
+  document.querySelectorAll('.slot').forEach((s, j) => s.classList.toggle('sel', j === i));
+  $('blockName').textContent = HOTBAR[i].name;
+}
+
+/* ---------------- audio (laser-wave chiptune) ---------------- */
+let AC = null, master = null, noiseBuf = null, audioOn = true;
+const LEAD = [220, 0, 261.63, 0, 329.63, 0, 0, 659.26,
+              220, 0, 261.63, 0, 329.63, 392, 440, 523.25];
+const BASSROOT = [110, 110, 82.41, 98];
+let nextT = 0, stepN = 0;
+
+function initAudio() {
+  if (AC) return;
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+  } catch (e) { return; }
+  master = AC.createGain();
+  master.gain.value = 0.38;
+  master.connect(AC.destination);
+  noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.05, AC.sampleRate);
+  const d = noiseBuf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  nextT = AC.currentTime + 0.1; stepN = 0;
+  setInterval(sched, 40);
+}
+function sched() {
+  if (!AC || AC.state !== 'running') return;
+  const spb = 60 / 150 / 4;
+  while (nextT < AC.currentTime + 0.15) {
+    if (audioOn) playStep(stepN, nextT);
+    stepN = (stepN + 1) % 16;
+    nextT += spb;
+  }
+}
+function tone(freq, dur, vol, t, type) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type || 'square';
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + dur + 0.03);
+}
+function playStep(s, t) {
+  const f = LEAD[s];
+  if (f) tone(f, 0.10, 0.11, t);
+  if (s % 4 === 0) tone(BASSROOT[s / 4], 0.17, 0.17, t);
+  const hs = AC.createBufferSource(); hs.buffer = noiseBuf;
+  const hg = AC.createGain();
+  hg.gain.setValueAtTime(s % 2 ? 0.045 : 0.022, t);
+  hg.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+  const hf = AC.createBiquadFilter(); hf.type = 'highpass'; hf.frequency.value = 6500;
+  hs.connect(hf); hf.connect(hg); hg.connect(master);
+  hs.start(t); hs.stop(t + 0.05);
+}
+function blip(freq, dur, vol) {
+  if (!AC || !audioOn || AC.state !== 'running') return;
+  tone(freq, dur, vol, AC.currentTime);
+}
+function toggleAudio() {
+  audioOn = !audioOn;
+  $('sbAudio').textContent = audioOn ? '♪ ON' : '♪ OFF';
+  $('bMidi').textContent = audioOn ? '♪ MIDI: ON' : '♪ MIDI: OFF';
+  say(audioOn ? 'SYNTH WAVE: ON' : 'SYNTH WAVE: OFF');
+}
+$('bMidi').addEventListener('click', toggleAudio);
+
+/* ---------------- HUD / UI ---------------- */
+let msgTimer = 0;
+function say(text) {
+  $('sbMsg').textContent = text;
+  clearTimeout(msgTimer);
+  msgTimer = setTimeout(() => { $('sbMsg').textContent = 'READY.'; }, 3500);
+}
+let fps = 0, frames = 0, fpsT = 0, hudT = 0;
+function updateHUD(t) {
+  frames++;
+  if (t - fpsT > 500) { fps = Math.round(frames * 1000 / (t - fpsT)); frames = 0; fpsT = t; }
+  if (t - hudT < 120) return;
+  hudT = t;
+  const p = player.pos;
+  const dirs = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'];
+  const a = ((player.yaw % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const dir = dirs[Math.round(a / (Math.PI / 4)) % 8];
+  $('sbFps').textContent = 'FPS ' + String(fps).padStart(3, '0');
+  $('sbPos').textContent =
+    'X:' + String(Math.round(p[0])).padStart(3, '0') +
+    ' Y:' + String(Math.round(p[1])).padStart(3, '0') +
+    ' Z:' + String(Math.round(p[2])).padStart(3, '0');
+  $('debug').textContent =
+    'RETROCRAFT v1.0\n' +
+    'FPS ' + String(fps).padStart(4, ' ') +
+    '  POS ' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ' ' + p[2].toFixed(1) + '\n' +
+    'DIR ' + dir +
+    '  FLY ' + (player.fly ? 'ON ' : 'OFF') +
+    '  SLOT ' + (player.slot + 1) + '\n' +
+    'TARGET: ' + (target ? BLOCK_NAME[target.b] : '—');
+  if (target) $('blockName').textContent = BLOCK_NAME[target.b] + '  (' + HOTBAR[player.slot].name + ')';
+  else $('blockName').textContent = HOTBAR[player.slot].name;
+}
+
+/* footer jokes */
+$('bNetscape').addEventListener('click', () => say('YOU ARE ON A FUTURE BUILD OF NETSCAPE. CONGRATULATIONS.'));
+$('bNotepad').addEventListener('click', () => say('EVERY PIXEL PLACED MANUALLY. MOSTLY.'));
+$('bRes').addEventListener('click', () => say('800x600 IS A LIFESTYLE.'));
+$('bY2k').addEventListener('click', () => say('THE Y2K BUG DID NOTHING. WE CHECKED.'));
+$('bConstr').addEventListener('click', () => say('FOREVER UNDER CONSTRUCTION. THAT IS THE POINT.'));
+$('bGuest').addEventListener('click', () => say('GUESTBOOK: STILL UNDER CONSTRUCTION. COME BACK NEVER.'));
+$('bWebring').addEventListener('click', () => say('FORM SUBMITTED TO THE RETRO WEBRING. (IT WAS NOT.)'));
+/* ---------------- maximize / recording mode ----------------
+   The □ button really maximizes now: the page chrome folds away, the window
+   takes the whole viewport, and we ask for real fullscreen on top of that so
+   a screen capture gets the full display.                                   */
+function isMaxed() { return document.body.classList.contains('maxed'); }
+
+function applyMaxed(on) {
+  document.body.classList.toggle('maxed', on);
+  $('tMax').textContent = on ? '❐' : '□';
+  $('tMax').title = on ? 'restore' : 'maximize';
+  resizeGL();                     // now, so the buffer never lags a frame behind
+  requestAnimationFrame(resizeGL); // and again once a fullscreen transition settles
+}
+
+function toggleMaxed() {
+  const on = !isMaxed();
+  applyMaxed(on);
+  if (on) {
+    const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+    if (r && r.catch) r.catch(() => {}); // denied fullscreen still leaves us maximized
+    say('MAXIMIZED. 800x600 WAS A PHASE.');
+  } else {
+    if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    say('BACK IN THE BOX.');
+  }
+}
+
+/* leaving fullscreen by ESC or the system UI must not strand the maxed layout */
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && isMaxed()) applyMaxed(false);
+  else requestAnimationFrame(resizeGL);
+});
+window.addEventListener('resize', resizeGL);
+/* the canvas box also changes without a window resize — browser zoom, devtools,
+   fullscreen transitions — so watch the element itself. No feedback loop: we only
+   touch the drawing buffer, never the CSS box. */
+if (window.ResizeObserver) new ResizeObserver(() => resizeGL()).observe($('gl'));
+
+$('mFile').addEventListener('click', () => say('FILE NOT FOUND. THE GRID REMEMBERS.'));
+$('mEdit').addEventListener('click', () => say('CANCEL.'));
+$('mView').addEventListener('click', () => {
+  $('stage').classList.toggle('noscan');
+  say('SCANLINES ' + ($('stage').classList.contains('noscan') ? 'OFF' : 'ON'));
+});
+$('mBlocks').addEventListener('click', () => say('USE THE HOTBAR, CHIEF: [1]-[8] OR WHEEL.'));
+$('mHelp').addEventListener('click', () => say('WASD+MOUSE. L-CLICK MINE. R-CLICK BUILD. F FLY. V FULLSCREEN. ESC PAUSE.'));
+$('tMin').addEventListener('click', () => say("YOU CAN'T MINIMIZE THE TRUTH."));
+$('tMax').addEventListener('click', toggleMaxed);
+$('tX').addEventListener('click', () => say('NICE TRY. THIS WINDOW IS LOAD-BEARING.'));
+$('sbAudio').addEventListener('click', toggleAudio);
+
+/* visitor counter — a GeoCities classic */
+(function counter() {
+  const days = Math.floor((Date.now() - Date.UTC(1996, 0, 1)) / 86400000);
+  let visits = 0;
+  try { visits = +(localStorage.getItem('rc_visits') || 0) + 1; localStorage.setItem('rc_visits', visits); } catch (e) { visits = 1; }
+  const n = (42137 + days * 7 + visits).toString().padStart(6, '0');
+  $('vcounter').textContent = n;
+  $('ovCounter').textContent = 'VISITOR № ' + n + ' SINCE 1.1.1996';
+})();
+
+/* hotbar */
+function buildHotbar() {
+  const hb = $('hotbar');
+  HOTBAR.forEach((b, i) => {
+    const d = document.createElement('div');
+    d.className = 'slot' + (i === 0 ? ' sel' : '');
+    const c = document.createElement('canvas');
+    c.width = 16; c.height = 16;
+    c.getContext('2d').drawImage(atlasCanvas, b.icon * 16, 0, 16, 16, 0, 0, 16, 16);
+    d.appendChild(c);
+    const k = document.createElement('span');
+    k.className = 'key'; k.textContent = String(i + 1);
+    d.appendChild(k);
+    d.title = b.name;
+    d.addEventListener('mousedown', e => e.stopPropagation());
+    d.addEventListener('click', () => { selectSlot(i); say(b.name + ' SELECTED'); });
+    hb.appendChild(d);
+  });
+}
+
+/* ---------------- main loop ---------------- */
+let last = performance.now();
+function frame(t) {
+  requestAnimationFrame(frame);
+  let dt = (t - last) / 1000;
+  last = t;
+  dt = Math.min(dt, 0.1);
+  if (playing) physics(dt);
+  try {
+    render(t);
+    updateHUD(t);
+  } catch (err) {
+    if (performance.now() - (frame.errAt || 0) > 2000) {
+      frame.errAt = performance.now();
+      console.error(err);
+      say('GPU DROVE ITSELF OFF A CLIFF: ' + err.message);
+    }
+  }
+}
+
+/* ---------------- boot ---------------- */
+(async function boot() {
+  const set = (pct, txt) => {
+    $('lbar').firstElementChild.style.width = pct + '%';
+    $('lmsg').textContent = txt;
+  };
+  try {
+    set(8, 'INSERT COIN...'); await wait(260);
+    makeAtlas();
+    set(26, 'PAINTING 16x16 PIXELS (BY HAND)...'); await wait(220);
+    initGL();
+    set(48, 'SPINNING UP THE GPU...'); await wait(220);
+    genWorld();
+    set(72, 'SYNTHESIZING TERRAIN...'); await wait(220);
+    buildMesh();
+    set(88, 'COMPILING GEOMETRY...'); await wait(200);
+    setSpawn();
+    buildHotbar();
+    selectSlot(0);
+    set(100, 'READY.'); await wait(360);
+    $('loading').style.display = 'none';
+    $('overlay').style.display = 'flex';
+    say('WELCOME, TRAVELER. THE SUN NEVER SETS HERE.');
+  } catch (err) {
+    $('lmsg').textContent = 'BOOT FAILED: ' + err.message;
+    $('lmsg').style.color = '#ff2975';
+    console.error(err);
+  }
+})();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

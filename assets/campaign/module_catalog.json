@@ -1,0 +1,347 @@
+{
+  "revision": "984d1b035125dad8cff96436862b96a92122a042",
+  "modules": [
+    {
+      "id": "calibration",
+      "title": "Примитивная калибровка",
+      "kind": "internal",
+      "source_dir": "",
+      "days": [
+        1,
+        2,
+        3
+      ],
+      "purpose": "Взаимодействие, физика и восстановление состояния",
+      "checks": [
+        "Поднять и поставить куб",
+        "Проверить падение",
+        "Изменить материал или свет",
+        "Сбросить состояние"
+      ],
+      "controls": "WASD и мышь; E — взаимодействие или поставить; ЛКМ — поднять или уронить; R — сброс.",
+      "entry": "",
+      "cover": ""
+    },
+    {
+      "id": "terrarium",
+      "title": "Terrarium No 11",
+      "kind": "environment",
+      "source_dir": "wow-terrarium-glm53-flash",
+      "days": [
+        1,
+        2,
+        3
+      ],
+      "purpose": "Изменение условий и сохранность среды",
+      "checks": [
+        "Осмотреть среду",
+        "Изменить дождь или освещение",
+        "Проверить сохранность объектов"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/terrarium/index.html",
+      "cover": "res://assets/campaign/covers/terrarium.webp"
+    },
+    {
+      "id": "retrocraft",
+      "title": "RetroCraft",
+      "kind": "sandbox",
+      "source_dir": "retrocraft-qwen3.8-27b",
+      "days": [
+        1,
+        2,
+        3
+      ],
+      "purpose": "Построение и изменение пространства",
+      "checks": [
+        "Изменить окружение",
+        "Проверить взаимодействие с объектами",
+        "Проверить сохранность изменений"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/retrocraft/index.html",
+      "cover": "res://assets/campaign/covers/retrocraft.webp"
+    },
+    {
+      "id": "mandelbulb",
+      "title": "Mandelbulb",
+      "kind": "visual",
+      "source_dir": "wow-mandelbulb-glm53-flash",
+      "days": [
+        1,
+        2,
+        3
+      ],
+      "purpose": "Навигация и визуальная устойчивость",
+      "checks": [
+        "Изменить точку наблюдения",
+        "Проверить читаемость пространства",
+        "Проверить устойчивость изображения"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/mandelbulb/index.html",
+      "cover": "res://assets/campaign/covers/mandelbulb.webp"
+    },
+    {
+      "id": "dustfall",
+      "title": "DUSTFALL",
+      "kind": "combat",
+      "source_dir": "dustfall",
+      "days": [
+        2,
+        3
+      ],
+      "purpose": "Движение, состояние и поведение агентов",
+      "checks": [
+        "Проверить движение и столкновения",
+        "Проверить реакцию противников",
+        "Проверить повтор или сброс"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/dustfall/index.html",
+      "cover": ""
+    },
+    {
+      "id": "drift",
+      "title": "Drift City",
+      "kind": "racing",
+      "source_dir": "wow-drift-city-glm53-flash",
+      "days": [
+        2,
+        3
+      ],
+      "purpose": "Управляемость, инерция и столкновения",
+      "checks": [
+        "Проверить управление",
+        "Проверить столкновение",
+        "Повторить один манёвр"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/drift/index.html",
+      "cover": "res://assets/campaign/covers/drift.webp"
+    },
+    {
+      "id": "tidebloom",
+      "title": "Tidebloom Rally",
+      "kind": "racing",
+      "source_dir": "kart-astra-solo",
+      "days": [
+        2,
+        3
+      ],
+      "purpose": "Траектории и устойчивость управления",
+      "checks": [
+        "Проверить управление",
+        "Пройти участок трассы",
+        "Сравнить повторный манёвр"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/tidebloom/index.html",
+      "cover": "res://assets/campaign/covers/tidebloom.webp"
+    },
+    {
+      "id": "tidebreak",
+      "title": "Tidebreak: Corsair Run",
+      "kind": "racing",
+      "source_dir": "boat-astra-deepseek",
+      "days": [
+        2,
+        3
+      ],
+      "purpose": "Инерция и взаимодействие с окружением",
+      "checks": [
+        "Проверить движение",
+        "Проверить столкновение",
+        "Проверить доступные действия"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/tidebreak/index.html",
+      "cover": "res://assets/campaign/covers/tidebreak.webp"
+    },
+    {
+      "id": "hanafubuki",
+      "title": "Hanafubuki",
+      "kind": "action",
+      "source_dir": "hanafubuki-grok-4-7",
+      "days": [
+        2,
+        3
+      ],
+      "purpose": "Управление и обратная связь действий",
+      "checks": [
+        "Проверить перемещение",
+        "Проверить доступное действие",
+        "Проверить читаемость обратной связи"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/hanafubuki/index.html",
+      "cover": ""
+    },
+    {
+      "id": "pagoda",
+      "title": "Pagoda Garden AC-130",
+      "kind": "sandbox",
+      "source_dir": "pagoda-ac130-glm53-flash",
+      "days": [
+        2,
+        3
+      ],
+      "purpose": "Разрушение и сохранение повреждений",
+      "checks": [
+        "Проверить разрушение",
+        "Сравнить состояние до и после",
+        "Проверить повтор действия"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/pagoda/index.html",
+      "cover": "res://assets/campaign/covers/pagoda.webp"
+    },
+    {
+      "id": "deadparade",
+      "title": "DEAD PARADE",
+      "kind": "combat",
+      "source_dir": "dead-parade",
+      "days": [
+        3
+      ],
+      "purpose": "Групповое поведение и пространственные ограничения",
+      "checks": [
+        "Проверить движение группы",
+        "Проверить взаимодействие агентов",
+        "Проверить нагрузку или повтор"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/deadparade/index.html",
+      "cover": ""
+    },
+    {
+      "id": "fogline",
+      "title": "FOGLINE — Sector 7",
+      "kind": "combat",
+      "source_dir": "fogline",
+      "days": [
+        3
+      ],
+      "purpose": "Наблюдение, бой и читаемость среды",
+      "checks": [
+        "Проверить управление",
+        "Проверить видимость и ориентиры",
+        "Проверить реакции агентов"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/fogline/index.html",
+      "cover": "res://assets/campaign/covers/fogline.webp"
+    },
+    {
+      "id": "trenchcam",
+      "title": "TRENCHCAM — BLOCK 17",
+      "kind": "combat",
+      "source_dir": "trenchcam-claude-opus-5.5",
+      "days": [
+        3
+      ],
+      "purpose": "Нагрузка, взаимодействие и разрушение",
+      "checks": [
+        "Проверить движение",
+        "Проверить разрушение или действие",
+        "Проверить устойчивость под нагрузкой"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/trenchcam/index.html",
+      "cover": "res://assets/campaign/covers/trenchcam.webp"
+    },
+    {
+      "id": "voidbound",
+      "title": "VOIDBOUND",
+      "kind": "combat",
+      "source_dir": "voidbound-choir-of-ash",
+      "days": [
+        3
+      ],
+      "purpose": "Навигация и обратная связь боя",
+      "checks": [
+        "Проверить ориентиры",
+        "Проверить доступные действия",
+        "Проверить повтор или сброс"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/voidbound/index.html",
+      "cover": "res://assets/campaign/covers/voidbound.webp"
+    },
+    {
+      "id": "voidrunner",
+      "title": "VOIDRUNNER",
+      "kind": "combat",
+      "source_dir": "voidrunner-astra",
+      "days": [
+        3
+      ],
+      "purpose": "Движение и пространственное восприятие",
+      "checks": [
+        "Проверить управление",
+        "Проверить пространственные ориентиры",
+        "Проверить столкновение или действие"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/voidrunner/index.html",
+      "cover": "res://assets/campaign/covers/voidrunner.webp"
+    },
+    {
+      "id": "kerr",
+      "title": "Kerr Protocol",
+      "kind": "demo",
+      "source_dir": "kerr-protocol-glm-5.3",
+      "days": [
+        2,
+        3
+      ],
+      "purpose": "Дополнительное исследование — визуализация данных",
+      "checks": [
+        "Осмотреть визуализацию",
+        "Изменить параметры",
+        "Проверить читаемость результата"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/kerr/index.html",
+      "cover": "res://assets/campaign/covers/kerr.webp"
+    },
+    {
+      "id": "rig-astra",
+      "title": "RIG / Anatomy of a Rig",
+      "kind": "demo",
+      "source_dir": "rig-3090-astra",
+      "days": [
+        2,
+        3
+      ],
+      "purpose": "Дополнительное исследование — устройство стенда",
+      "checks": [
+        "Осмотреть оборудование",
+        "Разобрать модель",
+        "Вернуть модель в исходное состояние"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/rig-astra/index.html",
+      "cover": "res://assets/campaign/covers/rig-astra.webp"
+    },
+    {
+      "id": "rig-fable",
+      "title": "RIG / 4× RTX 3090",
+      "kind": "demo",
+      "source_dir": "rig-3090-fable-5.1",
+      "days": [
+        2,
+        3
+      ],
+      "purpose": "Дополнительное исследование — оборудование",
+      "checks": [
+        "Осмотреть оборудование",
+        "Проверить доступные режимы",
+        "Сравнить состояния"
+      ],
+      "controls": "Управление указано в самой игре. Esc — панель стенда; F8 — снимок.",
+      "entry": "games/rig-fable/index.html",
+      "cover": "res://assets/campaign/covers/rig-fable.webp"
+    }
+  ]
+}

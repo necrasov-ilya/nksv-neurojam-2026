@@ -1,0 +1,20 @@
+{
+  "slug": "pagoda-ac130-glm53-flash",
+  "title": "Pagoda Garden AC-130",
+  "version": "GLM-5.3-FLASH",
+  "description": "A voxel Japanese pagoda garden seen through a circling AC-130 sensor: stabilized WHOT and warm daylight views, 25 mm cannon, 40 mm Bofors and 70 mm rockets, persistent block damage, support-driven structural collapse, debris, smoke and shockwaves. Generated and iteratively tuned by GLM-5.3 Flash via omp.",
+  "accent": "#ffd08a",
+  "tags": [
+    "Game",
+    "Voxel",
+    "Three.js",
+    "Destruction",
+    "Physics",
+    "AC-130",
+    "GLM-5.3 Flash",
+    "omp"
+  ],
+  "category": "action-sandbox",
+  "model": "GLM-5.3 Flash",
+  "cover": "cover.webp"
+}
