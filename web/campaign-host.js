@@ -17,6 +17,14 @@
     #latent-host .done{margin:auto;max-width:680px;padding:30px;font-size:22px;line-height:1.6;color:#eee8ff}#latent-host .done small{display:block;font-size:15px;color:#c9b5df}
     #latent-host .tape{position:absolute;inset:0;pointer-events:none;z-index:3;opacity:.13;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");mix-blend-mode:screen;animation:latent-grain .18s steps(1) infinite}#latent-host .tape:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 3px,#0006 3px 4px)}
     @keyframes latent-grain{0%{background-position:0 0}25%{background-position:47px 109px}50%{background-position:129px 25px}75%{background-position:11px 183px}}
+    #latent-host .authors{position:absolute;bottom:24px;right:22px;display:flex;gap:10px;z-index:6}
+    #latent-host .author-disc{display:block;width:64px;height:64px;border-radius:50%;filter:drop-shadow(0 3px 6px #0005)}
+    #latent-host .author-disc img{display:block;width:100%;height:100%;animation:latent-disc 12s linear infinite}
+    #latent-host .author-disc:hover img,#latent-host .author-disc:focus-visible img{animation-play-state:paused}
+    #latent-host .author-disc:focus-visible{outline:2px solid #5b4cff;outline-offset:4px}
+    @keyframes latent-disc{to{transform:rotate(360deg)}}
+    @media(prefers-reduced-motion:reduce){#latent-host .author-disc img{animation:none}}
+    @media(max-width:800px){#latent-host .author-disc{width:48px;height:48px}#latent-host .status{max-width:calc(100% - 148px)}}
     @media(max-width:800px){#latent-host header{border-radius:24px;flex-wrap:wrap;justify-content:center;width:calc(100% - 24px);padding:6px;gap:4px}#latent-host .title{max-width:120px}#latent-host button{font-size:11px;padding:7px}.brand{display:none}}
   `;
   document.head.appendChild(style);
@@ -164,6 +172,30 @@
     }));
     panel.append(plate);
     const statusNode = element('div', 'Загрузка контрольной среды · Esc — панель стенда', 'status');
+    const authors = element('nav', undefined, 'authors');
+    authors.setAttribute('aria-label', 'Автор игры · Telegram');
+    const [id, name, url] = ['deadparade', 'dustfall'].includes(info.id)
+      ? ['nksv', 'NKSV_ILYA', 'https://t.me/nksv_ilya']
+      : ['alesha', 'Алёша · Фарш не провернуть', 'https://t.me/fuckup_files'];
+    const link = element('a', undefined, 'author-disc');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.title = `${name} · Telegram · Esc — освободить курсор`;
+    link.setAttribute('aria-label', `${name} · открыть Telegram`);
+    const image = element('img');
+    image.src = new URL(`authors/${id}_disc.png`, base).href;
+    image.alt = '';
+    link.append(image);
+    link.addEventListener('click', event => {
+      pause(true);
+      if (token && window.sendIpcMessage) {
+        event.preventDefault();
+        window.sendIpcMessage(JSON.stringify({event: 'author-link', author: id}));
+      }
+    });
+    authors.append(link);
+    root.append(authors);
     root.append(frame, element('div', undefined, 'tape'), header, panel, statusNode);
     document.body.append(root);
     active = {root, frame, panel, plateTitle, instructionPending: Boolean(info.showInstructions), pauseButton, muteButton, finishButtons: [finishButton, pauseFinish], status: statusNode, info, token, callback, paused: false, muted: Boolean(muted), finishing: false, started: null, loaded: false, rendered: false, pausedMillis: 0, pauseStart: 0, snapshots: [], poll: null, ticker: setInterval(updateTimer, 200)};

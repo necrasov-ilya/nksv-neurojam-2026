@@ -93,6 +93,11 @@ func _on_native_message(message: String) -> void:
 		var locked := bool(parsed.get("locked", false)) and get_window().has_focus()
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if locked else Input.MOUSE_MODE_VISIBLE
 		_browser.eval("window.LatentHost.pointerLockResult(%d,%s);" % [int(parsed.get("request", 0)), "true" if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else "false"])
+	elif parsed.get("event", "") == "author-link":
+		var url: String = {"nksv": "https://t.me/nksv_ilya", "alesha": "https://t.me/fuckup_files"}.get(str(parsed.get("author", "")), "")
+		if not url.is_empty():
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			OS.shell_open(url)
 
 func _on_native_loaded(_url: String, status: int) -> void:
 	if status >= 400:

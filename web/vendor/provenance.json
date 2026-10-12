@@ -6,13 +6,10 @@
     "files": [
       "LICENSE",
       "build/three.module.js",
-      "examples/jsm/environments/RoomEnvironment.js",
       "examples/jsm/libs/draco/README.md",
       "examples/jsm/libs/draco/gltf/draco_decoder.js",
       "examples/jsm/libs/draco/gltf/draco_decoder.wasm",
       "examples/jsm/libs/draco/gltf/draco_wasm_wrapper.js",
-      "examples/jsm/loaders/DRACOLoader.js",
-      "examples/jsm/loaders/GLTFLoader.js",
       "examples/jsm/postprocessing/EffectComposer.js",
       "examples/jsm/postprocessing/MaskPass.js",
       "examples/jsm/postprocessing/OutputPass.js",
@@ -23,7 +20,6 @@
       "examples/jsm/shaders/CopyShader.js",
       "examples/jsm/shaders/LuminosityHighPassShader.js",
       "examples/jsm/shaders/OutputShader.js",
-      "examples/jsm/utils/BufferGeometryUtils.js",
       "package.json"
     ]
   },
@@ -33,8 +29,7 @@
   },
   "font_stylesheets": [
     "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap",
-    "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap",
-    "https://fonts.googleapis.com/css2?family=Unbounded:wght@300;500;700&family=Manrope:wght@300;400;600&display=swap"
+    "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
   ],
   "font_assets": [
     {
@@ -151,36 +146,6 @@
       "url": "https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3vAO8lc.ttf",
       "file": "fonts/feead6344d56160370c1.ttf",
       "sha256": "754dfc9d50cf7aabfb6b108d2c2f7d20a3f1f2cc6f6c01640c6728091272cec0"
-    },
-    {
-      "url": "https://fonts.gstatic.com/s/manrope/v20/xn7_YHE41ni1AdIRqAuZuw1Bx9mbZk6jFO_F.ttf",
-      "file": "fonts/12ffff5404d61b27004d.ttf",
-      "sha256": "8acf416c55ae37360161a6e84fd91489b3211ffe550ba17df750e28d0685bb93"
-    },
-    {
-      "url": "https://fonts.gstatic.com/s/manrope/v20/xn7_YHE41ni1AdIRqAuZuw1Bx9mbZk79FO_F.ttf",
-      "file": "fonts/755fa076675e6f6181d8.ttf",
-      "sha256": "a13d9b41b0a471ce58f0e46d377fa3cc76615e4632c3b15eb397caadf7a13f0a"
-    },
-    {
-      "url": "https://fonts.gstatic.com/s/manrope/v20/xn7_YHE41ni1AdIRqAuZuw1Bx9mbZk4jE-_F.ttf",
-      "file": "fonts/900670474e93d412231f.ttf",
-      "sha256": "6bad1a774228464cc88b8b0271555b266f7a3c64a7bedf15e165fdab4f6ac0ce"
-    },
-    {
-      "url": "https://fonts.gstatic.com/s/unbounded/v12/Yq6F-LOTXCb04q32xlpat-6uR42XTqtG60bx040.ttf",
-      "file": "fonts/08355ba062e4bd3007b9.ttf",
-      "sha256": "789c1e3061d62c2176a94ba56699b1b27cb6a52c6e986850d86a3aaadb44bad2"
-    },
-    {
-      "url": "https://fonts.gstatic.com/s/unbounded/v12/Yq6F-LOTXCb04q32xlpat-6uR42XTqtG6yrx040.ttf",
-      "file": "fonts/84f611d2daf17615b35c.ttf",
-      "sha256": "7ac0baee243b4d54ea0282ceb7e017a455f064462989620720215727e1b9129c"
-    },
-    {
-      "url": "https://fonts.gstatic.com/s/unbounded/v12/Yq6F-LOTXCb04q32xlpat-6uR42XTqtG6__2040.ttf",
-      "file": "fonts/9c53087cfe2d87051936.ttf",
-      "sha256": "0587b7ea8407976e5feda03dcba410dde297fa203ae115eb1098d64186efef5c"
     }
   ]
 }

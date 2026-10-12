@@ -1,0 +1,1521 @@
+{
+  "model": "Fish Speech S2-Pro",
+  "generated_on": "2026-10-12",
+  "scope": "21 implemented campaign NPC lines; protagonist and prior city/interview audio unchanged",
+  "settings": {
+    "max_new_tokens": 1024,
+    "chunk_length": 300,
+    "top_p": 0.8,
+    "repetition_penalty": 1.1,
+    "temperature": 0.7,
+    "format": "wav",
+    "use_memory_cache": "on"
+  },
+  "decoder_precision": "bfloat16",
+  "generation_order": [
+    "nika",
+    "artem",
+    "elena"
+  ],
+  "voice_origin": "Synthetic voices only; no third-party speaker recordings",
+  "license": "Fish Audio Research License, 7 March 2026; Built with Fish Audio — https://fish.audio/",
+  "references": {
+    "nika": {
+      "file": "originals/nika/reference.wav",
+      "text": "Ой. Прости, не хотела пугать. Я Ника, старший тестировщик.",
+      "sha256": "300c663c06d1488034883b3f302da1d150ddfefaf11774af95c90dc3974e2b44",
+      "origin": "Technical Nika probe generated 2026-10-12 with Fish S2-Pro, seed 5101, conditioned on existing synthetic receptionist reference; now fixed as Nika reference"
+    },
+    "artem": {
+      "file": "originals/artem/artem_shift_end.wav",
+      "text": "Отчёт сохранён. Завтра привезут исправленную версию. Возьми свои записи: новое название ещё не означает, что соседнее условие проверено.",
+      "seed": 6313,
+      "prompt": "[male voice, calm, practical, conversational] Отчёт сохранён. Завтра привезут исправленную версию. Возьми свои записи: новое название ещё не означает, что соседнее условие проверено.",
+      "sha256": "633045bb54d2d85d5f2afccb4caddb80a40b255e6e8bafb8f83b89e10f07becb",
+      "origin": "First accepted line generated without a speaker reference; fixed for all subsequent lines of this character"
+    },
+    "elena": {
+      "file": "originals/elena/elena_day2_01.wav",
+      "text": "Сегодня память среды. Поставь метку, измени панель, сравни обычный сброс и переподключение. Контрольная версия доступна на том же стенде.",
+      "seed": 7118,
+      "prompt": "[female voice, mature, calm, confident, professional] Сегодня память среды. Поставь метку, измени панель, сравни обычный сброс и переподключение. Контрольная версия доступна на том же стенде.",
+      "sha256": "e1e9cbd45d6b4f699ffb506c10b4ba1c2684d87a9f3f5859db51cac1fb4dbefe",
+      "origin": "First accepted line generated without a speaker reference; fixed for all subsequent lines of this character"
+    }
+  },
+  "lines": [
+    {
+      "id": "nika_evening_01",
+      "speaker": "Ника Орлова",
+      "text": "Ой. Прости, не хотела пугать. Я Ника, старший тестировщик.",
+      "character": "nika",
+      "direction": "После разворота героя; Ника неподвижна, голос обычный.",
+      "tts_text": "Ой. Прости, не хотела пугать. Я Ника, старший тестировщик.",
+      "tts_prompt": "[female voice, friendly, calm, professional, conversational] Ой. Прости, не хотела пугать. Я Ника, старший тестировщик.",
+      "seed": 5102,
+      "conditioned_on": "originals/nika/reference.wav",
+      "raw": "originals/nika/nika_evening_01.wav",
+      "ogg": "nika/nika_evening_01.ogg",
+      "raw_sha256": "c9a37976be210eae9c8eb0bb521e11d741ade293b6f4c45fe112a75434b3aeb5",
+      "ogg_sha256": "e6eab52fd48acc3e3b7b94d8a6443d55fd9820bf501c1af81b9ebba49ee28110",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=4.27247166,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=4.26247166:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-20.51:measured_TP=-1.40:measured_LRA=1.10:measured_thresh=-30.89:offset=1.53",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 4.272471655328798,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.6,
+        "true_peak_dbtp": -1.19,
+        "source_loudness": {
+          "input_i": "-20.51",
+          "input_tp": "-1.40",
+          "input_lra": "1.10",
+          "input_thresh": "-30.89",
+          "output_i": "-17.53",
+          "output_tp": "-1.50",
+          "output_lra": "0.60",
+          "output_thresh": "-27.74",
+          "normalization_type": "dynamic",
+          "target_offset": "1.53"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 4.3
+      },
+      "asr": {
+        "text": "Ой, прости, не хотела пугать. Я Ника, старший тестировщик.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 5102,
+          "transcript": "Ой, прости, не хотела пугать. Я Ника, старший тестировщик.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "nika_evening_02",
+      "speaker": "Ника Орлова",
+      "text": "Это главный офис — здесь проходят собеседования. Испытательный корпус находится в другом квартале. Сегодня покажу, где будешь работать. Спускайся на лифте, я подожду внизу.",
+      "character": "nika",
+      "direction": "До смены здания; понятное приглашение на экскурсию.",
+      "tts_text": "Это главный офис — здесь проходят собеседования. Испытательный корпус находится в другом квартале. Сегодня покажу, где будешь работать. Спускайся на лифте, я подожду внизу.",
+      "tts_prompt": "[female voice, friendly, calm, professional, conversational] Это главный офис — здесь проходят собеседования. Испытательный корпус находится в другом квартале. Сегодня покажу, где будешь работать. Спускайся на лифте, я подожду внизу.",
+      "seed": 5203,
+      "conditioned_on": "originals/nika/reference.wav",
+      "raw": "originals/nika/nika_evening_02.wav",
+      "ogg": "nika/nika_evening_02.ogg",
+      "raw_sha256": "459506edb05079dbc55d12c39c1db84ecd2797f19e2e1048d655574137905af8",
+      "ogg_sha256": "5451005a9beffb1c77498ed775464e51e855585a76fea34b8e9c97117cbe959f",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=10.26321995,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=10.25321995:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-21.86:measured_TP=-1.30:measured_LRA=5.00:measured_thresh=-32.06:offset=1.72",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 10.263219954648527,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.72,
+        "true_peak_dbtp": -1.29,
+        "source_loudness": {
+          "input_i": "-21.86",
+          "input_tp": "-1.30",
+          "input_lra": "5.00",
+          "input_thresh": "-32.06",
+          "output_i": "-17.72",
+          "output_tp": "-1.50",
+          "output_lra": "1.60",
+          "output_thresh": "-27.89",
+          "normalization_type": "dynamic",
+          "target_offset": "1.72"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 10.3
+      },
+      "asr": {
+        "text": "Это главный офис, здесь проходят собеседования. Испытательный корпус находится в другом квартале. Сегодня покажу, где будешь работать. Спускайся на лифте, я подожду внизу.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 5103,
+          "transcript": "Это главный офис, здесь проходит собеседование. Испытательный корпус находится в другом квартале. Сегодня покажу, где будешь работать. Спускайся на лифте, я подожду внизу.",
+          "matches": false
+        },
+        {
+          "seed": 5203,
+          "transcript": "Это главный офис, здесь проходят собеседования. Испытательный корпус находится в другом квартале. Сегодня покажу, где будешь работать. Спускайся на лифте, я подожду внизу.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "nika_day1_01",
+      "speaker": "Ника Орлова",
+      "text": "Это наш испытательный этаж. За этим столом будешь работать ты. На компьютере — проверка сохранности предмета.",
+      "character": "nika",
+      "direction": "Первое появление в лаборатории; буднично.",
+      "tts_text": "Это наш испытательный этаж. За этим столом будешь работать ты. На компьютере — проверка сохранности предмета.",
+      "tts_prompt": "[female voice, friendly, calm, professional, conversational] Это наш испытательный этаж. За этим столом будешь работать ты. На компьютере — проверка сохранности предмета.",
+      "seed": 5104,
+      "conditioned_on": "originals/nika/reference.wav",
+      "raw": "originals/nika/nika_day1_01.wav",
+      "ogg": "nika/nika_day1_01.ogg",
+      "raw_sha256": "7cfa2ea7e4f150f3e22bac086f4aeaeb1b1dcdd4e3a7338995a20e70a279fa93",
+      "ogg_sha256": "0950ba1b0ab01167ca859df70b375d8f0cdd5c2aa00dadf88d1f12970b5b7195",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=6.96598639,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=6.95598639:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-23.51:measured_TP=-4.66:measured_LRA=2.10:measured_thresh=-33.56:offset=1.53",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 6.965986394557823,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.89,
+        "true_peak_dbtp": -1.32,
+        "source_loudness": {
+          "input_i": "-23.51",
+          "input_tp": "-4.66",
+          "input_lra": "2.10",
+          "input_thresh": "-33.56",
+          "output_i": "-17.53",
+          "output_tp": "-1.50",
+          "output_lra": "1.10",
+          "output_thresh": "-27.53",
+          "normalization_type": "dynamic",
+          "target_offset": "1.53"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 7.000021
+      },
+      "asr": {
+        "text": "Это наш испытательный этаж. За этим столом будешь работать ты. На компьютере проверка сохранности предмета.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 5104,
+          "transcript": "Это наш испытательный этаж. За этим столом будешь работать ты. На компьютере проверка сохранности предмета.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "nika_day1_02",
+      "speaker": "Ника Орлова",
+      "text": "Начни с контроля. На стенде куб, шар и цилиндр; кнопки меняют размер, вес и упругость выбранного предмета. Для первой проверки поставь обычный, затем увеличенный куб в жёлтый шаблон. Смени версию, повтори и сравни посадку. Броски — на отдельной дорожке.",
+      "character": "nika",
+      "direction": "Простая предметная калибровка, не готовый диагноз.",
+      "tts_text": "Начни с контроля. На стенде куб, шар и цилиндр; кнопки меняют размер, вес и упругость выбранного предмета. Для первой проверки поставь обычный, затем увеличенный куб в жёлтый шаблон. Смени версию, повтори и сравни посадку. Броски — на отдельной дорожке.",
+      "tts_prompt": "[female voice, friendly, calm, professional, conversational] Начни с контроля. На стенде куб, шар и цилиндр; кнопки меняют размер, вес и упругость выбранного предмета. Для первой проверки поставь обычный, затем увеличенный куб в жёлтый шаблон. Смени версию, повтори и сравни посадку. Броски — на отдельной дорожке.",
+      "seed": 5105,
+      "sentence_parts": [
+        "Начни с контроля.",
+        "На стенде куб, шар и цилиндр; кнопки меняют размер, вес и упругость выбранного предмета.",
+        "Для первой проверки поставь обычный, затем увеличенный куб в жёлтый шаблон.",
+        "Смени версию, повтори и сравни посадку.",
+        "Броски — на отдельной дорожке."
+      ],
+      "sentence_seeds": [
+        5105,
+        5106,
+        5107,
+        5108,
+        5109
+      ],
+      "sentence_gap_seconds": 0.12,
+      "conditioned_on": "originals/nika/reference.wav",
+      "raw": "originals/nika/nika_day1_02.wav",
+      "ogg": "nika/nika_day1_02.ogg",
+      "raw_sha256": "cdf3347299f431cf2547dc2d9393c0ef9a2f45e4bcdec0c905af87203f00cc46",
+      "ogg_sha256": "e363ea2ffd3a9724e609cd85a10b07ae40e3057671d263f18086813ae4997253",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=17.15192744,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=17.14192744:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-21.09:measured_TP=-1.35:measured_LRA=3.00:measured_thresh=-31.51:offset=0.61",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 17.151927437641724,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.27,
+        "true_peak_dbtp": -1.24,
+        "source_loudness": {
+          "input_i": "-21.09",
+          "input_tp": "-1.35",
+          "input_lra": "3.00",
+          "input_thresh": "-31.51",
+          "output_i": "-16.61",
+          "output_tp": "-1.50",
+          "output_lra": "1.60",
+          "output_thresh": "-26.86",
+          "normalization_type": "dynamic",
+          "target_offset": "0.61"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 17.2
+      },
+      "asr": {
+        "text": "Начни с контроля. На стенде куб, шар и цилиндр. Кнопки меняют размер, вес и упругость выбранного предмета. Для первой проверки поставь обычный, затем увеличенный куб в желтый шаблон. Смени версию, повтори и сравни посадку. Броски на отдельной дорожке.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 5105,
+          "transcript": "Начни с контроля. На стенде куб, шар и цилиндр. Кнопки меняют размер, вес и упругость выбранного предмета. Для первой проверки поставь обычный, затем увеличенный куб в желтый шаблон. Смени версию, повтори и сравни посадку. Броски на отдельной дорожке.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "nika_day1_03",
+      "speaker": "Ника Орлова",
+      "text": "Да. Записывай действие, результат и повтор. Если не проверял — так и напиши. Другие игры на компьютере можно посмотреть дополнительно; они не заменяют сегодняшнюю задачу.",
+      "character": "nika",
+      "direction": "Предметный отчёт и необязательный каталог.",
+      "tts_text": "Да. Записывай действие, результат и повтор. Если не проверял — так и напиши. Другие игры на компьютере можно посмотреть дополнительно; они не заменяют сегодняшнюю задачу.",
+      "tts_prompt": "[female voice, friendly, calm, professional, conversational] Да. Записывай действие, результат и повтор. Если не проверял — так и напиши. Другие игры на компьютере можно посмотреть дополнительно; они не заменяют сегодняшнюю задачу.",
+      "seed": 5406,
+      "sentence_parts": [
+        "Да.",
+        "Записывай действие, результат и повтор.",
+        "Если не проверял — так и напиши.",
+        "Другие игры на компьютере можно посмотреть дополнительно; они не заменяют сегодняшнюю задачу."
+      ],
+      "sentence_seeds": [
+        5406,
+        5407,
+        5408,
+        5409
+      ],
+      "sentence_gap_seconds": 0.12,
+      "conditioned_on": "originals/nika/reference.wav",
+      "raw": "originals/nika/nika_day1_03.wav",
+      "ogg": "nika/nika_day1_03.ogg",
+      "raw_sha256": "65f215ca08ae148d3303f1ecbc2620fdae1b37f9634c0b9bb129e61650dfffca",
+      "ogg_sha256": "0cf80a8b7cc5ff272917cf23ae40a102e4a3624bb2e19269f4a8086455c9cd22",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=11.59845805,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=11.58845805:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-22.22:measured_TP=-2.79:measured_LRA=3.20:measured_thresh=-32.46:offset=0.74",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 11.598458049886622,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.35,
+        "true_peak_dbtp": -1.12,
+        "source_loudness": {
+          "input_i": "-22.22",
+          "input_tp": "-2.79",
+          "input_lra": "3.20",
+          "input_thresh": "-32.46",
+          "output_i": "-16.74",
+          "output_tp": "-1.50",
+          "output_lra": "2.10",
+          "output_thresh": "-26.97",
+          "normalization_type": "dynamic",
+          "target_offset": "0.74"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 11.6
+      },
+      "asr": {
+        "text": "Да. Записывай действие, результат и повтор. Если не проверял, так и напиши. Другие игры на компьютере можно посмотреть дополнительно. Они не заменяют сегодняшнюю задачу.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 5106,
+          "transcript": "Да, записывай действия, результаты и повтор. Если не проверял, так и напиши. Другие игры на компьютере можно посмотреть дополнительно. Они не заменяют сегодняшнюю задачу.",
+          "matches": false
+        },
+        {
+          "seed": 5206,
+          "transcript": "Да, записывай действия, результат и повтор. Если не проверял, так и напиши. Другие игры на компьютере можно посмотреть дополнительно. Они не заменяют сегодняшнюю задачу.",
+          "matches": false
+        },
+        {
+          "seed": 5306,
+          "transcript": "Да, записывай действия, результаты, повтор. Если не проверял, так и напиши. Другие игры на компьютере можно посмотреть дополнительно. Они не заменяют сегодняшнюю задачу.",
+          "matches": false
+        },
+        {
+          "seed": 5406,
+          "transcript": "Да. Записывай действие, результат и повтор. Если не проверял, так и напиши. Другие игры на компьютере можно посмотреть дополнительно. Они не заменяют сегодняшнюю задачу.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "nika_hired_01",
+      "speaker": "Ника Орлова",
+      "text": "Практическую часть мы приняли. Твой доступ уже оформляют. Завтра приходи к девяти; проверишь память среды.",
+      "character": "nika",
+      "direction": "Конец первого рабочего дня; найм без оценки послушания.",
+      "tts_text": "Практическую часть мы приняли. Твой доступ уже оформляют. Завтра приходи к девяти; проверишь память среды.",
+      "tts_prompt": "[female voice, friendly, calm, professional, conversational] Практическую часть мы приняли. Твой доступ уже оформляют. Завтра приходи к девяти; проверишь память среды.",
+      "seed": 5207,
+      "sentence_parts": [
+        "Практическую часть мы приняли. Твой доступ уже оформляют. Завтра приходи к девяти; проверишь память среды."
+      ],
+      "sentence_seeds": [
+        5207
+      ],
+      "sentence_gap_seconds": 0,
+      "conditioned_on": "originals/nika/reference.wav",
+      "raw": "originals/nika/nika_hired_01.wav",
+      "ogg": "nika/nika_hired_01.ogg",
+      "raw_sha256": "2cee10710909789a83b1aeb9e8d8fd399dafc86216d0ee2035fe3fe64aa9a0e9",
+      "ogg_sha256": "2ea723cb3c23adb5e84107388deebefeb75738290617e9be76cfe50d91413a06",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=6.91954649,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=6.90954649:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-21.43:measured_TP=-1.20:measured_LRA=3.10:measured_thresh=-31.47:offset=1.58",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 6.919546485260771,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.83,
+        "true_peak_dbtp": -1.35,
+        "source_loudness": {
+          "input_i": "-21.43",
+          "input_tp": "-1.20",
+          "input_lra": "3.10",
+          "input_thresh": "-31.47",
+          "output_i": "-17.58",
+          "output_tp": "-1.50",
+          "output_lra": "1.20",
+          "output_thresh": "-27.64",
+          "normalization_type": "dynamic",
+          "target_offset": "1.58"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 7
+      },
+      "asr": {
+        "text": "Практическую часть мы приняли. Твой доступ уже оформляют. Завтра приходи к девяти, проверишь память среды.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 5107,
+          "transcript": "Практическую часть мы приняли. Твой доступ уже оформляют. Завтра приходи к 9. Проверишь память среды.",
+          "matches": false
+        },
+        {
+          "seed": 5207,
+          "transcript": "Практическую часть мы приняли. Твой доступ уже оформляют. Завтра приходи к девяти, проверишь память среды.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "nika_day2_01",
+      "speaker": "Ника Орлова",
+      "text": "Сохраняй условия, а не только вывод. Артём может выполнить отдельную проверку панели. Его результат не заменяет твой.",
+      "character": "nika",
+      "direction": "Новые способы подтверждения.",
+      "tts_text": "Сохраняй условия, а не только вывод. Артём может выполнить отдельную проверку панели. Его результат не заменяет твой.",
+      "tts_prompt": "[female voice, friendly, calm, professional, conversational] Сохраняй условия, а не только вывод. Артём может выполнить отдельную проверку панели. Его результат не заменяет твой.",
+      "seed": 5108,
+      "sentence_parts": [
+        "Сохраняй условия, а не только вывод. Артём может выполнить отдельную проверку панели. Его результат не заменяет твой."
+      ],
+      "sentence_seeds": [
+        5108
+      ],
+      "sentence_gap_seconds": 0,
+      "conditioned_on": "originals/nika/reference.wav",
+      "raw": "originals/nika/nika_day2_01.wav",
+      "ogg": "nika/nika_day2_01.ogg",
+      "raw_sha256": "0a2cefcb7db2463da4b21bc2ca7ebccdc578f10a899056d9b47e4fcefaa4fc08",
+      "ogg_sha256": "2f5fa45e92e4f052a99591c577498b68f7b36d76c183af2d119d6c2a9f32561a",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=8.08054422,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=8.07054422:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-21.15:measured_TP=-1.00:measured_LRA=3.50:measured_thresh=-31.57:offset=1.29",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 8.080544217687075,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.6,
+        "true_peak_dbtp": -1.33,
+        "source_loudness": {
+          "input_i": "-21.15",
+          "input_tp": "-1.00",
+          "input_lra": "3.50",
+          "input_thresh": "-31.57",
+          "output_i": "-17.29",
+          "output_tp": "-1.50",
+          "output_lra": "1.40",
+          "output_thresh": "-27.69",
+          "normalization_type": "dynamic",
+          "target_offset": "1.29"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 8.1
+      },
+      "asr": {
+        "text": "Сохраняй условия, а не только вывод. Артем может выполнить отдельную проверку панели. Его результат не заменяет твой.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 5108,
+          "transcript": "Сохраняй условия, а не только вывод. Артем может выполнить отдельную проверку панели. Его результат не заменяет твой.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "nika_peer_01",
+      "speaker": "Ника Орлова",
+      "text": "Запрос записан отдельно. Для панели пригласи Артёма на стенд; подтверждение появится после его проверки, не после нажатия этой кнопки.",
+      "character": "nika",
+      "direction": "Не выдавать запрос за полученный результат.",
+      "tts_text": "Запрос записан отдельно. Для панели пригласи Артёма на стенд; подтверждение появится после его проверки, не после нажатия этой кнопки.",
+      "tts_prompt": "[female voice, friendly, calm, professional, conversational] Запрос записан отдельно. Для панели пригласи Артёма на стенд; подтверждение появится после его проверки, не после нажатия этой кнопки.",
+      "seed": 5109,
+      "sentence_parts": [
+        "Запрос записан отдельно. Для панели пригласи Артёма на стенд; подтверждение появится после его проверки, не после нажатия этой кнопки."
+      ],
+      "sentence_seeds": [
+        5109
+      ],
+      "sentence_gap_seconds": 0,
+      "conditioned_on": "originals/nika/reference.wav",
+      "raw": "originals/nika/nika_peer_01.wav",
+      "ogg": "nika/nika_peer_01.ogg",
+      "raw_sha256": "6017292a03c265b26e63883bf3606cf4aa562d9a1f917b04130ba843af2adf19",
+      "ogg_sha256": "15fdf5a027cdbe145d70863ead3acb48bf4ef174388e5beb1d44b330bff8f9d8",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=9.10222222,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=9.09222222:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-23.58:measured_TP=-4.24:measured_LRA=2.60:measured_thresh=-33.83:offset=0.77",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 9.102222222222222,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.4,
+        "true_peak_dbtp": -1.32,
+        "source_loudness": {
+          "input_i": "-23.58",
+          "input_tp": "-4.24",
+          "input_lra": "2.60",
+          "input_thresh": "-33.83",
+          "output_i": "-16.77",
+          "output_tp": "-1.50",
+          "output_lra": "0.90",
+          "output_thresh": "-27.02",
+          "normalization_type": "dynamic",
+          "target_offset": "0.77"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 9.2
+      },
+      "asr": {
+        "text": "Запрос записан отдельно. Для панели «Пригласи Артёма на стенд» подтверждение появится после его проверки, не после нажатия этой кнопки.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 5109,
+          "transcript": "Запрос записан отдельно. Для панели «Пригласи Артёма на стенд» подтверждение появится после его проверки, не после нажатия этой кнопки.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "nika_day3_01",
+      "speaker": "Ника Орлова",
+      "text": "Я здесь, на этаже. Закончишь отчёт — программа закроется. Не торопись называть принятым то, чего не проверял.",
+      "character": "nika",
+      "direction": "Ника присутствует в офисе.",
+      "tts_text": "Я здесь, на этаже. Закончишь отчёт — программа закроется. Не торопись называть принятым то, чего не проверял.",
+      "tts_prompt": "[female voice, friendly, calm, professional, conversational] Я здесь, на этаже. Закончишь отчёт — программа закроется. Не торопись называть принятым то, чего не проверял.",
+      "seed": 5110,
+      "sentence_parts": [
+        "Я здесь, на этаже. Закончишь отчёт — программа закроется. Не торопись называть принятым то, чего не проверял."
+      ],
+      "sentence_seeds": [
+        5110
+      ],
+      "sentence_gap_seconds": 0,
+      "conditioned_on": "originals/nika/reference.wav",
+      "raw": "originals/nika/nika_day3_01.wav",
+      "ogg": "nika/nika_day3_01.ogg",
+      "raw_sha256": "5f29a2bab9434e78eca264de1b395b85fe49e5fcb4246cd6c6a981c020fc0b37",
+      "ogg_sha256": "aeff1a6bf3ff82ab5e37b823ee8002c9c4d7613e5203c2b1eefade3351348c0f",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=7.10530612,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=7.09530612:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-22.47:measured_TP=-1.44:measured_LRA=3.00:measured_thresh=-32.61:offset=1.67",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 7.1053061224489795,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.45,
+        "true_peak_dbtp": -1.25,
+        "source_loudness": {
+          "input_i": "-22.47",
+          "input_tp": "-1.44",
+          "input_lra": "3.00",
+          "input_thresh": "-32.61",
+          "output_i": "-17.67",
+          "output_tp": "-1.50",
+          "output_lra": "1.60",
+          "output_thresh": "-27.86",
+          "normalization_type": "dynamic",
+          "target_offset": "1.67"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 7.2
+      },
+      "asr": {
+        "text": "Я здесь, на этаже. Закончишь отчет, программа закроется. Не торопись называть принятым то, чего не проверял.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 5110,
+          "transcript": "Я здесь, на этаже. Закончишь отчет, программа закроется. Не торопись называть принятым то, чего не проверял.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "nika_independent",
+      "speaker": "Ника Орлова",
+      "text": "В анкете ты выбрал самостоятельную смену. Не буду стоять над душой. Но вопросы задавать всё равно можно.",
+      "character": "nika",
+      "direction": "Последствие isolation=0.",
+      "tts_text": "В анкете ты выбрал самостоятельную смену. Не буду стоять над душой. Но вопросы задавать всё равно можно.",
+      "tts_prompt": "[female voice, friendly, calm, professional, conversational] В анкете ты выбрал самостоятельную смену. Не буду стоять над душой. Но вопросы задавать всё равно можно.",
+      "seed": 5111,
+      "sentence_parts": [
+        "В анкете ты выбрал самостоятельную смену. Не буду стоять над душой. Но вопросы задавать всё равно можно."
+      ],
+      "sentence_seeds": [
+        5111
+      ],
+      "sentence_gap_seconds": 0,
+      "conditioned_on": "originals/nika/reference.wav",
+      "raw": "originals/nika/nika_independent.wav",
+      "ogg": "nika/nika_independent.ogg",
+      "raw_sha256": "18b68693747847365fcc9f9519797d0a1318b7e9e184f644040aa211a8e2b224",
+      "ogg_sha256": "af2f8069625d2ca84ead3dff18797c0c90c6c8686a1522a034a8bda78ec260d8",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=6.22294785,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=6.21294785:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-21.79:measured_TP=-0.96:measured_LRA=2.80:measured_thresh=-31.97:offset=1.09",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 6.222947845804988,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.62,
+        "true_peak_dbtp": -1.31,
+        "source_loudness": {
+          "input_i": "-21.79",
+          "input_tp": "-0.96",
+          "input_lra": "2.80",
+          "input_thresh": "-31.97",
+          "output_i": "-17.09",
+          "output_tp": "-1.50",
+          "output_lra": "1.30",
+          "output_thresh": "-27.16",
+          "normalization_type": "dynamic",
+          "target_offset": "1.09"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 6.300021
+      },
+      "asr": {
+        "text": "В анкете ты выбрал самостоятельную смену. Не буду стоять над душой, но вопросы задавать все равно можно.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 5111,
+          "transcript": "В анкете ты выбрал самостоятельную смену. Не буду стоять над душой, но вопросы задавать все равно можно.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "nika_online",
+      "speaker": "Ника Орлова",
+      "text": "Ты просил, чтобы коллега оставался на связи. Я рядом, на этаже. Если понадобится — подойди.",
+      "character": "nika",
+      "direction": "Последствие isolation=1.",
+      "tts_text": "Ты просил, чтобы коллега оставался на связи. Я рядом, на этаже. Если понадобится — подойди.",
+      "tts_prompt": "[female voice, friendly, calm, professional, conversational] Ты просил, чтобы коллега оставался на связи. Я рядом, на этаже. Если понадобится — подойди.",
+      "seed": 5112,
+      "sentence_parts": [
+        "Ты просил, чтобы коллега оставался на связи. Я рядом, на этаже. Если понадобится — подойди."
+      ],
+      "sentence_seeds": [
+        5112
+      ],
+      "sentence_gap_seconds": 0,
+      "conditioned_on": "originals/nika/reference.wav",
+      "raw": "originals/nika/nika_online.wav",
+      "ogg": "nika/nika_online.ogg",
+      "raw_sha256": "d01d3bae65404888da99430875517bfe6bfeed96978ee7f18a3f1fdbab3fef0d",
+      "ogg_sha256": "73f0e548f7fa94fc97084a4e792a8dc966b4c7fbe35803aedd7dbf6547d57a85",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=6.03718821,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=6.02718821:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-21.60:measured_TP=-2.36:measured_LRA=3.20:measured_thresh=-31.99:offset=1.33",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 6.03718820861678,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -17.08,
+        "true_peak_dbtp": -1.22,
+        "source_loudness": {
+          "input_i": "-21.60",
+          "input_tp": "-2.36",
+          "input_lra": "3.20",
+          "input_thresh": "-31.99",
+          "output_i": "-17.33",
+          "output_tp": "-1.50",
+          "output_lra": "2.10",
+          "output_thresh": "-27.55",
+          "normalization_type": "dynamic",
+          "target_offset": "1.33"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 6.1
+      },
+      "asr": {
+        "text": "Ты просил, чтобы коллега оставался на связи. Я рядом, на этаже. Если понадобится, подойди.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 5112,
+          "transcript": "Ты просил, чтобы коллега оставался на связи. Я рядом, на этаже. Если понадобится, подойди.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "nika_together",
+      "speaker": "Ника Орлова",
+      "text": "В анкете ты написал, что не хочешь работать один. Первую пробу я буду рядом. Потом договоримся, как удобнее связываться.",
+      "character": "nika",
+      "direction": "Последствие isolation=2.",
+      "tts_text": "В анкете ты написал, что не хочешь работать один. Первую пробу я буду рядом. Потом договоримся, как удобнее связываться.",
+      "tts_prompt": "[female voice, friendly, calm, professional, conversational] В анкете ты написал, что не хочешь работать один. Первую пробу я буду рядом. Потом договоримся, как удобнее связываться.",
+      "seed": 5113,
+      "sentence_parts": [
+        "В анкете ты написал, что не хочешь работать один. Первую пробу я буду рядом. Потом договоримся, как удобнее связываться."
+      ],
+      "sentence_seeds": [
+        5113
+      ],
+      "sentence_gap_seconds": 0,
+      "conditioned_on": "originals/nika/reference.wav",
+      "raw": "originals/nika/nika_together.wav",
+      "ogg": "nika/nika_together.ogg",
+      "raw_sha256": "aaae6bcf23e5dfb41839c2b56e68a6ce61c9805c76cc35fd31ce0ad0c4ff7264",
+      "ogg_sha256": "531f8a61c5a40d21a784569a8cb0fa529870d7b72b0279a8af8c1a667868d10f",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=7.61614512,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=7.60614512:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-19.63:measured_TP=-0.75:measured_LRA=1.80:measured_thresh=-30.06:offset=0.22",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 7.616145124716553,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.04,
+        "true_peak_dbtp": -1.24,
+        "source_loudness": {
+          "input_i": "-19.63",
+          "input_tp": "-0.75",
+          "input_lra": "1.80",
+          "input_thresh": "-30.06",
+          "output_i": "-16.22",
+          "output_tp": "-1.50",
+          "output_lra": "1.60",
+          "output_thresh": "-26.46",
+          "normalization_type": "dynamic",
+          "target_offset": "0.22"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 7.7
+      },
+      "asr": {
+        "text": "В анкете ты написал, что не хочешь работать один. Первую пробу я буду рядом, потом договоримся, как удобнее связываться.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 5113,
+          "transcript": "В анкете ты написал, что не хочешь работать один. Первую пробу я буду рядом, потом договоримся, как удобнее связываться.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "artem_shift_end",
+      "speaker": "Артём Королёв",
+      "text": "Отчёт сохранён. Завтра привезут исправленную версию. Возьми свои записи: новое название ещё не означает, что соседнее условие проверено.",
+      "character": "artem",
+      "direction": "Конец второго дня без аварии.",
+      "tts_text": "Отчёт сохранён. Завтра привезут исправленную версию. Возьми свои записи: новое название ещё не означает, что соседнее условие проверено.",
+      "tts_prompt": "[male voice, calm, practical, conversational] Отчёт сохранён. Завтра привезут исправленную версию. Возьми свои записи: новое название ещё не означает, что соседнее условие проверено.",
+      "seed": 6313,
+      "sentence_parts": [
+        "Отчёт сохранён.",
+        "Завтра привезут исправленную версию.",
+        "Возьми свои записи: новое название ещё не означает, что соседнее условие проверено."
+      ],
+      "sentence_seeds": [
+        6313,
+        6314,
+        6315
+      ],
+      "sentence_gap_seconds": 0.12,
+      "conditioned_on": null,
+      "raw": "originals/artem/artem_shift_end.wav",
+      "ogg": "artem/artem_shift_end.ogg",
+      "raw_sha256": "633045bb54d2d85d5f2afccb4caddb80a40b255e6e8bafb8f83b89e10f07becb",
+      "ogg_sha256": "7f23363db458c6f5a4690b0f033bd74c2805ce07eaa59d10107337b3071ee391",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=10.03882086,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=10.02882086:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-20.19:measured_TP=-1.36:measured_LRA=5.00:measured_thresh=-30.43:offset=-0.41",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 10.038820861678005,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.38,
+        "true_peak_dbtp": -1.35,
+        "source_loudness": {
+          "input_i": "-20.19",
+          "input_tp": "-1.36",
+          "input_lra": "5.00",
+          "input_thresh": "-30.43",
+          "output_i": "-15.59",
+          "output_tp": "-1.50",
+          "output_lra": "2.50",
+          "output_thresh": "-25.90",
+          "normalization_type": "dynamic",
+          "target_offset": "-0.41"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 10.100021
+      },
+      "asr": {
+        "text": "Отчет сохранен. Завтра привезут исправленную версию. Возьми свои записи. Новое название еще не означает, что соседнее условие проверено.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 6113,
+          "transcript": "Отчет сохранен. Завтра привезут исправленную версию. Возьми свои записи. Новое название еще не означает, что соседние условия проверено.",
+          "matches": false
+        },
+        {
+          "seed": 6213,
+          "transcript": "Отчет сохранен. Завтра привезут исправленную версию. Возьми свои записи. Новое название еще не означает, что соседние условия проверены.",
+          "matches": false
+        },
+        {
+          "seed": 6313,
+          "transcript": "Отчет сохранен. Завтра привезут исправленную версию. Возьми свои записи. Новое название еще не означает, что соседнее условие проверено.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "artem_day3_01",
+      "speaker": "Артём Королёв",
+      "text": "Стенд подключён. Старые записи доступны на левом пульте. В служебном секторе сегодня обычное обслуживание, к проверке он не относится.",
+      "character": "artem",
+      "direction": "Нет обещания аварийной развилки.",
+      "tts_text": "Стенд подключён. Старые записи доступны на левом пульте. В служебном секторе сегодня обычное обслуживание, к проверке он не относится.",
+      "tts_prompt": "[male voice, calm, practical, conversational] Стенд подключён. Старые записи доступны на левом пульте. В служебном секторе сегодня обычное обслуживание, к проверке он не относится.",
+      "seed": 6114,
+      "sentence_parts": [
+        "Стенд подключён. Старые записи доступны на левом пульте. В служебном секторе сегодня обычное обслуживание, к проверке он не относится."
+      ],
+      "sentence_seeds": [
+        6114
+      ],
+      "sentence_gap_seconds": 0,
+      "conditioned_on": "originals/artem/artem_shift_end.wav",
+      "raw": "originals/artem/artem_day3_01.wav",
+      "ogg": "artem/artem_day3_01.ogg",
+      "raw_sha256": "8c9eef7fb9790ab9777a21a46dcffc54d41e9f2fdc80e543c7de09679aa304d0",
+      "ogg_sha256": "dcc44b0b3a3ae6ea7d3965fedd6b28e40e30e5a5936b8b4af3fc5cf6ea9287ff",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=9.42730159,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=9.41730159:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-19.31:measured_TP=-0.84:measured_LRA=5.30:measured_thresh=-29.91:offset=1.47",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 9.427301587301587,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -17.05,
+        "true_peak_dbtp": -1.35,
+        "source_loudness": {
+          "input_i": "-19.31",
+          "input_tp": "-0.84",
+          "input_lra": "5.30",
+          "input_thresh": "-29.91",
+          "output_i": "-17.47",
+          "output_tp": "-1.50",
+          "output_lra": "2.00",
+          "output_thresh": "-28.00",
+          "normalization_type": "dynamic",
+          "target_offset": "1.47"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 9.500021
+      },
+      "asr": {
+        "text": "Стенд подключен, старые записи доступны на левом пульте, в служебном секторе сегодня обычное обслуживание, к проверке он не относится.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 6114,
+          "transcript": "Стенд подключен, старые записи доступны на левом пульте, в служебном секторе сегодня обычное обслуживание, к проверке он не относится.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "artem_stop",
+      "speaker": "Артём Королёв",
+      "text": "Ты писал, что при потере связи остановишь тест. Здесь похоже: сначала сохрани условия опыта, потом переподключай среду.",
+      "character": "artem",
+      "direction": "Последствие communication=0.",
+      "tts_text": "Ты писал, что при потере связи остановишь тест. Здесь похоже: сначала сохрани условия опыта, потом переподключай среду.",
+      "tts_prompt": "[male voice, calm, practical, conversational] Ты писал, что при потере связи остановишь тест. Здесь похоже: сначала сохрани условия опыта, потом переподключай среду.",
+      "seed": 6115,
+      "sentence_parts": [
+        "Ты писал, что при потере связи остановишь тест. Здесь похоже: сначала сохрани условия опыта, потом переподключай среду."
+      ],
+      "sentence_seeds": [
+        6115
+      ],
+      "sentence_gap_seconds": 0,
+      "conditioned_on": "originals/artem/artem_shift_end.wav",
+      "raw": "originals/artem/artem_stop.wav",
+      "ogg": "artem/artem_stop.ogg",
+      "raw_sha256": "87aa56ec1d60f81c7cfec8ebb191198466be52920f63f06182c6c385bc35ab65",
+      "ogg_sha256": "2a471894c8e69300ed349790af20f6603b0ccafcaea482beed3c81d5152cd53e",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=8.87002268,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=8.86002268:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-19.73:measured_TP=-1.20:measured_LRA=1.80:measured_thresh=-30.24:offset=1.07",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 8.870022675736962,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.8,
+        "true_peak_dbtp": -1.22,
+        "source_loudness": {
+          "input_i": "-19.73",
+          "input_tp": "-1.20",
+          "input_lra": "1.80",
+          "input_thresh": "-30.24",
+          "output_i": "-17.07",
+          "output_tp": "-1.50",
+          "output_lra": "1.00",
+          "output_thresh": "-27.60",
+          "normalization_type": "dynamic",
+          "target_offset": "1.07"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 8.9
+      },
+      "asr": {
+        "text": "Ты писал, что при потере связи остановишь тест. Здесь похоже. Сначала сохрани условия опыта, потом переподключай среду.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 6115,
+          "transcript": "Ты писал, что при потере связи остановишь тест, здесь похоже, сначала сохрани условия опыта, потом переподключай среду.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "artem_reserve",
+      "speaker": "Артём Королёв",
+      "text": "Помню твой ответ про резервную связь. Записи у нас отдельные от решения о приёмке. Оставь себе копию.",
+      "character": "artem",
+      "direction": "Последствие communication=1.",
+      "tts_text": "Помню твой ответ про резервную связь. Записи у нас отдельные от решения о приёмке. Оставь себе копию.",
+      "tts_prompt": "[male voice, calm, practical, conversational] Помню твой ответ про резервную связь. Записи у нас отдельные от решения о приёмке. Оставь себе копию.",
+      "seed": 6116,
+      "sentence_parts": [
+        "Помню твой ответ про резервную связь. Записи у нас отдельные от решения о приёмке. Оставь себе копию."
+      ],
+      "sentence_seeds": [
+        6116
+      ],
+      "sentence_gap_seconds": 0,
+      "conditioned_on": "originals/artem/artem_shift_end.wav",
+      "raw": "originals/artem/artem_reserve.wav",
+      "ogg": "artem/artem_reserve.ogg",
+      "raw_sha256": "9c60f5aa94c7579f1c74bd1b5201d95e984eb9c55fe5b646be02878ae8ee0a35",
+      "ogg_sha256": "1477105fc5560ac2100c6688c100403fa3b212b8e4d2df9c41ada0092daee8d6",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=7.47682540,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=7.46682540:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-20.98:measured_TP=-1.76:measured_LRA=5.10:measured_thresh=-31.51:offset=1.37",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 7.476825396825397,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -17.16,
+        "true_peak_dbtp": -1.28,
+        "source_loudness": {
+          "input_i": "-20.98",
+          "input_tp": "-1.76",
+          "input_lra": "5.10",
+          "input_thresh": "-31.51",
+          "output_i": "-17.37",
+          "output_tp": "-1.50",
+          "output_lra": "2.60",
+          "output_thresh": "-27.81",
+          "normalization_type": "dynamic",
+          "target_offset": "1.37"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 7.5
+      },
+      "asr": {
+        "text": "Помню твой ответ про резервную связь. Записи у нас отдельные от решения о приемке. Оставь себе копию.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 6116,
+          "transcript": "Помню твой ответ про резервную связь. Записи у нас отдельные от решения о приемке. Оставь себе копию.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "artem_continue",
+      "speaker": "Артём Королёв",
+      "text": "В анкете ты выбрал закончить текущий этап. С повтором не смешивай: новый порядок действий — уже другое условие.",
+      "character": "artem",
+      "direction": "Последствие communication=2, без штрафа.",
+      "tts_text": "В анкете ты выбрал закончить текущий этап. С повтором не смешивай: новый порядок действий — уже другое условие.",
+      "tts_prompt": "[male voice, calm, practical, conversational] В анкете ты выбрал закончить текущий этап. С повтором не смешивай: новый порядок действий — уже другое условие.",
+      "seed": 6117,
+      "sentence_parts": [
+        "В анкете ты выбрал закончить текущий этап. С повтором не смешивай: новый порядок действий — уже другое условие."
+      ],
+      "sentence_seeds": [
+        6117
+      ],
+      "sentence_gap_seconds": 0,
+      "conditioned_on": "originals/artem/artem_shift_end.wav",
+      "raw": "originals/artem/artem_continue.wav",
+      "ogg": "artem/artem_continue.ogg",
+      "raw_sha256": "0a678e5277a15c788aa60e7b608c2cd93f0ed1249a89cc7d9a1b9949c283ea95",
+      "ogg_sha256": "0b07843467e1f79efd26a99138ada0610d1663675d98c56750f689f4f10886db",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=7.75546485,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=7.74546485:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-18.28:measured_TP=-0.63:measured_LRA=4.90:measured_thresh=-28.65:offset=1.48",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 7.75546485260771,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.88,
+        "true_peak_dbtp": -1.28,
+        "source_loudness": {
+          "input_i": "-18.28",
+          "input_tp": "-0.63",
+          "input_lra": "4.90",
+          "input_thresh": "-28.65",
+          "output_i": "-17.48",
+          "output_tp": "-1.50",
+          "output_lra": "3.70",
+          "output_thresh": "-27.89",
+          "normalization_type": "dynamic",
+          "target_offset": "1.48"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 7.800021
+      },
+      "asr": {
+        "text": "В анкете ты выбрал закончить текущий этап, с повтором не смешивай, новый порядок действий, уже другое условие.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 6117,
+          "transcript": "В анкете ты выбрал закончить текущий этап, с повтором не смешивай, новый порядок действий, уже другое условие.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "elena_day2_01",
+      "speaker": "Елена Бессонова",
+      "text": "Сегодня память среды. Поставь метку, измени панель, сравни обычный сброс и переподключение. Контрольная версия доступна на том же стенде.",
+      "character": "elena",
+      "direction": "Начало второго дня; спокойный руководитель.",
+      "tts_text": "Сегодня память среды. Поставь метку, измени панель, сравни обычный сброс и переподключение. Контрольная версия доступна на том же стенде.",
+      "tts_prompt": "[female voice, mature, calm, confident, professional] Сегодня память среды. Поставь метку, измени панель, сравни обычный сброс и переподключение. Контрольная версия доступна на том же стенде.",
+      "seed": 7118,
+      "sentence_parts": [
+        "Сегодня память среды. Поставь метку, измени панель, сравни обычный сброс и переподключение. Контрольная версия доступна на том же стенде."
+      ],
+      "sentence_seeds": [
+        7118
+      ],
+      "sentence_gap_seconds": 0,
+      "conditioned_on": null,
+      "raw": "originals/elena/elena_day2_01.wav",
+      "ogg": "elena/elena_day2_01.ogg",
+      "raw_sha256": "e1e9cbd45d6b4f699ffb506c10b4ba1c2684d87a9f3f5859db51cac1fb4dbefe",
+      "ogg_sha256": "b5a17fba882076eb790605cc2ea05fd0e531fd9701a051d456e4f1f124c32d03",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=9.33442177,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=9.32442177:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-21.45:measured_TP=-4.57:measured_LRA=1.30:measured_thresh=-31.48:offset=0.61",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 9.334421768707482,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.03,
+        "true_peak_dbtp": -1.38,
+        "source_loudness": {
+          "input_i": "-21.45",
+          "input_tp": "-4.57",
+          "input_lra": "1.30",
+          "input_thresh": "-31.48",
+          "output_i": "-16.61",
+          "output_tp": "-1.50",
+          "output_lra": "0.80",
+          "output_thresh": "-26.66",
+          "normalization_type": "dynamic",
+          "target_offset": "0.61"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 9.4
+      },
+      "asr": {
+        "text": "Сегодня память среды. Поставь метку, измени панель, сравни обычный сброс и переподключение. Контрольная версия доступна на том же стенде.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 7118,
+          "transcript": "Сегодня память среды. Поставь метку, измени панель, сравни обычный сброс и переподключение. Контрольная версия доступна на том же стенде.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "elena_day2_02",
+      "speaker": "Елена Бессонова",
+      "text": "Я. Твой отчёт не исправляем. Приёмка — отдельный документ с моей подписью.",
+      "character": "elena",
+      "direction": "Разделение наблюдения и решения.",
+      "tts_text": "Я. Твой отчёт не исправляем. Приёмка — отдельный документ с моей подписью.",
+      "tts_prompt": "[female voice, mature, calm, confident, professional] Я. Твой отчёт не исправляем. Приёмка — отдельный документ с моей подписью.",
+      "seed": 7719,
+      "sentence_parts": [
+        "Я.",
+        "Твой отчёт не исправляем.",
+        "Приёмка — отдельный документ с моей подписью."
+      ],
+      "sentence_seeds": [
+        7719,
+        7720,
+        7721
+      ],
+      "sentence_gap_seconds": 0.12,
+      "conditioned_on": "originals/elena/elena_day2_01.wav",
+      "raw": "originals/elena/elena_day2_02.wav",
+      "ogg": "elena/elena_day2_02.ogg",
+      "raw_sha256": "0f18f5bfdfb665becc034a72e6cd37dfae3d3b8eb93fcaf41485bdc6f80c24da",
+      "ogg_sha256": "7f5e66f323ba49fba5ffa485dbbcf29686db684a84dc28339b91850810cca40e",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=5.25551020,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=5.24551020:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-21.03:measured_TP=-6.08:measured_LRA=0.80:measured_thresh=-31.18:offset=0.39",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 5.255510204081633,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -15.99,
+        "true_peak_dbtp": -1.39,
+        "source_loudness": {
+          "input_i": "-21.03",
+          "input_tp": "-6.08",
+          "input_lra": "0.80",
+          "input_thresh": "-31.18",
+          "output_i": "-16.39",
+          "output_tp": "-1.50",
+          "output_lra": "0.70",
+          "output_thresh": "-26.47",
+          "normalization_type": "dynamic",
+          "target_offset": "0.39"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 5.300021
+      },
+      "asr": {
+        "text": "Я, твой отчет не исправляем, приемка отдельный документ с моей подписью.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 7119,
+          "transcript": "Я, твой отчет неисправляем, приемка отдельный документ с моей подписью.",
+          "matches": false
+        },
+        {
+          "seed": 7219,
+          "transcript": "Я, твой отчет неисправляем, приемка отдельный документ с моей подписью.",
+          "matches": false
+        },
+        {
+          "seed": 7319,
+          "transcript": "Я. Твой отчет неисправляем. Приемка отдельный документ с моей подписью.",
+          "matches": false
+        },
+        {
+          "seed": 7419,
+          "transcript": "Я. Твой отчет неисправляем. Приемка отдельный документ с моей подписью.",
+          "matches": false
+        },
+        {
+          "seed": 7519,
+          "transcript": "Я. Твой отчет неисправляем. Приемка. Отдельный документ с моей подписью.",
+          "matches": false
+        },
+        {
+          "seed": 7619,
+          "transcript": "Я, свой отчет не исправляем, приемка отдельный документ с моей подписью.",
+          "matches": false
+        },
+        {
+          "seed": 7719,
+          "transcript": "Я, твой отчет не исправляем, приемка отдельный документ с моей подписью.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "elena_review_01",
+      "speaker": "Елена Бессонова",
+      "text": "Замечание сохранено. Если данных мало, не ставь принятие из вежливости.",
+      "character": "elena",
+      "direction": "Реакция на доработку или недостаток данных.",
+      "tts_text": "Замечание сохранено. Если данных мало, не ставь принятие из вежливости.",
+      "tts_prompt": "[female voice, mature, calm, confident, professional] Замечание сохранено. Если данных мало, не ставь принятие из вежливости.",
+      "seed": 7120,
+      "sentence_parts": [
+        "Замечание сохранено. Если данных мало, не ставь принятие из вежливости."
+      ],
+      "sentence_seeds": [
+        7120
+      ],
+      "sentence_gap_seconds": 0,
+      "conditioned_on": "originals/elena/elena_day2_01.wav",
+      "raw": "originals/elena/elena_review_01.wav",
+      "ogg": "elena/elena_review_01.ogg",
+      "raw_sha256": "c543b245f18263500ca08a42120d2e99e7a7b12890440adbded420c568079f5a",
+      "ogg_sha256": "d69663837ec5b44008e031cbd3d67e74cfafba1547e1b4cfacdaa775afe584dd",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=5.01551020,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=5.00551020:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-21.89:measured_TP=-7.02:measured_LRA=2.20:measured_thresh=-31.99:offset=0.77",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 5.015510204081632,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -16.42,
+        "true_peak_dbtp": -1.7,
+        "source_loudness": {
+          "input_i": "-21.89",
+          "input_tp": "-7.02",
+          "input_lra": "2.20",
+          "input_thresh": "-31.99",
+          "output_i": "-16.77",
+          "output_tp": "-2.41",
+          "output_lra": "2.10",
+          "output_thresh": "-26.94",
+          "normalization_type": "dynamic",
+          "target_offset": "0.77"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 5.100021
+      },
+      "asr": {
+        "text": "Замечание сохранено. Если данных мало, не ставь принятие из вежливости.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 7120,
+          "transcript": "Замечание сохранено. Если данных мало, не ставь принятие из вежливости.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "id": "elena_day3_01",
+      "speaker": "Елена Бессонова",
+      "text": "Версия 1.2. Повтори посадку увеличенного куба по своим записям, затем проверь упругость шара. Одинаковая высота, одинаковый предмет — меняй только одно условие.",
+      "character": "elena",
+      "direction": "Приёмка исправления.",
+      "tts_text": "Версия один точка два. Повтори посадку увеличенного куба по своим записям, затем проверь упругость шара. Одинаковая высота, одинаковый предмет — меняй только одно условие.",
+      "tts_prompt": "[female voice, mature, calm, confident, professional] Версия один точка два. Повтори посадку увеличенного куба по своим записям, затем проверь упругость шара. Одинаковая высота, одинаковый предмет — меняй только одно условие.",
+      "seed": 7121,
+      "sentence_parts": [
+        "Версия один точка два. Повтори посадку увеличенного куба по своим записям, затем проверь упругость шара. Одинаковая высота, одинаковый предмет — меняй только одно условие."
+      ],
+      "sentence_seeds": [
+        7121
+      ],
+      "sentence_gap_seconds": 0,
+      "conditioned_on": "originals/elena/elena_day2_01.wav",
+      "raw": "originals/elena/elena_day3_01.wav",
+      "ogg": "elena/elena_day3_01.ogg",
+      "raw_sha256": "63f00cd0e9a117046ab740e33e649c3f6e6cee3846ce24c47d1abd4abd532ecf",
+      "ogg_sha256": "9a5e6e201db63cdce69c482e598a02f1118f777e23dc0ba097b1f20e0b4d2d4c",
+      "processing": {
+        "filters": "atrim=start=0.00000000:duration=11.47065760,asetpts=PTS-STARTPTS,afade=t=in:d=0.005,afade=t=out:st=11.46065760:d=0.010,loudnorm=I=-16:TP=-1.5:LRA=11:linear=true:print_format=json:measured_I=-22.30:measured_TP=-5.31:measured_LRA=1.00:measured_thresh=-32.30:offset=0.49",
+        "trim_start_seconds": 0,
+        "trim_end_seconds": 0,
+        "duration_seconds": 11.470657596371883,
+        "encoding": "OGG Vorbis q5 mono 48000 Hz",
+        "loudness_lufs": -15.97,
+        "true_peak_dbtp": -1.29,
+        "source_loudness": {
+          "input_i": "-22.30",
+          "input_tp": "-5.31",
+          "input_lra": "1.00",
+          "input_thresh": "-32.30",
+          "output_i": "-16.49",
+          "output_tp": "-1.50",
+          "output_lra": "1.00",
+          "output_thresh": "-26.49",
+          "normalization_type": "dynamic",
+          "target_offset": "0.49"
+        },
+        "method": "Two-pass EBU R128 loudnorm; peak limiting when fixed gain exceeds ceiling; no pitch, tempo or spatial effect",
+        "applied_normalization": "dynamic",
+        "encoded_duration_seconds": 11.5
+      },
+      "asr": {
+        "text": "Версия 1.2. Повтори посадку увеличенного куба по своим записям, затем проверь упругость шара, одинаковая высота, одинаковый предмет, меняй только одно условие.",
+        "language": "ru",
+        "verified_audio": "final mastered OGG"
+      },
+      "attempts": [
+        {
+          "seed": 7121,
+          "transcript": "Версия 1.2. Повтори посадку увеличенного куба по своим записям, затем проверь упругость шара, одинаковая высота, одинаковый предмет, меняй только одно условие.",
+          "matches": true
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "asr": "faster-whisper large-v3 CPU int8, Russian, beam 5, no text hint, ffmpeg PCM input",
+    "human_listening": false,
+    "godot": {
+      "version": "4.7.2",
+      "import": "passed",
+      "native_runtime": "CAMPAIGN_VOICE_RUNTIME: PASS / clips=21",
+      "native_checks": [
+        "stream and subtitle selection",
+        "playback advancement",
+        "pause and resume",
+        "voice-end sequence boundary"
+      ],
+      "shutdown_warnings": {
+        "objectdb_instances": 4,
+        "resources": 2
+      }
+    },
+    "web": {
+      "export": "release, single-threaded, Compatibility",
+      "scene": "actual scenes/campaign.tscn, temporary harness removed",
+      "clips_started": [
+        {
+          "id": "nika_evening_01",
+          "position": 0.130666673183441,
+          "length": 4.30000019073486,
+          "stream": "res://assets/audio/dialogue/campaign/nika/nika_evening_01.ogg"
+        },
+        {
+          "id": "nika_evening_02",
+          "position": 0.130666673183441,
+          "length": 10.3000001907349,
+          "stream": "res://assets/audio/dialogue/campaign/nika/nika_evening_02.ogg"
+        },
+        {
+          "id": "nika_day1_01",
+          "position": 0.130666673183441,
+          "length": 7.00002098083496,
+          "stream": "res://assets/audio/dialogue/campaign/nika/nika_day1_01.ogg"
+        },
+        {
+          "id": "nika_day1_02",
+          "position": 0.130666673183441,
+          "length": 17.2000007629395,
+          "stream": "res://assets/audio/dialogue/campaign/nika/nika_day1_02.ogg"
+        },
+        {
+          "id": "nika_day1_03",
+          "position": 0.130666673183441,
+          "length": 11.6000003814697,
+          "stream": "res://assets/audio/dialogue/campaign/nika/nika_day1_03.ogg"
+        },
+        {
+          "id": "nika_hired_01",
+          "position": 0.130666673183441,
+          "length": 7,
+          "stream": "res://assets/audio/dialogue/campaign/nika/nika_hired_01.ogg"
+        },
+        {
+          "id": "nika_day2_01",
+          "position": 0.130666673183441,
+          "length": 8.10000038146973,
+          "stream": "res://assets/audio/dialogue/campaign/nika/nika_day2_01.ogg"
+        },
+        {
+          "id": "nika_peer_01",
+          "position": 0.130666673183441,
+          "length": 9.19999980926514,
+          "stream": "res://assets/audio/dialogue/campaign/nika/nika_peer_01.ogg"
+        },
+        {
+          "id": "nika_day3_01",
+          "position": 0.130666673183441,
+          "length": 7.19999980926514,
+          "stream": "res://assets/audio/dialogue/campaign/nika/nika_day3_01.ogg"
+        },
+        {
+          "id": "nika_independent",
+          "position": 0.130666673183441,
+          "length": 6.30002069473267,
+          "stream": "res://assets/audio/dialogue/campaign/nika/nika_independent.ogg"
+        },
+        {
+          "id": "nika_online",
+          "position": 0.130666673183441,
+          "length": 6.09999990463257,
+          "stream": "res://assets/audio/dialogue/campaign/nika/nika_online.ogg"
+        },
+        {
+          "id": "nika_together",
+          "position": 0.130666673183441,
+          "length": 7.69999980926514,
+          "stream": "res://assets/audio/dialogue/campaign/nika/nika_together.ogg"
+        },
+        {
+          "id": "artem_shift_end",
+          "position": 0.130666673183441,
+          "length": 10.1000204086304,
+          "stream": "res://assets/audio/dialogue/campaign/artem/artem_shift_end.ogg"
+        },
+        {
+          "id": "artem_day3_01",
+          "position": 0.130666673183441,
+          "length": 9.50002098083496,
+          "stream": "res://assets/audio/dialogue/campaign/artem/artem_day3_01.ogg"
+        },
+        {
+          "id": "artem_stop",
+          "position": 0.130666673183441,
+          "length": 8.89999961853027,
+          "stream": "res://assets/audio/dialogue/campaign/artem/artem_stop.ogg"
+        },
+        {
+          "id": "artem_reserve",
+          "position": 0.130666673183441,
+          "length": 7.5,
+          "stream": "res://assets/audio/dialogue/campaign/artem/artem_reserve.ogg"
+        },
+        {
+          "id": "artem_continue",
+          "position": 0.130666673183441,
+          "length": 7.80002069473267,
+          "stream": "res://assets/audio/dialogue/campaign/artem/artem_continue.ogg"
+        },
+        {
+          "id": "elena_day2_01",
+          "position": 0.130666673183441,
+          "length": 9.39999961853027,
+          "stream": "res://assets/audio/dialogue/campaign/elena/elena_day2_01.ogg"
+        },
+        {
+          "id": "elena_day2_02",
+          "position": 0.130666673183441,
+          "length": 5.30002069473267,
+          "stream": "res://assets/audio/dialogue/campaign/elena/elena_day2_02.ogg"
+        },
+        {
+          "id": "elena_review_01",
+          "position": 0.130666673183441,
+          "length": 5.10002088546753,
+          "stream": "res://assets/audio/dialogue/campaign/elena/elena_review_01.ogg"
+        },
+        {
+          "id": "elena_day3_01",
+          "position": 0.130666673183441,
+          "length": 11.5,
+          "stream": "res://assets/audio/dialogue/campaign/elena/elena_day3_01.ogg"
+        }
+      ],
+      "pause_escape": {
+        "before": 0.461333334445953,
+        "after": 0.461333334445953,
+        "paused": true
+      },
+      "sequence": {
+        "first_tail_position": 4.11999988555908,
+        "first_length": 4.30000019073486,
+        "next_id": "elena_day2_02",
+        "next_position": 1.04799997806549,
+        "finished_mode": "none"
+      },
+      "visual": "Nika and Elena subtitles and 3D speakers observed in Chromium",
+      "console_errors": []
+    },
+    "total_encoded_duration_seconds": 177.100147,
+    "ordinary_release": {
+      "path": "build/campaign-voice-review/index.html",
+      "temporary_harness_removed": true,
+      "main_menu_visible": true,
+      "console_errors": [],
+      "menu_audio_signal": [
+        {
+          "state": "running",
+          "time": 0.4053333333333333,
+          "rms": 0
+        },
+        {
+          "state": "running",
+          "time": 0.4053333333333333,
+          "rms": 0.0000017841612752790171
+        }
+      ],
+      "menu_audio_fix": "scripts/ui/start_screen.gd: explicit AudioServer.PLAYBACK_TYPE_STREAM avoids long-track Sample createBuffer error",
+      "native_menu_shutdown_warnings": {
+        "objectdb_instances": 4,
+        "resources": 1
+      }
+    }
+  }
+}

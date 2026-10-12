@@ -29,6 +29,7 @@ var _focused := true
 var _module := ""
 var _sample: Dictionary = {}
 var _use_ray := PhysicsRayQueryParameters3D.new()
+var _placement_query := PhysicsShapeQueryParameters3D.new()
 var _hud_clock := 0.0
 var _roots: Dictionary = {}
 var _interludes: Dictionary = {}
@@ -273,7 +274,8 @@ func _sync_input() -> void:
 	player.enabled = free
 	for root in _roots.values():
 		root.process_mode = Node.PROCESS_MODE_INHERIT if root == _root_for(_stage) and free else Node.PROCESS_MODE_DISABLED
-	workshop.cube.freeze = workshop.carried or not free or _stage != "stand"
+	workshop.set_active(free and _stage == "stand")
+	ui.author_discs.visible = _stage == "stand" and ui.mode in ["none", "pause"] and not _busy and not bridge.active
 	get_viewport().disable_3d = bridge.active
 	_audio.set_muted(not GameSettings.sound_enabled or not free or _stage == "bus")
 	_music.stream_paused = not GameSettings.sound_enabled or not free or _stage != "lab"
@@ -319,7 +321,6 @@ func _process(delta: float) -> void:
 		_music.play()
 	if _stage == "stand":
 		workshop.carry(player.camera)
-		workshop.observe(player.camera, player.get_rid())
 	elif _stage in ["evening", "bus", "dream"]:
 		_update_interlude(delta)
 		if _busy:
@@ -370,16 +371,17 @@ func _find_action() -> String:
 		return "bus_exit" if _bus_arrived else ""
 	if _cafe_seated:
 		return "cafe_leave" if _scene_seconds >= 8 else ""
-	if _stage == "stand" and workshop.carried:
-		return "place_cube"
 	var root := _root_for(_stage)
 	var nearest := 3.1
 	var action := ""
 	var targets := _actions()
 	for key in targets:
+		if _stage == "stand" and workshop.carried and (key.begins_with("object_") or key == "measure"):
+			continue
 		var target: Vector3 = root.to_global(targets[key])
 		var offset := target - player.camera.global_position
-		if offset.length() >= nearest or offset.normalized().dot(-player.camera.global_basis.z) < 0.5:
+		var alignment := 0.92 if _stage == "stand" else 0.5
+		if offset.length() >= nearest or offset.normalized().dot(-player.camera.global_basis.z) < alignment:
 			continue
 		_use_ray.from = player.camera.global_position
 		_use_ray.to = target
@@ -388,10 +390,12 @@ func _find_action() -> String:
 			continue
 		nearest = offset.length()
 		action = key
-	return action
+	return "place_object" if action.is_empty() and _stage == "stand" and workshop.carried else action
 
 func _action_label(action: String) -> String:
-	var names := {"computer": "рабочий компьютер", "archive": "история отчётов", "nika": "поговорить с Никой", "coffee": "перерыв", "exit": "закончить смену", "service": "служебный сектор", "lab_gate": "местный привод", "home_pc": "личные записи и сообщения", "bed": "лечь спать", "home_exit": "выйти на работу", "home_coffee": "посмотреть на кухню", "cube": "поднять куб", "mode": "сменить контроль / испытываемую версию", "light": "изменить свет", "reset": "обычный сброс", "reconnect": "переподключить среду", "case_notes": "задание, журнал и собственные записи", "finish_case": "вернуться с выборкой в отчёт", "place_cube": "поставить предмет · ЛКМ — уронить", "mark": "поставить метку А-01", "impact": "изменить панель", "replay": "повтор последней команды", "inspect": "осмотреть обратную сторону", "escape": "вернуться на рабочий этаж", "sector_window": "проверить сервисный режим"}
+	var names := {"computer": "рабочий компьютер", "archive": "история отчётов", "nika": "поговорить с Никой", "coffee": "перерыв", "exit": "закончить смену", "service": "служебный сектор", "lab_gate": "местный привод", "home_pc": "личные записи и сообщения", "bed": "лечь спать", "home_exit": "выйти на работу", "home_coffee": "посмотреть на кухню", "mode": "сменить контроль / испытываемую версию", "light": "изменить свет", "reset": "обычный сброс", "reconnect": "переподключить среду", "case_notes": "задание, журнал и собственные записи", "finish_case": "вернуться с выборкой в отчёт", "place_object": "поставить предмет · Q — бросить · ЛКМ — уронить", "size_up": "увеличить выбранный предмет", "size_down": "уменьшить выбранный предмет", "weight": "изменить вес выбранного предмета", "elastic": "переключить упругость", "throw": "бросить предмет по направлению взгляда", "measure": "измерить посадку в шаблон", "mark": "поставить метку А-01", "impact": "изменить панель", "escape": "вернуться на рабочий этаж", "sector_window": "проверить сервисный режим"}
+	if action.begins_with("object_"):
+		return "поднять " + Workshop.OBJECT_NAMES[int(action.get_slice("_", 1))].to_lower()
 	names.merge({"cafe_sit": "присесть и посмотреть на закат", "cafe_leave": "встать и пройти к автобусу", "bus_board": "сесть в автобус №18", "bus_exit": "выйти на своей остановке"})
 	if action == "exit" and GameRun.shift_released:
 		return "выйти с этажа" if GameRun.day == 3 else "выйти в город"
@@ -439,19 +443,24 @@ func _unhandled_input(event: InputEvent) -> void:
 			_release_object(false)
 		else:
 			var action := _find_action()
-			if action == "cube":
+			if action.begins_with("object_"):
 				_use(action)
 	elif ui.mode == "none" and event is InputEventKey and event.pressed and not event.echo:
 		if event.physical_keycode == KEY_F8 and _stage == "stand":
 			_capture_case()
 		elif event.physical_keycode == KEY_R and _stage == "stand" and not workshop.peer_running:
 			workshop.reset_environment()
+		elif event.physical_keycode == KEY_Q and _stage == "stand" and not workshop.peer_running:
+			workshop.throw_object(player.camera)
 
 func _use(action: String) -> void:
 	if action.is_empty():
 		return
 	if _stage == "stand" and workshop.peer_running and action != "case_notes":
 		ui.say("Артём выполняет свою проверку. Можно смотреть, сделать снимок или открыть записи; действия на стенде пока заняты.")
+		return
+	if action.begins_with("object_"):
+		workshop.pickup(int(action.get_slice("_", 1)))
 		return
 	_audio.play_event("ui_click")
 	match action:
@@ -482,18 +491,21 @@ func _use(action: String) -> void:
 				GameRun.go_to_work()
 				_travel("lab", Vector3(2.6, 0.03, 4.5), 0, _brief_day)
 		"home_coffee": ui.say("Тихо. Ключи на полке, будильник на восемь.")
-		"cube": workshop.pickup()
 		"mode": workshop.change_mode()
 		"light": workshop.change_light()
 		"reset": workshop.reset_environment()
 		"reconnect": workshop.reconnect()
-		"place_cube": _release_object(true)
+		"place_object": _release_object(true)
 		"finish_case": _finish_case()
 		"case_notes": _case_notes()
 		"mark": workshop.stamp()
 		"impact": workshop.impact()
-		"replay": workshop.replay_command()
-		"inspect": workshop.inspect_back(player.global_position)
+		"size_up": workshop.resize_object(1)
+		"size_down": workshop.resize_object(-1)
+		"weight": workshop.change_weight()
+		"elastic": workshop.change_elasticity()
+		"throw": workshop.throw_object(player.camera)
+		"measure": workshop.measure()
 		"escape": _travel("lab", Vector3(7.5, 0.03, 9.6), PI)
 		"sector_window": ui.say("Местное управление в сервисном режиме. Это оборудование здания, а не игровой стенд. Рабочую приёмку выполняют в лаборатории.")
 		"cafe_sit":
@@ -515,13 +527,27 @@ func _use(action: String) -> void:
 		"bus_exit": _go_home()
 
 func _release_object(place: bool) -> void:
-	var body: RigidBody3D = workshop.cube
+	var body := workshop.selected_body()
 	if place:
 		_use_ray.from = player.camera.global_position
 		_use_ray.to = _use_ray.from - player.camera.global_basis.z * 3.1
 		var hit := get_world_3d().direct_space_state.intersect_ray(_use_ray)
 		if not hit.is_empty() and (hit.normal as Vector3).dot(Vector3.UP) > 0.6:
-			body.global_position = hit.position + Vector3.UP * 0.29
+			var collision: CollisionShape3D = body.get_child(1)
+			_placement_query.shape = collision.shape
+			_placement_query.exclude = [player.get_rid(), body.get_rid()]
+			var position_value: Vector3 = hit.position + Vector3.UP * (workshop.object_radius() + 0.025)
+			var clear := false
+			for attempt in 21:
+				_placement_query.transform = Transform3D(body.global_basis, position_value)
+				if get_world_3d().direct_space_state.intersect_shape(_placement_query, 1).is_empty():
+					clear = true
+					break
+				position_value.y += 0.1
+			if not clear:
+				ui.say("Здесь предмет не помещается. Выбери свободную поверхность.")
+				return
+			body.global_position = position_value
 	workshop.release()
 
 func _computer(tab := 0) -> void:
@@ -570,7 +596,10 @@ func _finish_case() -> void:
 func _case_notes() -> void:
 	var body := ui.page(Workshop.TITLES[workshop.case_day - 1], "ЛОКАЛЬНЫЙ СТЕНД / " + workshop.version(), "case_notes")
 	body.add_child(ui.label(workshop.task(), 20))
-	body.add_child(ui.label("E — действие; ЛКМ — поднять или уронить; R — обычный сброс; F8 — снимок. Режим, свет и переподключение — на пультах. Можно завершить с недостатком данных: таймер не является проверкой.", 17, Interface.MUTED))
+	body.add_child(ui.label("E — взять или поставить предмет, нажать кнопку; ЛКМ — уронить; Q — бросить по взгляду; R — сброс всех предметов; F8 — снимок. Размер, вес, упругость, версия и переподключение — на подписанных пультах. Сначала возьми нужный предмет: кнопки меняют последний выбранный. Можно завершить с недостатком данных.", 17, Interface.MUTED))
+	body.add_child(ui.label("Дополнительные опыты", 22, Interface.ACCENT))
+	for exercise in [["shape_0", "Поднять куб"], ["shape_1", "Поднять шар"], ["shape_2", "Поднять цилиндр"], ["resize", "Изменить размер"], ["weight", "Изменить массу"], ["elastic", "Включить упругость"], ["throw", "Выполнить бросок"], ["target", "Попасть в мишень"], ["measure", "Измерить посадку"], ["bounce", "Наблюдать отскок"]]:
+		body.add_child(ui.label(("✓ " if workshop.exercises.has(exercise[0]) else "○ ") + exercise[1], 17, Interface.MUTED))
 	if workshop.case_day == 2:
 		var peer_button := ui.button(body, "Пригласить Артёма на отдельную проверку", func():
 			ui.close_page()

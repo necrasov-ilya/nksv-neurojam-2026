@@ -2,6 +2,7 @@
   "artist": "Creo",
   "permission_source": "http://faq.creo-music.com/",
   "permission_quote": "If your game is free/non-commercial (no ads, in-game purchases, etc...) you are welcome to use any of my music against credit.",
+  "storage_note": "For 0.5.0-alpha, 20 unused MP3 files were removed at the participant's request. Only epilogue.mp3 remains as the original source of the menu music. The tracks array preserves the complete historical import provenance, not the current file inventory.",
   "tracks": [
     {
       "title": "We Can Dream",

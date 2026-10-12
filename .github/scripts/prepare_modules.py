@@ -138,7 +138,14 @@ def prepare_modules(output=None, build_sources=True):
     for filename in ['campaign-host.js', 'campaign-frame.js', 'simulation-host.html']:
         shutil.copyfile(ROOT / 'web' / filename, output / filename)
     shutil.copytree(VENDOR, output / 'vendor', dirs_exist_ok=True)
+    shutil.copytree(ROOT / 'assets/ui/authors', output / 'authors', ignore=shutil.ignore_patterns('*.import'), dirs_exist_ok=True)
     shutil.copyfile(CATALOG, output / 'module_catalog.json')
+    selected_ids = {info['id'] for info in catalog['modules'] if info['source_dir']}
+    games_output = output / 'games'
+    if games_output.is_dir():
+        for directory in games_output.iterdir():
+            if directory.is_dir() and directory.name not in selected_ids:
+                shutil.rmtree(directory)
     packaged = []
     source_index = 0
     for info in catalog['modules']:

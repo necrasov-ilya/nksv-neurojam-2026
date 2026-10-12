@@ -52,7 +52,8 @@ def add_notices(archive, platform, version):
         "Campaign: voiced prologue, city, interview, three local verification cases, apartment and a quiet ending.\n"
         "Included independent games run through a host; finish each sample to submit a report.\n\n"
         f"{INSTRUCTIONS[platform]}\n\n"
-        "Controls: WASD, mouse, E; Shift runs after the interview (camera motion can be disabled in Settings). LMB picks up/drops, E places, R resets the local test. Escape pauses or closes the tablet. Hold Enter to skip the prologue; F8 captures an observation. Local cases finish through a report; optional external games require 15 active seconds, excluding loading and pause.\n"
+        "Controls: WASD, mouse, E; Shift runs after the interview (camera motion can be disabled in Settings). E or LMB picks up the cube, sphere or cylinder; E places, LMB drops, Q throws. Labelled buttons change size, mass and elasticity of the selected object; R resets all objects. Escape pauses or closes the tablet. Hold Enter to skip the prologue; F8 captures an observation. Local cases finish through a report; optional external games require 15 active seconds, excluding loading and pause.\n"
+        "Alpha warning: everything after day two, including day three and the ending, has not been thoroughly tested. Progress is kept in memory only during the current run.\n"
         "Source and resource credits: SOURCES.md and the in-game credits.\n"
         "Project: https://github.com/necrasov-ilya/nksv-neurojam-2026\n",
     )

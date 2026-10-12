@@ -5,6 +5,7 @@ signal speaker_changed(id: String)
 const Dialogue := preload("res://scripts/campaign/dialogue.gd")
 const UIStyle := preload("res://scripts/ui/hud_style.gd")
 const PauseUI := preload("res://scripts/ui/pause_drawer.gd")
+const AuthorDiscs := preload("res://scripts/ui/author_discs.gd")
 const INK := UIStyle.INK
 const MUTED := UIStyle.MUTED
 const ACCENT := UIStyle.ACCENT
@@ -35,6 +36,7 @@ var _page_footer: HBoxContainer
 var _remark_remaining := 0.0
 var _transition_card: Control
 var speaker_context := ""
+var author_discs: AuthorDiscs
 
 func transition_card(text: String) -> void:
 	if is_instance_valid(_transition_card):
@@ -141,6 +143,15 @@ func _ready() -> void:
 	_voice.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	add_child(_voice)
 	_voice.finished.connect(_on_voice_finished)
+	author_discs = AuthorDiscs.new()
+	add_child(author_discs)
+	author_discs.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	author_discs.offset_left = -86
+	author_discs.offset_top = -88
+	author_discs.offset_right = -22
+	author_discs.offset_bottom = -24
+	author_discs.z_index = 50
+	author_discs.hide()
 	fade = ColorRect.new()
 	_full(fade, self)
 	fade.color = Color(0, 0, 0, 0)
@@ -275,6 +286,8 @@ func page(title: String, kicker: String, page_mode := "page") -> VBoxContainer:
 		_page_root = drawer
 		_page_body = drawer.body
 		drawer.show()
+		# GUI picking follows tree order, not z_index: keep the link above the scrim.
+		move_child(author_discs, get_child_count() - 1)
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		modal_changed.emit()
 		return _page_body
@@ -451,7 +464,7 @@ func computer(launch: Callable, end_shift: Callable, tab := 0) -> void:
 			body.add_child(HSeparator.new())
 	else:
 		body.add_child(label("Контрольные версии и решения приёмки", 24, ACCENT))
-		body.add_child(label("1.0 — контроль нагрузки; 1.1 — сохранность предмета.\n2.0 / 2.0-C — память среды и контроль сброса.\n1.2 — исправление сохранности и приёмка.", 20))
+		body.add_child(label("1.0 — контроль предметной физики; 1.1 — размер и посадка.\n2.0 / 2.0-C — память среды и контроль сброса.\n1.2 — исправление размера и проверка упругости.", 20))
 		body.add_child(label("Это локальные подготовленные испытания, не управление настоящими дверями здания. Вывод тестировщика и подпись руководителя остаются отдельными документами.", 17, MUTED))
 		if GameRun.release_history.is_empty():
 			body.add_child(label("Решений о приёмке ещё нет.", 19))

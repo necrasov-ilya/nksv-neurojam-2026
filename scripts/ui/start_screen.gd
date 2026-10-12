@@ -27,7 +27,7 @@ var _drawer: Panel
 var _scrim: Button
 var _settings_body: SettingsUI
 var _about_body: Control
-var _about_info: Label
+var _about_info: RichTextLabel
 var _about_copy: String
 var _close_button: Button
 var _drawer_title: Label
@@ -53,6 +53,7 @@ func _ready() -> void:
 	var track: AudioStreamOggVorbis = preload("res://assets/audio/campaign/menu_epilogue.ogg").duplicate()
 	track.loop = true
 	_music.stream = track
+	_music.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	_music.volume_db = -35
 	add_child(_music)
 	_music.play()
@@ -148,7 +149,16 @@ func _build_drawer() -> void:
 	about_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	about_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_about_body.add_child(about_scroll)
-	var info := _label("LATENTPUNK: TEST SUBJECT 0\n\nСобеседование · Три смены · Квартира · Финал\n\nWASD — идти · Мышь — обзор\nE — взаимодействие\nЛКМ — поднять / уронить предмет\nE — поставить предмет\nTab — выбор · Enter — ответ\nEsc — пауза · F8 — снимок на стендах\n\nМузыка Shift Change — собственная композиция\nГолоса: Built with Fish Audio · fish.audio\nИконки: Lucide Contributors · ISC / MIT\n\nGodot 4.7.2 · Compatibility\nОднопоточный Web\n\nПрогресс сохраняется только в текущем запуске.", 19, INK, about_scroll)
+	var info := RichTextLabel.new()
+	info.bbcode_enabled = true
+	info.fit_content = true
+	info.scroll_active = false
+	info.add_theme_font_override("normal_font", FONT)
+	info.add_theme_font_size_override("normal_font_size", 19)
+	info.add_theme_color_override("default_color", INK)
+	info.meta_clicked.connect(func(url: Variant): OS.shell_open(str(url)))
+	about_scroll.add_child(info)
+	info.text = "LATENTPUNK: TEST SUBJECT 0\n\nСобеседование · Три смены · Квартира · Финал\n\n[color=#5b4cff]АВТОРЫ И ИГРОВЫЕ СРЕДЫ[/color]\n[url=https://t.me/nksv_ilya]NKSV_ILYA · @nksv_ilya[/url]\nLATENTPUNK, калибровка, DEAD PARADE и DUSTFALL.\n\n[url=https://t.me/fuckup_files]Алёша · @fuckup_files[/url]\nОстальные внешние игры — из его проекта bench-portal.\n[url=https://github.com/alesha-pro/bench-portal]Оригинальный репозиторий · alesha-pro/bench-portal ↗[/url]\nАвторские и лицензионные уведомления включённых игр сохранены.\n\nWASD — идти · Мышь — обзор\nE — взаимодействие и постановка предмета\nЛКМ — поднять / уронить · Q — бросить\nR — сбросить калибровку\nTab — выбор · Enter — ответ\nEsc — пауза и свободный курсор\nF8 — снимок на стендах\nДиски справа снизу — Telegram авторов.\n\nМузыка Shift Change — собственная композиция\nГолоса: Built with Fish Audio · fish.audio\nИконки: Lucide Contributors · ISC / MIT\n\nGodot 4.7.2 · Compatibility\nОднопоточный Web\n\nПрогресс сохраняется только в текущем запуске."
 	info.custom_minimum_size.x = 408
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.text += "\n\nМузыка меню: Epilogue — Creo\ncreo-music.com/track/epilogue · CC BY-NC 4.0\nМузыка сна: Ossuary 6 - Air — Kevin MacLeod\nincompetech.com · CC BY 4.0\nИспуг Ники: Horror Sting (Deep in the Void)2 — SilverIllusionist\nfreesound.org/people/SilverIllusionist/sounds/655386/ · CC BY 4.0"

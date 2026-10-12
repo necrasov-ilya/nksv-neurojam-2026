@@ -406,8 +406,6 @@ static func dress_shift(info: Dictionary, day: int, profile: Dictionary, domesti
 	else:
 		var note := "ЗАПИСЫВАЙ УСЛОВИЯ" if profile.get("verification", -1) == 0 else "ПРОВЕРИМ ВМЕСТЕ" if profile.get("verification", -1) == 1 else "НЕПОДТВЕРЖДЁННОЕ ≠ ЛОЖНОЕ"
 		plaque(g, note, Vector3(2.6, 1.82, -0.44), 2.2, "accent_violet")
-		if profile.get("isolation", -1) in [1, 2]:
-			plaque(g, "НИКА / ВНУТРЕННИЙ 204", Vector3(3.45, 0.99, 0.03), 1.35, "accent_magenta")
 		if day >= 2:
 			g.box(Vector3(8.8, 0.23, -3.9), Vector3(0.8, 0.45, 0.5), "mustard")
 			plaque(g, "ЗАЯВКА 014 / ПРИВОД", Vector3(8.5, 1.4, -4.86), 1.6)
